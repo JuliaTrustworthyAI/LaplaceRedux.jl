@@ -100,31 +100,3 @@ function predict(mod::BayesLogreg, X)
     p = p ./ (1 .+ p)
     return p
 end
-
-using AlgorithmicRecourse
-
-"""
-    retrain(𝑴::AlgorithmicRecourse.Models.BayesianLogisticModel, data; n_epochs=10) 
-
-Retrains a fitted deep ensemble for (new) data.
-"""
-function retrain(𝑴::AlgorithmicRecourse.Models.LogisticModel, data; n_epochs=10, τ=1.0) 
-    X = Flux.stack(map(d -> d[1], data),1)
-    y = Flux.stack(map(d -> d[2], data),1)
-    model = bayes_logreg(X, y)
-    𝑴 = AlgorithmicRecourse.Models.LogisticModel(reshape(model.μ[2:end],1,length(model.μ)-1), [model.μ[1]]);
-    return 𝑴
-end
-
-"""
-    retrain(𝑴::AlgorithmicRecourse.Models.BayesianLogisticModel, data; n_epochs=10) 
-
-Retrains a fitted deep ensemble for (new) data.
-"""
-function retrain(𝑴::AlgorithmicRecourse.Models.BayesianLogisticModel, data; n_epochs=10, τ=1.0) 
-    X = Flux.stack(map(d -> d[1], data),1)
-    y = Flux.stack(map(d -> d[2], data),1)
-    model = bayes_logreg(X, y)
-    𝑴 = AlgorithmicRecourse.Models.BayesianLogisticModel(reshape(model.μ,1,length(model.μ)), model.Σ);
-    return 𝑴
-end
