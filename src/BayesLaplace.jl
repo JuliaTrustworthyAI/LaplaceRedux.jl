@@ -1,6 +1,10 @@
 module BayesLaplace
 
 include("logit.jl")
-export bayes_logreg
+include("Curvature.jl")
+using .Curvature
+include("laplace.jl")
+
+export bayes_logreg, laplace
 
 end
