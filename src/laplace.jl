@@ -1,6 +1,6 @@
 using Flux, LinearAlgebra, .Curvature
 
-function laplace(model::Any; loss_type=:logitbinarycrossentropy, subset_of_weights=:last_layer, hessian_structure=:full,backend=:EmpiricalFisher,λ=1e-3) 
+function laplace(model::Any; loss_type=:logitbinarycrossentropy, subset_of_weights=:last_layer, hessian_structure=:full,backend=:EmpiricalFisher,λ=1) 
     # Initialize:
     𝐇₀ = UniformScaling(λ)
     nn = model
@@ -41,15 +41,13 @@ function hessian_approximation(𝑳::LaplaceRedux, d)
 end
 
 function fit!(𝑳::LaplaceRedux,data)
-    
-    if isnothing(𝑳.𝐇)
-        𝐇 = zeros(𝑳.n_params,𝑳.n_params)
-        for d in data
-            𝐇 += hessian_approximation(𝑳, d)
-        end
-        𝑳.𝐇 = 𝐇 + 𝑳.𝐇₀ # posterior precision
-        𝑳.Σ̂ = inv(𝑳.𝐇) # posterior covariance
+
+    𝐇 = zeros(𝑳.n_params,𝑳.n_params)
+    for d in data
+        𝐇 += hessian_approximation(𝑳, d)
     end
+    𝑳.𝐇 = 𝐇 + 𝑳.𝐇₀ # posterior precision
+    𝑳.Σ̂ = inv(𝑳.𝐇) # posterior covariance
     
 end
 

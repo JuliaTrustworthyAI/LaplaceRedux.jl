@@ -44,7 +44,7 @@ struct BayesLogreg
     μ::Vector{Float64}
     Σ::Matrix{Float64}
 end
-function bayes_logreg(X,y;w_0=nothing,H_0=nothing,𝓁=𝓁,∇𝓁=∇𝓁,∇∇𝓁=∇∇𝓁,constant=true,λ=0.005,optim_options...)
+function bayes_logreg(X,y;w_0=nothing,H_0=nothing,𝓁=𝓁,∇𝓁=∇𝓁,∇∇𝓁=∇∇𝓁,constant=true,λ=1,optim_options...)
     # Setup:
     if constant
         if !all(X[:,1] .== 1)
