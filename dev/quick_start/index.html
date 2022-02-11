@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Getting started · BayesLaplace.jl</title><script data-outdated-warner src="../assets/warner.js"></script><link rel="canonical" href="https://pat-alt.github.io/BayesLaplace.jl/quick_start/"/><link href="https://cdnjs.cloudflare.com/ajax/libs/lato-font/3.0.0/css/lato-font.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/juliamono/0.039/juliamono-regular.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.13.11/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL=".."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../assets/documenter.js"></script><script src="../siteinfo.js"></script><script src="../../versions.js"></script><script src="../../copy.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><div class="docs-package-name"><span class="docs-autofit"><a href="../">BayesLaplace.jl</a></span></div><form class="docs-search" action="../search/"><input class="docs-search-query" id="documenter-search-query" name="q" type="text" placeholder="Search docs"/></form><ul class="docs-menu"><li><a class="tocitem" href="../">Home</a></li><li class="is-active"><a class="tocitem" href>Getting started</a><ul class="internal"><li><a class="tocitem" href="#Laplace-appoximation"><span>Laplace appoximation</span></a></li></ul></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><nav class="breadcrumb"><ul class="is-hidden-mobile"><li class="is-active"><a href>Getting started</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Getting started</a></li></ul></nav><div class="docs-right"><a class="docs-edit-link" href="https://github.com/pat-alt/BayesLaplace.jl/blob/master/docs/src/quick_start.md#" title="Edit on GitHub"><span class="docs-icon fab"></span><span class="docs-label is-hidden-touch">Edit on GitHub</span></a><a class="docs-settings-button fas fa-cog" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-sidebar-button fa fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a></div></header><article class="content" id="documenter-page"><hr/><p>pagetitle: quick_start toc-title: Table of contents –-</p><h1 id="Quick-start"><a class="docs-heading-anchor" href="#Quick-start">Quick start</a><a id="Quick-start-1"></a><a class="docs-heading-anchor-permalink" href="#Quick-start" title="Permalink"></a></h1><p>&lt;div class=&quot;cell&quot; execution_count=&quot;166&quot;&gt;</p><pre><code class="language-julia hljs"># Import libraries.
+using Flux, Plots, Random, PlotThemes, Statistics, BayesLaplace
+theme(:juno)
+using Logging
+disable_logging(Logging.Info)</code></pre><p>&lt;div class=&quot;cell-output-display&quot;&gt;</p><pre><code class="nohighlight hljs">LogLevel(1)</code></pre><p>&lt;/div&gt;</p><p>&lt;/div&gt;</p><pre><code class="language-julia hljs"># Number of points to generate.
+N = 100
+M = round(Int, N / 4)
+Random.seed!(1234)
+
+# Generate artificial data.
+x1s = rand(M) * 4.5; x2s = rand(M) * 4.5; 
+xt1s = Array([[x1s[i] + 0.5; x2s[i] + 0.5] for i = 1:M])
+x1s = rand(M) * 4.5; x2s = rand(M) * 4.5; 
+append!(xt1s, Array([[x1s[i] - 5; x2s[i] - 5] for i = 1:M]))
+
+x1s = rand(M) * 4.5; x2s = rand(M) * 4.5; 
+xt0s = Array([[x1s[i] + 0.5; x2s[i] - 5] for i = 1:M])
+x1s = rand(M) * 4.5; x2s = rand(M) * 4.5; 
+append!(xt0s, Array([[x1s[i] - 5; x2s[i] + 0.5] for i = 1:M]))
+
+# Store all the data for later.
+xs = [xt1s; xt0s]
+X = hcat(xs...) # bring into tabular format
+ts = [ones(2*M); zeros(2*M)];
+
+plt = plot()
+
+# Plot data points.
+function plot_data!(plt,X,y)
+    Plots.scatter!(plt, X[y.==1.0,1],X[y.==1.0,2], color=1, clim = (0,1), label=&quot;y=1&quot;)
+    Plots.scatter!(plt, X[y.==0.0,1],X[y.==0.0,2], color=0, clim = (0,1), label=&quot;y=0&quot;)
+end
+
+plt = plot_data!(plt,X&#39;,ts);</code></pre><p>&lt;div class=&quot;cell&quot; execution_count=&quot;168&quot;&gt;</p><pre><code class="language-julia hljs">function build_model(;input_dim=2,n_hidden=32,output_dim=1)
+    
+    # Params:
+    W₁ = input_dim
+    b₁ = n_hidden
+    W₀ = n_hidden
+    b₀ = output_dim
+    
+    nn = Chain(
+        Dense(W₁, b₁, σ),
+        Dense(W₀, b₀))  
+
+    return nn
+
+end
+nn = build_model()</code></pre><p>&lt;div class=&quot;cell-output-display&quot;&gt;</p><pre><code class="nohighlight hljs">Chain(
+  Dense(2, 32, σ),                      [90m# 96 parameters[39m
+  Dense(32, 1),                         [90m# 33 parameters[39m
+)[90m                   # Total: 4 arrays, [39m129 parameters, 772 bytes.</code></pre><p>&lt;/div&gt;</p><p>&lt;/div&gt;</p><p>&lt;div class=&quot;cell&quot; execution_count=&quot;169&quot;&gt;</p><pre><code class="language-julia hljs">λ = 1e-10</code></pre><p>&lt;div class=&quot;cell-output-display&quot;&gt;</p><pre><code class="nohighlight hljs">1.0e-10</code></pre><p>&lt;/div&gt;</p><p>&lt;/div&gt;</p><pre><code class="language-julia hljs">sqnorm(x) = sum(abs2, x)
+weight_regularization(λ=λ) = 1/2 * λ^2 * sum(sqnorm, Flux.params(nn))
+
+loss(x, y) = Flux.Losses.logitbinarycrossentropy(nn(x), y) + weight_regularization()
+ps = Flux.params(nn)
+data = zip(xs,ts);</code></pre><pre><code class="language-julia hljs">using Flux.Optimise: update!, ADAM
+opt = ADAM()
+epochs = 200
+avg_loss(data) = mean(map(d -&gt; loss(d[1],d[2]), data))
+
+using Plots
+anim = Animation()
+plt = plot(ylim=(0,avg_loss(data)), xlim=(0,epochs), legend=false, xlab=&quot;Epoch&quot;)
+avg_l = []
+
+for epoch = 1:epochs
+  for d in data
+    gs = gradient(params(nn)) do
+      l = loss(d...)
+    end
+    update!(opt, params(nn), gs)
+  end
+  avg_l = vcat(avg_l,avg_loss(data))
+  plot!(plt, avg_l, color=1, title=&quot;Average (training) loss&quot;)
+  frame(anim, plt)
+end
+
+gif(anim, &quot;www/nn_training.gif&quot;);</code></pre><p><img src="../www/nn_training.gif" alt/></p><pre><code class="language-julia hljs">predictive(𝑴::Flux.Chain, X::AbstractArray) = Flux.σ.(nn(X))
+# Plot the posterior distribution with a contour plot.
+function plot_contour(X,y,𝑴;clegend=true,title=&quot;&quot;,length_out=30)
+    x_range = collect(range(minimum(X[:,1]),stop=maximum(X[:,1]),length=length_out))
+    y_range = collect(range(minimum(X[:,2]),stop=maximum(X[:,2]),length=length_out))
+    Z = [predictive(𝑴,[x, y])[1] for x=x_range, y=y_range]
+    plt = contourf(x_range, y_range, Z&#39;, color=:plasma, legend=clegend, title=title, linewidth=0)
+    plot_data!(plt,X,y)
+end
+p_plugin = plot_contour(X&#39;,ts,nn;title=&quot;Plugin&quot;);</code></pre><h2 id="Laplace-appoximation"><a class="docs-heading-anchor" href="#Laplace-appoximation">Laplace appoximation</a><a id="Laplace-appoximation-1"></a><a class="docs-heading-anchor-permalink" href="#Laplace-appoximation" title="Permalink"></a></h2><pre><code class="language-julia hljs">la = laplace(nn, λ=0.1)
+fit!(la, data);
+predictive(𝑴::BayesLaplace.LaplaceRedux, X::AbstractArray) = predict(𝑴, X)
+p_laplace = plot_contour(X&#39;,ts,la;title=&quot;Laplace&quot;);</code></pre><pre><code class="language-julia hljs"># Plot the posterior distribution with a contour plot.
+plt = plot(p_plugin, p_laplace, layout=(1,2), size=(1000,400));
+savefig(plt, &quot;www/posterior_predictive.png&quot;)</code></pre><p><img src="../www/posterior_predictive.png" alt/></p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../">« Home</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 0.27.12 on <span class="colophon-date" title="Friday 11 February 2022 11:29">Friday 11 February 2022</span>. Using Julia version 1.7.2.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
