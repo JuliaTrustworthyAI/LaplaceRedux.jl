@@ -12,13 +12,13 @@ function jacobians(𝑪::CurvatureInterface, X::AbstractArray)
     𝐉 = reduce(hcat,[𝐉[θ] for θ ∈ 𝑪.𝚯])
     return 𝐉, ŷ
 end
-struct EFInterface <: CurvatureInterface
+struct EmpiricalFisher <: CurvatureInterface
     model::Any
     loss::Function
     𝚯::AbstractArray
 end
 
-function full(𝑪::EFInterface, d::Tuple)
+function full(𝑪::EmpiricalFisher, d::Tuple)
     nn = 𝑪.model
     x, y = d
     # Hessian approximation:
