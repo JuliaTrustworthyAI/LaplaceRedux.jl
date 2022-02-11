@@ -43,7 +43,10 @@ end
 struct BayesLogreg
     μ::Vector{Float64}
     Σ::Matrix{Float64}
+    𝐇₀::Any
+    𝐇::AbstractArray
 end
+
 function bayes_logreg(X,y;w_0=nothing,H_0=nothing,𝓁=𝓁,∇𝓁=∇𝓁,∇∇𝓁=∇∇𝓁,constant=true,λ=1,optim_options...)
     # Setup:
     if constant
@@ -66,9 +69,10 @@ function bayes_logreg(X,y;w_0=nothing,H_0=nothing,𝓁=𝓁,∇𝓁=∇𝓁,∇�
     Σ_map = Symmetric(Σ_map) # to ensure matrix is Hermitian (i.e. avoid rounding issues)
     
     # Output:
-    mod = BayesLogreg(w_map, Σ_map)
+    mod = BayesLogreg(w_map, Σ_map, H_0, H_map)
     return mod
 end
+
 
 #  ------------ Outer constructor methods: ------------
 # Accessing fields:
@@ -80,19 +84,28 @@ coef(mod::BayesLogreg) = mod.μ
 # Sampling from posterior distribution:
 using Distributions
 sample_posterior(mod::BayesLogreg, n) = rand(MvNormal(mod.μ, mod.Σ),n)
-# Posterior predictions:
-function predict(mod::BayesLogreg, X)
+
+# Predictive distribution:
+function glm_predictive_distribution(mod::BayesLogreg, X::AbstractArray)
     μ = mod.μ # MAP mean vector
     Σ = mod.Σ # MAP covariance matrix
     if !isa(X, Matrix)
         X = reshape(X, 1, length(X))
     end
-    # Inner product:
-    z = X*μ
+    # Predictions:
+    ŷ = X*μ
+    # Predictive variance
+    σ̂ = [X[n,:]'Σ*X[n,:] for n=1:size(X)[1]]
+    σ̂ = reshape(σ̂, size(ŷ)...)
+    return ŷ, σ̂
+end
+
+# Posterior predictions:
+function predict(mod::BayesLogreg, X)
+    ŷ, σ̂ = glm_predictive_distribution(mod, X)
     # Probit approximation
-    v = [X[n,:]'Σ*X[n,:] for n=1:size(X)[1]]
-    κ = 1 ./ sqrt.(1 .+ π/8 .* v) 
-    z = κ .* z
+    κ = 1 ./ sqrt.(1 .+ π/8 .* σ̂) 
+    z = κ .* ŷ
     # Truncation to avoid numerical over/underflow:
     trunc = 8.0 
     z = clamp.(z,-trunc,trunc)

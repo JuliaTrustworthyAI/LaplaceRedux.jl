@@ -1,17 +1,11 @@
----
-pagetitle: quick_start
-toc-title: Table of contents
----
-
-``` @meta
+```@meta
 CurrentModule = BayesLaplace
 ```
 
 # Quick start
 
-<div class="cell" execution_count="166">
 
-``` julia
+```julia
 # Import libraries.
 using Flux, Plots, Random, PlotThemes, Statistics, BayesLaplace
 theme(:juno)
@@ -19,15 +13,12 @@ using Logging
 disable_logging(Logging.Info)
 ```
 
-<div class="cell-output-display">
 
     LogLevel(1)
 
-</div>
 
-</div>
 
-``` julia
+```julia
 # Number of points to generate.
 N = 100
 M = round(Int, N / 4)
@@ -60,10 +51,9 @@ end
 plt = plot_data!(plt,X',ts);
 ```
 
-<div class="cell" execution_count="168">
 
-``` julia
-function build_model(;input_dim=2,n_hidden=32,output_dim=1)
+```julia
+function build_model(;input_dim=2,n_hidden=128,output_dim=1)
     
     # Params:
     W₁ = input_dim
@@ -81,32 +71,24 @@ end
 nn = build_model()
 ```
 
-<div class="cell-output-display">
 
     Chain(
-      Dense(2, 32, σ),                      [90m# 96 parameters[39m
-      Dense(32, 1),                         [90m# 33 parameters[39m
-    )[90m                   # Total: 4 arrays, [39m129 parameters, 772 bytes.
+      Dense(2, 128, σ),                     [90m# 384 parameters[39m
+      Dense(128, 1),                        [90m# 129 parameters[39m
+    )[90m                   # Total: 4 arrays, [39m513 parameters, 2.254 KiB.
 
-</div>
 
-</div>
 
-<div class="cell" execution_count="169">
-
-``` julia
-λ = 1e-10
+```julia
+λ = 0.01
 ```
 
-<div class="cell-output-display">
 
-    1.0e-10
+    0.01
 
-</div>
 
-</div>
 
-``` julia
+```julia
 sqnorm(x) = sum(abs2, x)
 weight_regularization(λ=λ) = 1/2 * λ^2 * sum(sqnorm, Flux.params(nn))
 
@@ -115,7 +97,8 @@ ps = Flux.params(nn)
 data = zip(xs,ts);
 ```
 
-``` julia
+
+```julia
 using Flux.Optimise: update!, ADAM
 opt = ADAM()
 epochs = 200
@@ -143,7 +126,8 @@ gif(anim, "www/nn_training.gif");
 
 ![](www/nn_training.gif)
 
-``` julia
+
+```julia
 predictive(𝑴::Flux.Chain, X::AbstractArray) = Flux.σ.(nn(X))
 # Plot the posterior distribution with a contour plot.
 function plot_contour(X,y,𝑴;clegend=true,title="",length_out=30)
@@ -158,14 +142,16 @@ p_plugin = plot_contour(X',ts,nn;title="Plugin");
 
 ## Laplace appoximation
 
-``` julia
-la = laplace(nn, λ=0.1)
+
+```julia
+la = laplace(nn, λ=1000)
 fit!(la, data);
 predictive(𝑴::BayesLaplace.LaplaceRedux, X::AbstractArray) = predict(𝑴, X)
 p_laplace = plot_contour(X',ts,la;title="Laplace");
 ```
 
-``` julia
+
+```julia
 # Plot the posterior distribution with a contour plot.
 plt = plot(p_plugin, p_laplace, layout=(1,2), size=(1000,400));
 savefig(plt, "www/posterior_predictive.png")

@@ -66,7 +66,7 @@ end
 
 # Posterior predictions:
 function predict(𝑳::LaplaceRedux, X::AbstractArray; link_approx=:probit)
-    ŷ, σ̂ = glm_predictive_distribution(𝑳::LaplaceRedux, X::AbstractArray)
+    ŷ, σ̂ = glm_predictive_distribution(𝑳, X)
     # Probit approximation
     κ = 1 ./ sqrt.(1 .+ π/8 .* σ̂) 
     z = κ .* ŷ
