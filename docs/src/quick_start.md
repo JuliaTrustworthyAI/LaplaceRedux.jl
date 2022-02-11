@@ -13,6 +13,19 @@ using Logging
 disable_logging(Logging.Info)
 ```
 
+    ┌ Error: Failed to revise /Users/FA31DU/Library/CloudStorage/OneDrive-DelftUniversityofTechnology/git/BayesLaplace.jl/src/logit.jl
+    │   exception = Revise.ReviseEvalException("/Users/FA31DU/Library/CloudStorage/OneDrive-DelftUniversityofTechnology/git/BayesLaplace.jl/src/logit.jl:43", ErrorException("invalid redefinition of constant BayesLogreg"), Any[(top-level scope at logit.jl:43, 1)])
+    └ @ Revise /Users/FA31DU/.julia/packages/Revise/jHTGK/src/packagedef.jl:708
+    ┌ Warning: The running code does not match the saved version for the following files:
+    │ 
+    │   /Users/FA31DU/Library/CloudStorage/OneDrive-DelftUniversityofTechnology/git/BayesLaplace.jl/src/logit.jl
+    │ 
+    │ If the error was due to evaluation order, it can sometimes be resolved by calling `Revise.retry()`.
+    │ Use Revise.errors() to report errors again. Only the first error in each file is shown.
+    │ Your prompt color may be yellow until the errors are resolved.
+    └ @ Revise /Users/FA31DU/.julia/packages/Revise/jHTGK/src/packagedef.jl:818
+
+
 
     LogLevel(1)
 
@@ -144,7 +157,7 @@ p_plugin = plot_contour(X',ts,nn;title="Plugin");
 
 
 ```julia
-la = laplace(nn, λ=1000)
+la = laplace(nn, λ=λ)
 fit!(la, data);
 predictive(𝑴::BayesLaplace.LaplaceRedux, X::AbstractArray) = predict(𝑴, X)
 p_laplace = plot_contour(X',ts,la;title="Laplace");
