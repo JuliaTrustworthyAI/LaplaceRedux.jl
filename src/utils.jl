@@ -47,15 +47,22 @@ end
 
 # Plot contour of posterior predictive:
 using Plots
-function plot_contour(X,y,𝑴;clegend=true,title="",length_out=30,type=:laplace)
-    x_range = collect(range(minimum(X[:,1]),stop=maximum(X[:,1]),length=length_out))
-    y_range = collect(range(minimum(X[:,2]),stop=maximum(X[:,2]),length=length_out))
+function plot_contour(X,y,𝑴;clegend=true,title="",length_out=50,type=:laplace,zoom=0)
+    xlims = (minimum(X[:,1]),maximum(X[:,1])).+(zoom,-zoom)
+    ylims = (minimum(X[:,2]),maximum(X[:,2])).+(zoom,-zoom)
+    x_range = collect(range(xlims[1],stop=xlims[2],length=length_out))
+    y_range = collect(range(ylims[1],stop=ylims[2],length=length_out))
     if type==:laplace
         Z = [predict(𝑴,[x, y])[1] for x=x_range, y=y_range]
     else
         Z = [plugin(𝑴,[x, y])[1] for x=x_range, y=y_range]
     end
-    plt = contourf(x_range, y_range, Z', color=:plasma, legend=clegend, title=title, linewidth=0)
+    plt = contourf(
+        x_range, y_range, Z'; 
+        color=:plasma, legend=clegend, title=title, linewidth=0,
+        xlim=xlims,
+        ylim=ylims,
+    )
     plot_data!(plt,X,y)
 end
 

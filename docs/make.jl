@@ -15,7 +15,8 @@ makedocs(;
     ),
     pages=[
         "Home" => "index.md",
-        "Getting started" => "quick_start.md",
+        "Bayesian Logistic Regression" => "logit.md",
+        "Bayesian Neural Network" => "mlp.md"
     ],
 )
 
