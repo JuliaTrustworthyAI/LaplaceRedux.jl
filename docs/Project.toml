@@ -2,4 +2,6 @@
 BayesLaplace = "c52c1a26-f7c5-402b-80be-ba1e638ad478"
 Documenter = "e30172f5-a6a5-5a46-863b-614d45cd2de4"
 Flux = "587475ba-b771-5e3f-ad9e-33799f191a9c"
+GLM = "38e38edf-8417-5370-95a0-9cbb8c7f171a"
+GLMNet = "8d5ece8b-de18-5317-b113-243142960cc6"
 PlotThemes = "ccf2f8ad-2431-5c83-bf29-c5338b663b6a"

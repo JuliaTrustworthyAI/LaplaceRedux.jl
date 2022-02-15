@@ -29,9 +29,13 @@ function get_params(𝑳::LaplaceRedux)
     nn = 𝑳.model
     n_layers = length(nn)
     𝚯 = Flux.params(nn)
-    if 𝑳.subset_of_weights == :last_layer
+    if 𝑳.subset_of_weights == :all
+        𝚯 = [θ for θ ∈ 𝚯] # get all parameters and constants in logitbinarycrossentropy
+    elseif 𝑳.subset_of_weights == :last_layer
         𝚯 = [𝚯[2*n_layers-1],𝚯[2*n_layers]] # only get last parameters and constants
-    end
+    else
+        @error "`subset_of_weights` of weights should be one of the following: `[:all, :last_layer]`"
+    end 
     return 𝚯
 end
 
@@ -75,6 +79,13 @@ function predict(𝑳::LaplaceRedux, X::AbstractArray; link_approx=:probit)
     z = clamp.(z,-trunc,trunc)
     p = exp.(z)
     p = p ./ (1 .+ p)
+    return p
+end
+
+# Plugin estimate (MAP)
+function plugin(𝑳::LaplaceRedux, X::AbstractArray)
+    ŷ, σ̂ = glm_predictive_distribution(𝑳, X)
+    p = Flux.σ.(ŷ)
     return p
 end
 

@@ -45,6 +45,7 @@ struct BayesLogreg
     Σ::Matrix{Float64}
     𝐇₀::Any
     𝐇::AbstractArray
+    Σ̂::Union{AbstractArray,Nothing}
 end
 
 function bayes_logreg(X,y;w_0=nothing,H_0=nothing,𝓁=𝓁,∇𝓁=∇𝓁,∇∇𝓁=∇∇𝓁,constant=true,λ=1,optim_options...)
@@ -69,7 +70,7 @@ function bayes_logreg(X,y;w_0=nothing,H_0=nothing,𝓁=𝓁,∇𝓁=∇𝓁,∇�
     Σ_map = Symmetric(Σ_map) # to ensure matrix is Hermitian (i.e. avoid rounding issues)
     
     # Output:
-    mod = BayesLogreg(w_map, Σ_map, H_0, H_map)
+    mod = BayesLogreg(w_map, Σ_map, H_0, H_map, Σ_map)
     return mod
 end
 
@@ -90,7 +91,12 @@ function glm_predictive_distribution(mod::BayesLogreg, X::AbstractArray)
     μ = mod.μ # MAP mean vector
     Σ = mod.Σ # MAP covariance matrix
     if !isa(X, Matrix)
+        # turn into matrix if necessary:
         X = reshape(X, 1, length(X))
+    end
+    if size(μ)[1] > size(X)[2]
+        # add constant if necessary:
+        X = hcat(ones(size(X)[1]),X)
     end
     # Predictions:
     ŷ = X*μ
@@ -111,5 +117,12 @@ function predict(mod::BayesLogreg, X)
     z = clamp.(z,-trunc,trunc)
     p = exp.(z)
     p = p ./ (1 .+ p)
+    return p
+end
+
+# Plugin estimate (MAP)
+function plugin(mod::BayesLogreg, X)
+    ŷ, σ̂ = glm_predictive_distribution(mod, X)
+    p = Flux.σ.(ŷ)
     return p
 end

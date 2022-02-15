@@ -22,7 +22,7 @@ function full(𝑪::EmpiricalFisher, d::Tuple)
     nn = 𝑪.model
     x, y = d
     # Hessian approximation:
-    𝐠 = gradient(() -> 𝑪. loss(x,y),Flux.params(nn)) 
+    𝐠 = gradient(() -> 𝑪.loss(x,y),Flux.params(nn)) 
     𝐠 = reduce(vcat,[vec(𝐠[θ]) for θ ∈ 𝑪.𝚯])
     𝐇 = 𝐠 * 𝐠'
     return 𝐇
