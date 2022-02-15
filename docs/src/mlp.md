@@ -9,20 +9,19 @@ CurrentModule = BayesLaplace
 # Import libraries.
 using Flux, Plots, Random, PlotThemes, Statistics, BayesLaplace
 theme(:juno)
-using Logging
-disable_logging(Logging.Info)
 ```
 
-
-    LogLevel(1)
-
+This time we use a synthetic dataset containing samples that are not linearly separable:
 
 
 ```julia
 # Number of points to generate.
 xs, y = toy_data_non_linear(200)
 X = hcat(xs...); # bring into tabular format
+data = zip(xs,y);
 ```
+
+For the classification task we build a neural network with weight decay composed of a single hidden layer.
 
 
 ```julia
@@ -32,33 +31,13 @@ nn = Chain(
     Dense(D, n_hidden, σ),
     Dense(n_hidden, 1)
 )  
-```
-
-
-    Chain(
-      Dense(2, 32, σ),                      [90m# 96 parameters[39m
-      Dense(32, 1),                         [90m# 33 parameters[39m
-    )[90m                   # Total: 4 arrays, [39m129 parameters, 772 bytes.
-
-
-
-```julia
 λ = 0.01
-```
-
-
-    0.01
-
-
-
-```julia
 sqnorm(x) = sum(abs2, x)
 weight_regularization(λ=λ) = 1/2 * λ^2 * sum(sqnorm, Flux.params(nn))
-
-loss(x, y) = Flux.Losses.logitbinarycrossentropy(nn(x), y) + weight_regularization()
-ps = Flux.params(nn)
-data = zip(xs,y);
+loss(x, y) = Flux.Losses.logitbinarycrossentropy(nn(x), y) + weight_regularization();
 ```
+
+The model is trained for 200 epochs before the training loss stagnates.
 
 
 ```julia
@@ -93,6 +72,8 @@ gif(anim, "www/nn_training_mlp.gif")
 
 ## Laplace appoximation
 
+Laplace approximation can be implemented as follows:
+
 
 ```julia
 la = laplace(nn, λ=λ, subset_of_weights=:last_layer)
@@ -102,6 +83,8 @@ p_plugin = plot_contour(X',y,la;title="Plugin",type=:plugin,zoom=zoom);
 p_laplace = plot_contour(X',y,la;title="Laplace",zoom=zoom);
 ```
 
+The plot below shows the resulting posterior predictive surface for the plugin estimator (left) and the Laplace approximation (right).
+
 
 ```julia
 # Plot the posterior distribution with a contour plot.
@@ -110,6 +93,8 @@ savefig(plt, "www/posterior_predictive_mlp.png")
 ```
 
 ![](www/posterior_predictive_mlp.png)
+
+Zooming out we can note that the plugin estimator produces high-confidence estimates in regions scarce of any samples. The Laplace approximation is much more conservative about these regions.
 
 
 ```julia

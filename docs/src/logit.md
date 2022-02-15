@@ -11,36 +11,29 @@ using Flux, Plots, Random, PlotThemes, Statistics, BayesLaplace
 theme(:juno)
 ```
 
+We will use synthetic data with linearly separable samples:
+
 
 ```julia
 # Number of points to generate.
 xs, y = toy_data_linear(100)
 X = hcat(xs...); # bring into tabular format
-```
-
-
-```julia
-nn = Chain(Dense(2,1));
-```
-
-
-```julia
-λ = 0.5
-```
-
-
-    0.5
-
-
-
-```julia
-sqnorm(x) = sum(abs2, x)
-weight_regularization(λ=λ) = 1/2 * λ^2 * sum(sqnorm, Flux.params(nn))
-
-loss(x, y) = Flux.Losses.logitbinarycrossentropy(nn(x), y) + weight_regularization()
-ps = Flux.params(nn)
 data = zip(xs,y);
 ```
+
+Logisitic regression with weight decay can be implemented in Flux.jl as a single dense (linear) layer with binary logit crossentropy loss:
+
+
+```julia
+nn = Chain(Dense(2,1))
+λ = 0.5
+sqnorm(x) = sum(abs2, x)
+weight_regularization(λ=λ) = 1/2 * λ^2 * sum(sqnorm, Flux.params(nn))
+loss(x, y) = Flux.Losses.logitbinarycrossentropy(nn(x), y) + weight_regularization()
+```
+
+The code below simply trains the model. After about 50 training epochs training loss stagnates.
+
 
 
 ```julia
@@ -73,6 +66,8 @@ gif(anim, "www/nn_training.gif");
 
 ## Laplace appoximation
 
+Laplace approximation for the posterior predictive can be implemented as follows:
+
 
 ```julia
 la = laplace(nn, λ=λ, subset_of_weights=:last_layer)
@@ -80,6 +75,8 @@ fit!(la, data);
 p_plugin = plot_contour(X',y,la;title="Plugin",type=:plugin);
 p_laplace = plot_contour(X',y,la;title="Laplace");
 ```
+
+The plot below shows the resulting posterior predictive surface for the plugin estimator (left) and the Laplace approximation (right).
 
 
 ```julia
