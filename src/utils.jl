@@ -47,23 +47,38 @@ end
 
 # Plot contour of posterior predictive:
 using Plots
-function plot_contour(X,y,𝑴;clegend=true,title="",length_out=50,type=:laplace,zoom=0)
-    xlims = (minimum(X[:,1]),maximum(X[:,1])).+(zoom,-zoom)
-    ylims = (minimum(X[:,2]),maximum(X[:,2])).+(zoom,-zoom)
-    x_range = collect(range(xlims[1],stop=xlims[2],length=length_out))
-    y_range = collect(range(ylims[1],stop=ylims[2],length=length_out))
+function plot_contour(X,y,𝑴;clegend=true,title="",length_out=50,type=:laplace,zoom=0,xlim=nothing,ylim=nothing)
+    
+    # Surface range:
+    if isnothing(xlim)
+        xlim = (minimum(X[:,1]),maximum(X[:,1])).+(zoom,-zoom)
+    else
+        xlim = xlim .+ (zoom,-zoom)
+    end
+    if isnothing(ylim)
+        ylim = (minimum(X[:,2]),maximum(X[:,2])).+(zoom,-zoom)
+    else
+        ylim = ylim .+ (zoom,-zoom)
+    end
+    x_range = collect(range(xlim[1],stop=xlim[2],length=length_out))
+    y_range = collect(range(ylim[1],stop=ylim[2],length=length_out))
+
+    # Predictions:
     if type==:laplace
         Z = [predict(𝑴,[x, y])[1] for x=x_range, y=y_range]
     else
         Z = [plugin(𝑴,[x, y])[1] for x=x_range, y=y_range]
     end
+
+    # Plot:
     plt = contourf(
         x_range, y_range, Z'; 
         color=:plasma, legend=clegend, title=title, linewidth=0,
-        xlim=xlims,
-        ylim=ylims,
+        xlim=xlim,
+        ylim=ylim
     )
     plot_data!(plt,X,y)
+
 end
 
 # Helper function to predict from network trained for binary classification and producing logits as output:
