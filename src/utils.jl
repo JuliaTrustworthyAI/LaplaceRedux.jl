@@ -73,7 +73,7 @@ function plot_contour(X,y,𝑴;clegend=true,title="",length_out=50,type=:laplace
     # Plot:
     plt = contourf(
         x_range, y_range, Z'; 
-        color=:plasma, legend=clegend, title=title, linewidth=0,
+        legend=clegend, title=title, linewidth=0,
         xlim=xlim,
         ylim=ylim
     )
