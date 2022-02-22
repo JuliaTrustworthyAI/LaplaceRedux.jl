@@ -3,6 +3,11 @@ module Curvature
 using Flux, Zygote
 abstract type CurvatureInterface end 
 
+"""
+    jacobians(𝑪::CurvatureInterface, X::AbstractArray)
+
+Computes the Jacobian `∇f(x;θ)`.
+"""
 function jacobians(𝑪::CurvatureInterface, X::AbstractArray)
     nn = 𝑪.model
     # Output:
@@ -18,6 +23,11 @@ struct EmpiricalFisher <: CurvatureInterface
     𝚯::AbstractArray
 end
 
+"""
+    full(𝑪::EmpiricalFisher, d::Tuple)
+
+Compute the full empirical Fisher.
+"""
 function full(𝑪::EmpiricalFisher, d::Tuple)
     nn = 𝑪.model
     x, y = d

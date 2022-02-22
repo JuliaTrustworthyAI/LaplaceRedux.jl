@@ -15,8 +15,11 @@ makedocs(;
     ),
     pages=[
         "Home" => "index.md",
-        "Bayesian Logistic Regression" => "logit.md",
-        "Bayesian Neural Network" => "mlp.md"
+        "Tutorials" => [
+            "Logistic Regression" => "logit.md",
+            "MLP" => "mlp.md"
+        ],
+        "Reference" => "reference.md"
     ],
 )
 
