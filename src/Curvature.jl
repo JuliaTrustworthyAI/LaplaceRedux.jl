@@ -24,7 +24,7 @@ struct EmpiricalFisher <: CurvatureInterface
 end
 
 """
-    full(𝑪::EmpiricalFisher, d::Tuple)
+    full(𝑪::EmpiricalFisher, d::Union{Tuple,NamedTuple})
 
 Compute the full empirical Fisher.
 """
