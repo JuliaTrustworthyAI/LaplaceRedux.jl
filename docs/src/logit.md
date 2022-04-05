@@ -2,7 +2,7 @@
 CurrentModule = BayesLaplace
 ```
 
-# Bayesian Logisitic Regression
+# Bayesian Logistic Regression
 
 
 ```julia

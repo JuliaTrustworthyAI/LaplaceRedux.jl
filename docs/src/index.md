@@ -20,10 +20,3 @@ Pkg.add("https://github.com/pat-alt/BayesLaplace.jl")
 ## Limitations
 
 This library is pure-play and lacks any kind of unit testing. It is also limited to binary classification problems. 
-
-```@index
-```
-
-```@autodocs
-Modules = [BayesLaplace]
-```
