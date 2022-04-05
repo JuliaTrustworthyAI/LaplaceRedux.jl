@@ -15,6 +15,11 @@ makedocs(;
     ),
     pages=[
         "Home" => "index.md",
+        "Tutorials" => [
+            "Logistic Regression" => "logit.md",
+            "MLP" => "mlp.md"
+        ],
+        "Reference" => "reference.md"
     ],
 )
 
