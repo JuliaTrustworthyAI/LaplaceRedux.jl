@@ -1,5 +1,3 @@
-module Curvature
-
 using Flux, Zygote
 abstract type CurvatureInterface end 
 
@@ -36,6 +34,4 @@ function full(𝑪::EmpiricalFisher, d::Tuple)
     𝐠 = reduce(vcat,[vec(𝐠[θ]) for θ ∈ 𝑪.𝚯])
     𝐇 = 𝐠 * 𝐠'
     return 𝐇
-end
-
 end

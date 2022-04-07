@@ -1,6 +1,6 @@
 module BayesLaplace
 
-include("Curvature.jl")
+include("curvature/Curvature.jl")
 using .Curvature
 include("laplace.jl")
 
