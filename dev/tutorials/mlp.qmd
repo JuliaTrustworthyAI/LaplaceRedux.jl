@@ -93,8 +93,8 @@ The plot below shows the resulting posterior predictive surface for the plugin e
 ```{julia}
 # Plot the posterior distribution with a contour plot.
 zoom=0
-p_plugin = plot_contour(X',y,la;title="Plugin",type=:plugin,zoom=zoom)
-p_laplace = plot_contour(X',y,la;title="Laplace",zoom=zoom)
+p_plugin = plot_contour(X',ys,la;title="Plugin",type=:plugin,zoom=zoom)
+p_laplace = plot_contour(X',ys,la;title="Laplace",zoom=zoom)
 plt = plot(p_plugin, p_laplace, layout=(1,2), size=(1000,400))
 savefig(plt, joinpath(www_path, "posterior_predictive_mlp.png"))
 ```
@@ -105,11 +105,11 @@ Zooming out we can note that the plugin estimator produces high-confidence estim
 
 ```{julia}
 zoom=-50
-p_plugin = plot_contour(X',y,la;title="Plugin",type=:plugin,zoom=zoom);
-p_laplace = plot_contour(X',y,la;title="Laplace",zoom=zoom);
+p_plugin = plot_contour(X',ys,la;title="Plugin",type=:plugin,zoom=zoom)
+p_laplace = plot_contour(X',ys,la;title="Laplace",zoom=zoom)
 # Plot the posterior distribution with a contour plot.
 plt = plot(p_plugin, p_laplace, layout=(1,2), size=(1000,400))
-savefig(plt, "www/posterior_predictive_mlp_zoomed.png");
+savefig(plt, joinpath(www_path, "posterior_predictive_mlp_zoomed.png"))
 ```
 
 ![](www/posterior_predictive_mlp_zoomed.png)
