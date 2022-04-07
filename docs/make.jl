@@ -16,8 +16,8 @@ makedocs(;
     pages=[
         "Home" => "index.md",
         "Tutorials" => [
-            "Logistic Regression" => "logit.md",
-            "MLP" => "mlp.md"
+            "Logistic Regression" => "tutorials/logit.md",
+            "MLP" => "tutorials/mlp.md"
         ],
         "Reference" => "reference.md"
     ],

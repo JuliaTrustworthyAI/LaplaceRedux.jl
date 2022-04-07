@@ -58,6 +58,39 @@ function toy_data_non_linear(N=100)
     return xs, ts
 end
 
+using Random
+"""
+    toy_data_multi(N=100)
+
+# Examples
+
+```julia-repl
+toy_data_multi()
+```
+
+"""
+function toy_data_multi(N=100)
+    # Number of points to generate.
+    M = round(Int, N / 4)
+    Random.seed!(1234)
+
+    # Generate artificial data.
+    x1s = rand(M) * 4.5; x2s = rand(M) * 4.5; 
+    xt1s = Array([[x1s[i] + 1; x2s[i] + 1] for i = 1:M])
+    x1s = rand(M) * 4.5; x2s = rand(M) * 4.5; 
+    append!(xt1s, Array([[x1s[i] - 7; x2s[i] - 7] for i = 1:M]))
+
+    x1s = rand(M) * 4.5; x2s = rand(M) * 4.5; 
+    xt0s = Array([[x1s[i] + 1; x2s[i] - 7] for i = 1:M])
+    x1s = rand(M) * 4.5; x2s = rand(M) * 4.5; 
+    append!(xt0s, Array([[x1s[i] - 7; x2s[i] + 1] for i = 1:M]))
+
+    # Store all the data for later.
+    xs = [xt1s; xt0s]
+    ts = [ones(M); ones(M).*2; ones(M).*3; ones(M).*4];
+    return xs, ts
+end
+
 # Plot data points:
 using Plots
 """
@@ -135,4 +168,5 @@ function plot_contour(X,y,𝑴;clegend=true,title="",length_out=50,type=:laplace
 end
 
 # Helper function to predict from network trained for binary classification and producing logits as output:
+import BayesLaplace: predict
 predict(𝑴::Flux.Chain, X::AbstractArray) = Flux.σ.(𝑴(X))

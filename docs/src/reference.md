@@ -7,6 +7,22 @@ CurrentModule = BayesLaplace
 ```@index
 ```
 
+## Exported functions
+
 ```@autodocs
-Modules = [BayesLaplace, BayesLaplace.Curvature]
+Modules = [
+    BayesLaplace,
+    BayesLaplace.Curvature
+]
+Private = false
+```
+
+## Internal functions
+
+```@autodocs
+Modules = [
+    BayesLaplace,
+    BayesLaplace.Curvature
+]
+Public = false
 ```
