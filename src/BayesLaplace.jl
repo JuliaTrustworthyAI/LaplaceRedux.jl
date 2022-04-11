@@ -1,9 +1,13 @@
 module BayesLaplace
 
+include("data/Data.jl")
+using .Data
+
 include("curvature/Curvature.jl")
 using .Curvature
+
 include("laplace.jl")
 
-export laplace, fit!, predict, plugin
+export Laplace, fit!, predict, plugin
 
 end

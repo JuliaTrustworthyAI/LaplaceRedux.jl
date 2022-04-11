@@ -22,7 +22,7 @@ Pkg.add("https://github.com/pat-alt/BayesLaplace.jl")
 Laplace approximation can be used post-hoc for any trained neural network. This library should be compatible with any pre-trained Flux.jl model. Let `nn` be one such model trained on dataset `data`. Then implementing Laplace approximation is easy as follows:
 
 ``` julia
-la = laplace(nn)
+la = Laplace(nn)
 fit!(la, data)
 ```
 
@@ -30,6 +30,6 @@ Calling `predict(nn,X)` for some features `X` will produce posterior predictions
 
 ![](https://raw.githubusercontent.com/pat-alt/BayesLaplace.jl/main/docs/src/tutorials/www/posterior_predictive_mlp.png)
 
-## Limitations
+## Limitations and Goals.
 
-This library is pure-play and lacks any kind of unit testing and documenation of functions and classes. It is also limited to binary classification problems.
+This library currently offers native support only for models composed and trained in Flux. It is also limited to binary classification problems.

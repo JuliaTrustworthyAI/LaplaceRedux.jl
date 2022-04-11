@@ -1,7 +1,19 @@
 using Flux, LinearAlgebra, .Curvature
 
+mutable struct Laplace
+    model::Flux.Chain
+    loss::Function
+    subset_of_weights::Symbol
+    hessian_structure::Symbol
+    curvature::Union{Curvature.CurvatureInterface,Nothing}
+    H₀::Any
+    H::Union{AbstractArray,Nothing}
+    Σ::Union{AbstractArray,Nothing}
+    n_params::Union{Int,Nothing}
+end
+
 """
-    laplace(model::Any; loss_type=:logitbinarycrossentropy, subset_of_weights=:last_layer, hessian_structure=:full,backend=:EmpiricalFisher,λ=1)    
+    Laplace(model::Any; loss_type=:logitbinarycrossentropy, subset_of_weights=:last_layer, hessian_structure=:full,backend=:EmpiricalFisher,λ=1)    
 
 Wrapper function to prepare Laplace approximation.
 
@@ -10,37 +22,25 @@ Wrapper function to prepare Laplace approximation.
 ```julia-repl
 using Flux, BayesLaplace
 nn = Chain(Dense(2,1))
-la = laplace(nn)
+la = Laplace(nn)
 ```
 
 """
-function laplace(model::Any; loss_type=:logitbinarycrossentropy, subset_of_weights=:last_layer, hessian_structure=:full,backend=:EmpiricalFisher,λ=1) 
+function Laplace(model::Any; loss_type=:logitbinarycrossentropy, subset_of_weights=:last_layer, hessian_structure=:full,backend=:EmpiricalFisher,λ=1) 
     # Initialize:
-    𝐇₀ = UniformScaling(λ)
+    H₀ = UniformScaling(λ)
     nn = model
     loss(x, y) = getfield(Flux.Losses,loss_type)(nn(x), y)
     # Instantiate:
-    𝑳 = LaplaceRedux(model, loss, subset_of_weights, hessian_structure, nothing, 𝐇₀, nothing, nothing, nothing)
-    𝚯 = get_params(𝑳)
-    𝑳.𝑪 = getfield(Curvature,backend)(nn,𝑳.loss,𝚯) # instantiate chosen curvature interface
-    𝑳.n_params = length(reduce(vcat, [vec(θ) for θ ∈ 𝚯]))
-    return 𝑳
-end
-
-mutable struct LaplaceRedux
-    model::Any
-    loss::Function
-    subset_of_weights::Symbol
-    hessian_structure::Symbol
-    𝑪::Union{Curvature.CurvatureInterface,Nothing}
-    𝐇₀::Any
-    𝐇::Union{AbstractArray,Nothing}
-    Σ̂::Union{AbstractArray,Nothing}
-    n_params::Union{Int,Nothing}
+    la = Laplace(model, loss, subset_of_weights, hessian_structure, nothing, H₀, nothing, nothing, nothing)
+    params = get_params(la)
+    la.curvature = getfield(Curvature,backend)(nn,la.loss,params) # instantiate chosen curvature interface
+    la.n_params = length(reduce(vcat, [vec(θ) for θ ∈ params]))
+    return la
 end
 
 """
-    get_params(𝑳::LaplaceRedux) 
+    get_params(la::Laplace) 
 
 Retrieves the desired (sub)set of model parameters and stores them in a list.
 
@@ -49,37 +49,37 @@ Retrieves the desired (sub)set of model parameters and stores them in a list.
 ```julia-repl
 using Flux, BayesLaplace
 nn = Chain(Dense(2,1))
-la = laplace(nn)
+la = Laplace(nn)
 BayesLaplace.get_params(la)
 ```
 
 """
-function get_params(𝑳::LaplaceRedux)
-    nn = 𝑳.model
-    𝚯 = Flux.params(nn)
-    n_params = length(𝚯)
-    if 𝑳.subset_of_weights == :all
-        𝚯 = [θ for θ ∈ 𝚯] # get all parameters and constants in logitbinarycrossentropy
-    elseif 𝑳.subset_of_weights == :last_layer
-        𝚯 = [𝚯[n_params-1],𝚯[n_params]] # only get last parameters and constants
+function get_params(la::Laplace)
+    nn = la.model
+    params = Flux.params(nn)
+    n_elements = length(params)
+    if la.subset_of_weights == :all
+        params = [θ for θ ∈ params] # get all parameters and constants in logitbinarycrossentropy
+    elseif la.subset_of_weights == :last_layer
+        params = [params[n_elements-1],params[n_elements]] # only get last parameters and constants
     else
         @error "`subset_of_weights` of weights should be one of the following: `[:all, :last_layer]`"
     end 
-    return 𝚯
+    return params
 end
 
 """
-    hessian_approximation(𝑳::LaplaceRedux, d)
+    hessian_approximation(la::Laplace, d)
 
 Computes the local Hessian approximation at a single data `d`.
 """
-function hessian_approximation(𝑳::LaplaceRedux, d)
-    𝐇 = getfield(Curvature, 𝑳.hessian_structure)(𝑳.𝑪,d)
-    return 𝐇
+function hessian_approximation(la::Laplace, d)
+    H = getfield(Curvature, la.hessian_structure)(la.curvature,d)
+    return H
 end
 
 """
-    fit!(𝑳::LaplaceRedux,data)
+    fit!(la::Laplace,data)
 
 Fits the Laplace approximation for a data set.
 
@@ -90,49 +90,50 @@ using Flux, BayesLaplace
 x, y = toy_data_linear()
 data = zip(x,y)
 nn = Chain(Dense(2,1))
-la = laplace(nn)
+la = Laplace(nn)
 fit!(la, data)
 ```
 
 """
-function fit!(𝑳::LaplaceRedux,data)
+function fit!(la::Laplace,data)
 
-    𝐇 = zeros(𝑳.n_params,𝑳.n_params)
+    H = zeros(la.n_params,la.n_params)
     for d in data
-        𝐇 += hessian_approximation(𝑳, d)
+        H += hessian_approximation(la, d)
     end
-    𝑳.𝐇 = 𝐇 + 𝑳.𝐇₀ # posterior precision
-    𝑳.Σ̂ = inv(𝑳.𝐇) # posterior covariance
+    println(H)
+    la.H = H + la.H₀ # posterior precision
+    la.Σ = inv(la.H) # posterior covariance
     
 end
 
 """
-    glm_predictive_distribution(𝑳::LaplaceRedux, X::AbstractArray)
+    glm_predictive_distribution(la::Laplace, X::AbstractArray)
 
 Computes the linearized GLM predictive.
 """
-function glm_predictive_distribution(𝑳::LaplaceRedux, X::AbstractArray)
-    𝐉, ŷ = Curvature.jacobians(𝑳.𝑪,X)
-    σ̂ = predictive_variance(𝑳,𝐉)
-    σ̂ = reshape(σ̂, size(ŷ)...)
-    return ŷ, σ̂
+function glm_predictive_distribution(la::Laplace, X::AbstractArray)
+    𝐉, ŷ = Curvature.jacobians(la.curvature,X)
+    Σ = predictive_variance(la,𝐉)
+    Σ = reshape(Σ, size(ŷ)...)
+    return ŷ, Σ
 end
 
 """
-    predictive_variance(𝑳::LaplaceRedux,𝐉)
+    predictive_variance(la::Laplace,𝐉)
 
-Compute the linearized GLM predictive variance as `𝐉ₙΣ̂𝐉ₙ'` where `𝐉=∇f(x;θ)|θ̂` is the Jacobian evaluated at the MAP estimate and `Σ̂ = 𝐇⁻¹`.
+Compute the linearized GLM predictive variance as `𝐉ₙΣ𝐉ₙ'` where `𝐉=∇f(x;θ)|θ̂` is the Jacobian evaluated at the MAP estimate and `Σ = H⁻¹`.
 
 """
-function predictive_variance(𝑳::LaplaceRedux,𝐉)
+function predictive_variance(la::Laplace,𝐉)
     N = size(𝐉)[1]
-    σ̂ = map(n -> 𝐉[n,:]' * 𝑳.Σ̂ * 𝐉[n,:], 1:N)
-    return σ̂
+    Σ = map(n -> 𝐉[n,:]' * la.Σ * 𝐉[n,:], 1:N)
+    return Σ
 end
 
 # Posterior predictions:
 """
-    predict(𝑳::LaplaceRedux, X::AbstractArray; link_approx=:probit)
+    predict(la::Laplace, X::AbstractArray; link_approx=:probit)
 
 Computes predictions from Bayesian neural network.
 
@@ -143,16 +144,16 @@ using Flux, BayesLaplace
 x, y = toy_data_linear()
 data = zip(x,y)
 nn = Chain(Dense(2,1))
-la = laplace(nn)
+la = Laplace(nn)
 fit!(la, data)
 predict(la, hcat(x...))
 ```
 
 """
-function predict(𝑳::LaplaceRedux, X::AbstractArray; link_approx=:probit)
-    ŷ, σ̂ = glm_predictive_distribution(𝑳, X)
+function predict(la::Laplace, X::AbstractArray; link_approx=:probit)
+    ŷ, Σ = glm_predictive_distribution(la, X)
     # Probit approximation
-    κ = 1 ./ sqrt.(1 .+ π/8 .* σ̂) 
+    κ = 1 ./ sqrt.(1 .+ π/8 .* Σ) 
     z = κ .* ŷ
     # Truncation to avoid numerical over/underflow:
     trunc = 8.0 
@@ -163,12 +164,12 @@ function predict(𝑳::LaplaceRedux, X::AbstractArray; link_approx=:probit)
 end
 
 """
-    plugin(𝑳::LaplaceRedux, X::AbstractArray)
+    plugin(la::Laplace, X::AbstractArray)
 
 Computes the plugin estimate.
 """
-function plugin(𝑳::LaplaceRedux, X::AbstractArray)
-    ŷ, σ̂ = glm_predictive_distribution(𝑳, X)
+function plugin(la::Laplace, X::AbstractArray)
+    ŷ, Σ = glm_predictive_distribution(la, X)
     p = Flux.σ.(ŷ)
     return p
 end

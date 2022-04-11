@@ -56,7 +56,7 @@ end
 Laplace approximation can be implemented as follows:
 
 ``` julia
-la = laplace(nn, λ=λ, subset_of_weights=:last_layer)
+la = Laplace(nn, λ=λ, subset_of_weights=:last_layer)
 fit!(la, data)
 ```
 
