@@ -36,7 +36,7 @@ We will use synthetic data with linearly separable samples:
 
 ```{julia}
 # Number of points to generate.
-xs, ys = toy_data_linear(100)
+xs, ys = BayesLaplace.Data.toy_data_linear(100)
 X = hcat(xs...) # bring into tabular format
 data = zip(xs,ys)
 ```
@@ -79,7 +79,7 @@ end
 Laplace approximation for the posterior predictive can be implemented as follows:
 
 ```{julia}
-la = laplace(nn, λ=λ, subset_of_weights=:last_layer)
+la = Laplace(nn, λ=λ, subset_of_weights=:last_layer)
 fit!(la, data)
 ```
 

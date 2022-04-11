@@ -36,7 +36,7 @@ This time we use a synthetic dataset containing samples that are not linearly se
 
 ```{julia}
 # Number of points to generate.
-xs, ys = toy_data_non_linear(200)
+xs, ys = BayesLaplace.Data.toy_data_non_linear(200)
 X = hcat(xs...) # bring into tabular format
 data = zip(xs,ys)
 ```
@@ -84,7 +84,7 @@ end
 Laplace approximation can be implemented as follows:
 
 ```{julia}
-la = laplace(nn, λ=λ, subset_of_weights=:last_layer)
+la = Laplace(nn, λ=λ, subset_of_weights=:last_layer)
 fit!(la, data)
 ```
 
