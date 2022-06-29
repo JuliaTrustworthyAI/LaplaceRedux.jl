@@ -11,12 +11,12 @@ bibliography: https://raw.githubusercontent.com/pat-alt/bib/main/bib.bib
 output: asis
 ---
 
-# BayesLaplace
+# LaplaceRedux
 
-<!-- [![Stable](https://img.shields.io/badge/docs-stable-blue.svg)](https://pat-alt.github.io/BayesLaplace.jl/stable) -->
-[![Dev](https://img.shields.io/badge/docs-dev-blue.svg)](https://pat-alt.github.io/BayesLaplace.jl/dev)
-[![Build Status](https://github.com/pat-alt/BayesLaplace.jl/actions/workflows/CI.yml/badge.svg?branch=main)](https://github.com/pat-alt/BayesLaplace.jl/actions/workflows/CI.yml?query=branch%3Amain)
-[![Coverage](https://codecov.io/gh/pat-alt/BayesLaplace.jl/branch/main/graph/badge.svg)](https://codecov.io/gh/pat-alt/BayesLaplace.jl)
+<!-- [![Stable](https://img.shields.io/badge/docs-stable-blue.svg)](https://pat-alt.github.io/LaplaceRedux.jl/stable) -->
+[![Dev](https://img.shields.io/badge/docs-dev-blue.svg)](https://pat-alt.github.io/LaplaceRedux.jl/dev)
+[![Build Status](https://github.com/pat-alt/LaplaceRedux.jl/actions/workflows/CI.yml/badge.svg?branch=main)](https://github.com/pat-alt/LaplaceRedux.jl/actions/workflows/CI.yml?query=branch%3Amain)
+[![Coverage](https://codecov.io/gh/pat-alt/LaplaceRedux.jl/branch/main/graph/badge.svg)](https://codecov.io/gh/pat-alt/LaplaceRedux.jl)
 
 ```{r, child='docs/src/intro.qmd'}
 ```

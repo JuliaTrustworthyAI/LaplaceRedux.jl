@@ -20,7 +20,7 @@ Wrapper function to prepare Laplace approximation.
 # Examples
 
 ```julia-repl
-using Flux, BayesLaplace
+using Flux, LaplaceRedux
 nn = Chain(Dense(2,1))
 la = Laplace(nn)
 ```
@@ -47,10 +47,10 @@ Retrieves the desired (sub)set of model parameters and stores them in a list.
 # Examples
 
 ```julia-repl
-using Flux, BayesLaplace
+using Flux, LaplaceRedux
 nn = Chain(Dense(2,1))
 la = Laplace(nn)
-BayesLaplace.get_params(la)
+LaplaceRedux.get_params(la)
 ```
 
 """
@@ -86,7 +86,7 @@ Fits the Laplace approximation for a data set.
 # Examples
 
 ```julia-repl
-using Flux, BayesLaplace
+using Flux, LaplaceRedux
 x, y = toy_data_linear()
 data = zip(x,y)
 nn = Chain(Dense(2,1))
@@ -140,7 +140,7 @@ Computes predictions from Bayesian neural network.
 # Examples
 
 ```julia-repl
-using Flux, BayesLaplace
+using Flux, LaplaceRedux
 x, y = toy_data_linear()
 data = zip(x,y)
 nn = Chain(Dense(2,1))

@@ -1,6 +1,6 @@
-# BayesLaplace
+# LaplaceRedux
 
-[![Dev](https://img.shields.io/badge/docs-dev-blue.svg)](https://pat-alt.github.io/BayesLaplace.jl/dev) [![Build Status](https://github.com/pat-alt/BayesLaplace.jl/actions/workflows/CI.yml/badge.svg?branch=main)](https://github.com/pat-alt/BayesLaplace.jl/actions/workflows/CI.yml?query=branch%3Amain) [![Coverage](https://codecov.io/gh/pat-alt/BayesLaplace.jl/branch/main/graph/badge.svg)](https://codecov.io/gh/pat-alt/BayesLaplace.jl)
+[![Dev](https://img.shields.io/badge/docs-dev-blue.svg)](https://pat-alt.github.io/LaplaceRedux.jl/dev) [![Build Status](https://github.com/pat-alt/LaplaceRedux.jl/actions/workflows/CI.yml/badge.svg?branch=main)](https://github.com/pat-alt/LaplaceRedux.jl/actions/workflows/CI.yml?query=branch%3Amain) [![Coverage](https://codecov.io/gh/pat-alt/LaplaceRedux.jl/branch/main/graph/badge.svg)](https://codecov.io/gh/pat-alt/LaplaceRedux.jl)
 
 This is a small library that can be used for effortless Bayesian Deep Learning and Logisitic Regression trough Laplace Approximation. It is inspired by this Python [library](https://aleximmer.github.io/Laplace/index.html#setup) and its companion [paper](https://arxiv.org/abs/2106.14806).
 
@@ -10,7 +10,7 @@ This package is not registered, but can be installed from Github as follows:
 
 ``` julia
 using Pkg
-Pkg.add("https://github.com/pat-alt/BayesLaplace.jl")
+Pkg.add("https://github.com/pat-alt/LaplaceRedux.jl")
 ```
 
 ## Getting started
@@ -22,9 +22,9 @@ la = Laplace(nn)
 fit!(la, data)
 ```
 
-Calling `predict(nn,X)` for some features `X` will produce posterior predictions. The plot below has been lifted from the [documentation](https://www.paltmeyer.com/BayesLaplace.jl/dev/), which provides more detail. It shows the resulting posterior predictive surface for the plugin estimator (left) and the Laplace approximation (right) for a toy data set.
+Calling `predict(nn,X)` for some features `X` will produce posterior predictions. The plot below has been lifted from the [documentation](https://www.paltmeyer.com/LaplaceRedux.jl/dev/), which provides more detail. It shows the resulting posterior predictive surface for the plugin estimator (left) and the Laplace approximation (right) for a toy data set.
 
-![](https://raw.githubusercontent.com/pat-alt/BayesLaplace.jl/main/docs/src/tutorials/www/posterior_predictive_mlp.png)
+![](https://raw.githubusercontent.com/pat-alt/LaplaceRedux.jl/main/docs/src/tutorials/www/posterior_predictive_mlp.png)
 
 ## Limitations.
 

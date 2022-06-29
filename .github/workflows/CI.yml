@@ -54,9 +54,9 @@ jobs:
       - run: |
           julia --project=docs -e '
             using Documenter: DocMeta, doctest
-            using BayesLaplace
-            DocMeta.setdocmeta!(BayesLaplace, :DocTestSetup, :(using BayesLaplace); recursive=true)
-            doctest(BayesLaplace)'
+            using LaplaceRedux
+            DocMeta.setdocmeta!(LaplaceRedux, :DocTestSetup, :(using LaplaceRedux); recursive=true)
+            doctest(LaplaceRedux)'
       - run: julia --project=docs docs/make.jl
         env:
           JULIA_PKG_SERVER: ""

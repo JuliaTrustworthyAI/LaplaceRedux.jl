@@ -1,7 +1,7 @@
-using BayesLaplace
+using LaplaceRedux
 using Test
 
-@testset "BayesLaplace.jl" begin
+@testset "LaplaceRedux.jl" begin
     @testset "Curvature" begin
         include("curvature.jl")
     end

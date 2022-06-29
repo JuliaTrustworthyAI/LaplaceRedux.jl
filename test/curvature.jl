@@ -1,6 +1,6 @@
-using BayesLaplace
-using BayesLaplace.Curvature
-using BayesLaplace.Data
+using LaplaceRedux
+using LaplaceRedux.Curvature
+using LaplaceRedux.Data
 using Flux
 
 

@@ -1,6 +1,6 @@
-using BayesLaplace
-using BayesLaplace.Curvature
-using BayesLaplace.Data
+using LaplaceRedux
+using LaplaceRedux.Curvature
+using LaplaceRedux.Data
 using Flux
 
 @testset "Construction" begin
@@ -23,10 +23,10 @@ end
     
     nn = Chain(Dense(2,2,σ),Dense(2,1))
     la = Laplace(nn)
-    @test BayesLaplace.get_params(la) == collect(Flux.params(nn))[(end-1):end]
+    @test LaplaceRedux.get_params(la) == collect(Flux.params(nn))[(end-1):end]
 
     la = Laplace(nn; subset_of_weights=:all)
-    @test BayesLaplace.get_params(la) == collect(Flux.params(nn))
+    @test LaplaceRedux.get_params(la) == collect(Flux.params(nn))
 
 end
 
@@ -44,15 +44,15 @@ end
         target = 1
         x = [1,1]
         grad = [-0.5,-0.5] # analytical solution for gradient
-        @test BayesLaplace.hessian_approximation(la, (x,target))[1:2,1:2] == grad * grad'
+        @test LaplaceRedux.hessian_approximation(la, (x,target))[1:2,1:2] == grad * grad'
 
         x = [-1,-1]
         grad = [0.5,0.5] # analytical solution for gradient
-        @test BayesLaplace.hessian_approximation(la, (x,target))[1:2,1:2] == grad * grad'
+        @test LaplaceRedux.hessian_approximation(la, (x,target))[1:2,1:2] == grad * grad'
 
         x = [0,0]
         grad = [0,0] # analytical solution for gradient
-        @test BayesLaplace.hessian_approximation(la, (x,target))[1:2,1:2] == grad * grad'
+        @test LaplaceRedux.hessian_approximation(la, (x,target))[1:2,1:2] == grad * grad'
         
     end
     

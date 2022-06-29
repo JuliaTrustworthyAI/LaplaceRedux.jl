@@ -1,16 +1,16 @@
-using BayesLaplace
+using LaplaceRedux
 using Documenter
 
-DocMeta.setdocmeta!(BayesLaplace, :DocTestSetup, :(using BayesLaplace); recursive=true)
+DocMeta.setdocmeta!(LaplaceRedux, :DocTestSetup, :(using LaplaceRedux); recursive=true)
 
 makedocs(;
-    modules=[BayesLaplace],
+    modules=[LaplaceRedux],
     authors="Patrick Altmeyer",
-    repo="https://github.com/pat-alt/BayesLaplace.jl/blob/{commit}{path}#{line}",
-    sitename="BayesLaplace.jl",
+    repo="https://github.com/pat-alt/LaplaceRedux.jl/blob/{commit}{path}#{line}",
+    sitename="LaplaceRedux.jl",
     format=Documenter.HTML(;
         prettyurls=get(ENV, "CI", "false") == "true",
-        canonical="https://pat-alt.github.io/BayesLaplace.jl",
+        canonical="https://pat-alt.github.io/LaplaceRedux.jl",
         assets=String[],
     ),
     pages=[
@@ -24,6 +24,6 @@ makedocs(;
 )
 
 deploydocs(;
-    repo="github.com/pat-alt/BayesLaplace.jl",
+    repo="github.com/pat-alt/LaplaceRedux.jl",
     devbranch="main",
 )

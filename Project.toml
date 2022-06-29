@@ -1,4 +1,4 @@
-name = "BayesLaplace"
+name = "LaplaceRedux"
 uuid = "c52c1a26-f7c5-402b-80be-ba1e638ad478"
 authors = ["Patrick Altmeyer"]
 version = "0.1.0"

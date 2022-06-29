@@ -6,7 +6,7 @@ using Plots
 # Examples
 
 ```julia-repl
-using BayesLaplace, Plots
+using LaplaceRedux, Plots
 X, y = toy_data_linear(100)
 plt = plot()
 plot_data!(plt, hcat(X...)', y)
@@ -28,8 +28,8 @@ Generates a contour plot for the posterior predictive surface.
 # Examples
 
 ```julia-repl
-using BayesLaplace, Plots
-import BayesLaplace: predict
+using LaplaceRedux, Plots
+import LaplaceRedux: predict
 using NNlib: σ
 X, y = toy_data_linear(100)
 X = hcat(X...)'
@@ -75,5 +75,6 @@ function plot_contour(X,y,𝑴;clegend=true,title="",length_out=50,type=:laplace
 end
 
 # Helper function to predict from network trained for binary classification and producing logits as output:
-import BayesLaplace: predict
+import LaplaceRedux: predict
+using Flux
 predict(𝑴::Flux.Chain, X::AbstractArray) = Flux.σ.(𝑴(X))

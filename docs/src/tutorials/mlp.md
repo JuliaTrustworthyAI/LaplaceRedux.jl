@@ -1,5 +1,5 @@
 ``` @meta
-CurrentModule = BayesLaplace
+CurrentModule = LaplaceRedux
 ```
 
 # Bayesian MLP

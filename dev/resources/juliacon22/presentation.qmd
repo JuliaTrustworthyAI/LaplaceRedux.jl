@@ -1,0 +1,339 @@
+---
+title: Effortless Bayesian Deep Learning through Laplace Redux
+subtitle: JuliaCon 2022
+author: Patrick Altmeyer
+format: 
+  revealjs:
+    logo: www/delft_logo.png
+    footer: |
+      Effortless Bayesian Deep Learning through Laplace Redux -- JuliaCon 2022 -- Patrick Altmeyer
+    self-contained: true
+    smaller: true
+    scrollable: true
+    preview-links: auto
+    slide-number: true
+    transition: slide
+    background-transition: fade
+    fig-align: center
+bibliography: https://raw.githubusercontent.com/pat-alt/bib/main/bib.bib
+execute:
+  eval: false
+  echo: true
+---
+
+```{julia}
+#| echo: false
+using Pkg; Pkg.activate("dev")
+using Plots, PlotThemes
+theme(:wong)
+include("dev/utils.jl")
+www_path = "dev/resources/juliacon22/www"
+```
+
+
+## Overview
+
+:::{.incremental}
+- The case for Bayesian Deep Learning
+- Laplace Redux in Julia 📦
+    - From Bayesian Logistic Regression ...
+    - ... to Bayesian Neural Networks
+- Recent Developments
+- Goals and Ambitions 🎯
+:::
+
+# The case for Bayesian Deep Learning
+
+## Towards Trustworthy AI {auto-animate=true auto-animate-easing="ease-in-out"}
+
+::: {.r-hstack}
+
+::: {data-id="box3" style="background: #389826; width: 150px; height: 150px; border-radius: 50%; display: grid; place-content: center; text-align: center;"}
+Ground Truthing
+:::
+
+::: {data-id="box2" style="background: #cb3c33; width: 150px; height: 150px; border-radius: 50%; display: grid; place-content: center; text-align: center;"}
+Probabilistic Models
+:::
+
+::: {data-id="box1" style="background: #9558b2; width: 150px; height: 150px; border-radius: 50%; display: grid; place-content: center; text-align: center;"}
+Counterfactual Reasoning
+:::
+:::
+
+## Towards Trustworthy AI {auto-animate=true auto-animate-easing="ease-in-out"}
+
+::: {.r-hstack}
+
+::: {data-id="box3" style="background: #389826; width: 150px; height: 150px; border-radius: 50%; display: grid; place-content: center; text-align: center;"}
+Ground Truthing
+:::
+
+::: {data-id="box2" style="background: #cb3c33; width: 150px; height: 150px; border-radius: 50%; display: grid; place-content: center; text-align: center; opacity: 0.5;"}
+Probabilistic Models
+:::
+
+::: {data-id="box1" style="background: #9558b2; width: 150px; height: 150px; border-radius: 50%; display: grid; place-content: center; text-align: center; opacity: 0.5;"}
+Counterfactual Reasoning
+:::
+:::
+
+#### Objective
+
+Let $\mathcal{D}={(x,y)}$ denote our true population of input-output pairs. Then we want to find a subsample of the true population
+
+$$\mathcal{D}_n \subset \mathcal{D}$$
+
+such that 
+
+$$\mathcal{D}_n \sim p(\mathcal{D})$$
+
+> Lots of open questions and work to be done, but not here and today.
+
+## Towards Trustworthy AI {auto-animate=true auto-animate-easing="ease-in-out"}
+
+::: {.r-hstack}
+::: {data-id="box3" style="background: #389826; width: 150px; height: 150px; border-radius: 50%; display: grid; place-content: center; text-align: center; opacity: 0.5;"}
+Ground Truthing
+:::
+
+::: {data-id="box2" style="background: #cb3c33; width: 150px; height: 150px; border-radius: 50%; display: grid; place-content: center; text-align: center; opacity: 0.5;"}
+Probabilistic Models
+:::
+
+::: {data-id="box1" style="background: #9558b2; width: 150px; height: 150px; border-radius: 50%; display: grid; place-content: center; text-align: center; align-items: center;"}
+Counterfactual Reasoning
+:::
+:::
+
+:::{.fragment .semi-fade-out}
+
+#### Objective
+
+Let $\hat\theta$ denote our MLE estimate (or MAP in the probabilistic setting). Then we are interested in understanding how predictions of our model change with respect to input changes.
+
+$$\nabla_x p(y|x,\mathcal{D}_n)$$
+
+- Counterfactual reasoning boils down to simple questions: what if $x \Rightarrow x\prime$?
+- By (strategically) perturbing features and checking the model output, we can (begin to) understand how the model makes its decisions.
+
+:::
+
+. . .
+
+> If interested, check out my other talk.
+
+## Towards Trustworthy AI {auto-animate=true auto-animate-easing="ease-in-out"}
+
+::: {.r-hstack style="text-align: center;"}
+::: {data-id="box3" style="background: #389826; width: 150px; height: 150px; border-radius: 50%; display: grid; place-content: center; text-align: center; opacity: 0.5;"}
+Ground Truthing
+:::
+
+::: {data-id="box2" style="background: #cb3c33; width: 150px; height: 150px; border-radius: 50%; display: grid; place-content: center; text-align: center;"}
+Probabilistic Models
+:::
+
+::: {data-id="box1" style="background: #9558b2; width: 150px; height: 150px; border-radius: 50%; display: grid; place-content: center; text-align: center; opacity: 0.5;"}
+Counterfactual Reasoning
+:::
+:::
+
+#### Objective
+
+Let $p(\mathcal{D}_n|\theta)$ denote the likelihood of observing our subsample $\mathcal{D}_n$ under some model parameterized by $\theta$. Then we typically want to maximize this likelihood with respect to the parameters [@murphy2022probabilistic]:
+
+$$\arg \max_{\theta} p(\mathcal{D}_n|\theta)$$
+
+:::{.incremental}
+- In an ideal world we can rely on parsimonious and interpretable models [@rudin2019stop].
+- In practice these models often have performance limitations.
+- Black-box models like deep neural networks are popular, but also the very opposite of parsimonious.
+:::
+
+. . .
+
+> [...] deep neural networks are typically very underspecified by the available data, and [...] parameters [therefore] correspond to a diverse variety of compelling explanations for the data. 
+> [@wilson2020case]
+
+What does @wilson2020case mean by this? What should we do?
+
+## Bayesian Model Averaging
+
+> Don't put all your 🥚 in one 🧺.
+
+. . .
+
+:::{.incremental}
+- In Deep Learning we typically maximise highly non-convex functions full of local optima and saddle points.
+- Stochastic Gradient Descent (and modern extensions) help us to avoid these.
+- But the bottom line is that there may be many $\hat\theta_1, ..., \hat\theta_m$ that are slightly different, but yield similar performance.
+:::
+
+. . .
+
+$\theta$ is a random variable. Shouldn't we treat it that way?
+
+$$
+p(y|x,\mathcal{D}) = \int p(y|x,\theta)p(\theta|\mathcal{D})d\theta
+$$ {#eq-bma}
+
+. . .
+
+In practice we typically rely on a **plugin** approximation [@murphy2022probabilistic].
+
+$$
+p(y|x,\mathcal{D}) = \int p(y|x,\theta)p(\theta|\mathcal{D})d\theta \approx p(y|x,\hat\theta)
+$$ {#eq-plugin}
+
+> Yes, "plugin" is literal ... can we do better?
+
+## Enter: Bayesian Deep Learning 🔮
+
+> Yes, we can! 
+
+::::{.columns}
+
+:::{.column width="50%"}
+
+#### Popular approaches include ...
+
+:::{.fragment .semi-fade-out fragment-index=4}
+
+:::{.fragment .fade-left fragment-index=0}
+MCMC (see [`Turing`](https://turing.ml/dev/tutorials/03-bayesian-neural-network/))
+:::
+
+:::{.fragment .fade-left fragment-index=1}
+Variational Inference [@blundell2015weight]
+:::
+
+:::{.fragment .fade-left fragment-index=2}
+Monte Carlo Dropout [@gal2016dropout]
+:::
+
+:::{.fragment .fade-left fragment-index=3}
+Deep Ensembles [@lakshminarayanan2016simple]
+:::
+
+:::
+
+:::{.fragment .fade-left fragment-index=5}
+Laplace Redux [@daxberger2021laplace]
+:::
+
+. . .
+
+![Pierre-Simon Laplace as chancellor of the Senate under the First French Empire. Source: [Wikipedia](https://en.wikipedia.org/wiki/Pierre-Simon_Laplace)](www/laplace_dude.jpeg){#fig-laplace-dude width="25%"}
+
+:::
+
+:::{.column width="50%"}
+![Simulation of changing posteriour predictive distribution.](www/intro.gif){#fig-intro}
+:::
+
+::::
+
+
+# Laplace Redux in Julia 📦
+
+## From Bayesian Logistic Regression ...
+
+### ... to Bayesian Neural Networks
+
+# Recent Developments
+
+# Goals and Ambitions 🎯
+
+## JuliaCon 2022 and beyond
+
+::::{.columns}
+
+:::{.column width="50%"}
+
+:::{.fragment .semi-fade-out fragment-index=4}
+#### To JuliaCon ...
+
+:::{.fragment .strike fragment-index=1}
+Learn about Laplace Redux by implementing it in Julia.
+:::
+
+:::{.fragment .strike fragment-index=2}
+Turn code into a small package. 
+:::
+
+:::{.fragment .strike fragment-index=3}
+Submit to [JuliaCon 2022](https://juliacon.org/2022/) and share the idea.
+:::
+:::
+
+#### ... and beyond
+
+. . .
+
+Package is pure-play at this point and needs a lot of work.
+
+:::{.incremental}
+- **Goal**: reach same level of maturity as Python [counterpart](https://aleximmer.github.io/Laplace/). (Beautiful work btw!)
+- **Problem**: limited capacity and fairly new to Julia.
+- **Solution**: find contributors 🤗.
+:::
+:::
+
+:::{.column width="50%"}
+![Photo by [Ivan Diaz](https://unsplash.com/@ivvndiaz?utm_source=unsplash&utm_medium=referral&utm_content=creditCopyText) on [Unsplash](https://unsplash.com/?utm_source=unsplash&utm_medium=referral&utm_content=creditCopyText)](www/launch.jpeg){width="70%"}
+:::
+
+::::
+
+## More Resources 📚
+
+::::{.columns}
+
+:::{.column width="60%"}
+> Read on ...
+
+- Blog post (1) -- Bayesian Logisitic Regression: [[TDS](https://towardsdatascience.com/individual-recourse-for-black-box-models-5e9ed1e4b4cc), [homepage](https://www.paltmeyer.com/blog/posts/individual-recourse-for-black-box-models/)].
+- Blog post (2) -- Bayesian Deep Learning: [[TDS](https://towardsdatascience.com/a-new-tool-for-explainable-ai-65834e757c28), [homepage](https://www.paltmeyer.com/blog/posts/a-new-tool-for-explainable-ai/)].
+- Detailed slide pack generously shared by [Professor José Miguel Hernández-Lobato](https://jmhl.org/): [[pdf]()]
+- Package [docs](https://www.paltmeyer.com/CounterfactualExplanations.jl/dev/).
+
+> ... or even better: get involved! 🤗
+
+:::
+
+:::{.column width="40%"}
+
+<img src="www/profile.jpg" height="auto" width="250" style="border-radius:50%; display: block; margin-left: auto; margin-right: auto;">
+
+<div style="text-align: center;">
+  <p style="display: inline; vertical-align: middle"> 
+    <a href="https://www.linkedin.com/in/patrick-altmeyer-a2a25494/" style="display: inline-block; color: rgb(207, 142, 255) !important;">
+      <font style="">
+        <img width="60" height="60" src="https://s1g.s3.amazonaws.com/d0fc399dee4218d1e0e0399b8947acab.png" alt="LinkedIn (Personal)" style="border: none; max-width: 100%; height: 60px !important;">
+      </font>
+    </a>
+    <a href="https://twitter.com/paltmey" style="display: inline-block; color: rgb(207, 142, 255) !important;">
+      <font style="">
+        <img width="60" height="60" src="https://s1g.s3.amazonaws.com/3949237f892004c237021ac9e3182b1d.png" alt="Twitter" style="border: none; max-width: 100%; height: 60px !important;">
+      </font>
+    </a>
+    <a href="https://github.com/pat-alt" style="display: inline-block; color: rgb(207, 142, 255) !important;">
+      <font style="">
+        <img width="60" height="60" src="https://s1g.s3.amazonaws.com/47f4eb2d0082a8a3611d614b75a09db8.png" alt="Github" style="border: none; max-width: 100%; height: 60px !important;">
+      </font>
+    </a>
+    <a href="https://medium.com/@patrick.altmeyer" style="display: inline-block; color: rgb(207, 142, 255) !important;">
+      <font style="">
+        <img width="60" height="60" src="https://s1g.s3.amazonaws.com/175f49662614345cb7dbb95fce3f88af.png" alt="Medium" style="border: none; max-width: 100%; height: 60px !important;">
+      </font>
+    </a>
+  </p>
+</div>
+
+<img src="www/qr.png" height="auto" width="100" style="display: block; margin-left: auto; margin-right: auto;">
+:::
+
+::::
+
+## References 

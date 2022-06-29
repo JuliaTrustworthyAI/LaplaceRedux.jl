@@ -1,5 +1,5 @@
 ```@meta
-CurrentModule = BayesLaplace
+CurrentModule = LaplaceRedux
 ```
 
 # All functions and types
@@ -11,8 +11,8 @@ CurrentModule = BayesLaplace
 
 ```@autodocs
 Modules = [
-    BayesLaplace,
-    BayesLaplace.Curvature
+    LaplaceRedux,
+    LaplaceRedux.Curvature
 ]
 Private = false
 ```
@@ -21,8 +21,8 @@ Private = false
 
 ```@autodocs
 Modules = [
-    BayesLaplace,
-    BayesLaplace.Curvature
+    LaplaceRedux,
+    LaplaceRedux.Curvature
 ]
 Public = false
 ```
