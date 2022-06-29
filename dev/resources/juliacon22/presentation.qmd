@@ -178,6 +178,8 @@ $$
 p(y|x,\mathcal{D}) = \int p(y|x,\theta)p(\theta|\mathcal{D})d\theta
 $$ {#eq-bma}
 
+> Intractable!
+
 . . .
 
 In practice we typically rely on a **plugin** approximation [@murphy2022probabilistic].
@@ -234,14 +236,76 @@ Laplace Redux [@daxberger2021laplace]
 
 ::::
 
+## Laplace Approximation
+
+> We first need to estimate the weight posterior $p(\theta|\mathcal{D})$ ...
+
+. . .
+
+**Idea** 💡: Taylor approximation at the mode.
+
+:::{.incremental}
+- Going through the maths we find that this yields a Gaussian posteriour centered around the MAP estimate $\hat\theta$ (see pp. 148/149 in @murphy2022probabilistic).
+- Covariance corresponds to inverse Hessian at the mode (in practice we may have to rely on approximations).
+:::
+
+. . .
+
+![Unnormalized log-posterior and corresponding Laplace Approximation. Source: @murphy2022probabilistic.](www/laplace_posterior.png)
+
+> Now we can rely on MC or Probit Approximation to compute posterior predictive (classification).
 
 # Laplace Redux in Julia 📦
 
 ## From Bayesian Logistic Regression ...
 
-### ... to Bayesian Neural Networks
+$$
+p(\theta) \sim \mathcal{N} \left( \theta | \mathbf{0}, \sigma_0^2 \mathbf{I} \right)=\mathcal{N} \left( \theta | \mathbf{0}, \mathbf{H}_0^{-1} \right)
+$$ {#eq-prior}
 
-# Recent Developments
+$$
+\ell(\theta)= - \sum_{n}^N [y_n \log \mu_n + (1-y_n)\log (1-\mu_n)] + \\ \frac{1}{2} (\theta-\theta_0)^T\mathbf{H}_0(\theta-\theta_0)
+$$ {#eq-prior}
+
+## ... to Bayesian Neural Networks
+
+# Considerations
+
+## A crucial detail I skipped
+
+> We're really using linearized neural networks ...
+
+::::{.columns}
+
+:::{.column width="50%"}
+:::{.incremental}
+- Could do Monte Carlo for true BNN predictive, but this performs poorly when using approximations for the Hessian.
+- Instead we rely on **linear expansion** of predictive around mode [@immer2020improving].
+- **Intuition**: Hessian approximation involves linearization, then so should the predictive. 
+- Finally:
+  - **Regression**: we're done.
+  - **Classification**: probit approximation.
+:::
+:::
+
+:::{.column width="50%"}
+![](www/mc_fail.png)
+:::
+
+::::
+
+
+
+
+
+## Other things to consider
+
+:::{.incremental}
+- Hessian approximations still quadratically large: use factorizations.
+- Hyperparameter tuning: what about that prior?
+- Scaling things up: subnetwork inference.
+- Early stopping: do we really end up at the mode?
+:::
 
 # Goals and Ambitions 🎯
 
