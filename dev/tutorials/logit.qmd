@@ -16,7 +16,7 @@ jupyter: julia-1.6
 ---
 
 ```@meta
-CurrentModule = BayesLaplace
+CurrentModule = LaplaceRedux
 ```
 
 # Bayesian Logisitic Regression
@@ -24,7 +24,7 @@ CurrentModule = BayesLaplace
 ```{julia}
 #| echo: false
 # Import libraries.
-using Flux, Plots, Random, PlotThemes, Statistics, BayesLaplace
+using Flux, Plots, Random, PlotThemes, Statistics, LaplaceRedux
 theme(:lime)
 using Logging
 disable_logging(Logging.Info)
@@ -36,7 +36,7 @@ We will use synthetic data with linearly separable samples:
 
 ```{julia}
 # Number of points to generate.
-xs, ys = BayesLaplace.Data.toy_data_linear(100)
+xs, ys = LaplaceRedux.Data.toy_data_linear(100)
 X = hcat(xs...) # bring into tabular format
 data = zip(xs,ys)
 ```

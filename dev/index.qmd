@@ -12,12 +12,12 @@ output: asis
 ---
 
 ```@meta
-CurrentModule = BayesLaplace
+CurrentModule = LaplaceRedux
 ```
 
-# BayesLaplace
+# LaplaceRedux
 
-Documentation for [BayesLaplace.jl](https://github.com/pat-alt/BayesLaplace.jl).
+Documentation for [LaplaceRedux.jl](https://github.com/pat-alt/LaplaceRedux.jl).
 
 ```{r, child='intro.qmd'}
 ```
