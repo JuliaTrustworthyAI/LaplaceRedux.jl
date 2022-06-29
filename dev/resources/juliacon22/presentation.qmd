@@ -359,7 +359,7 @@ Package is pure-play at this point and needs a lot of work.
 
 - Blog post (1) -- Bayesian Logisitic Regression: [[TDS](https://towardsdatascience.com/individual-recourse-for-black-box-models-5e9ed1e4b4cc), [homepage](https://www.paltmeyer.com/blog/posts/individual-recourse-for-black-box-models/)].
 - Blog post (2) -- Bayesian Deep Learning: [[TDS](https://towardsdatascience.com/a-new-tool-for-explainable-ai-65834e757c28), [homepage](https://www.paltmeyer.com/blog/posts/a-new-tool-for-explainable-ai/)].
-- Detailed slide pack generously shared by [Professor José Miguel Hernández-Lobato](https://jmhl.org/): [[pdf]()]
+- Detailed slide pack generously shared by [Professor José Miguel Hernández-Lobato](https://jmhl.org/): [[pdf](https://github.com/pat-alt/LaplaceRedux.jl/blob/main/dev/resources/juliacon22/slides_lobato.pdf)]
 - Package [docs](https://www.paltmeyer.com/CounterfactualExplanations.jl/dev/).
 
 > ... or even better: get involved! 🤗
