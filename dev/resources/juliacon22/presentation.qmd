@@ -602,7 +602,9 @@ Package is bare-bones at this point and needs a lot of work.
 :::
 
 :::{.column width="50%"}
-<iframe src="https://giphy.com/embed/dUHdTk3tvry9NETa67" width="480" height="400" frameBorder="0" class="giphy-embed" allowFullScreen></iframe><p><a href="https://giphy.com/gifs/theoffice-nbc-the-office-tv-dUHdTk3tvry9NETa67">via GIPHY</a></p>
+
+![Source: [Giphy](https://giphy.com/gifs/theoffice-nbc-the-office-tv-dUHdTk3tvry9NETa67)](www/dwight.gif)
+
 :::
 
 ::::
