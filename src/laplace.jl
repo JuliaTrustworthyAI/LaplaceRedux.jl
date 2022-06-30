@@ -101,7 +101,6 @@ function fit!(la::Laplace,data)
     for d in data
         H += hessian_approximation(la, d)
     end
-    println(H)
     la.H = H + la.H₀ # posterior precision
     la.Σ = inv(la.H) # posterior covariance
     

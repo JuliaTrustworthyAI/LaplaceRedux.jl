@@ -38,7 +38,6 @@ www_path = "dev/resources/juliacon22/www"
 - Laplace Redux in Julia 📦
     - From Bayesian Logistic Regression ...
     - ... to Bayesian Neural Networks
-- Recent Developments
 - Goals and Ambitions 🎯
 :::
 
@@ -60,68 +59,6 @@ Probabilistic Models
 Counterfactual Reasoning
 :::
 :::
-
-## Towards Trustworthy AI {auto-animate=true auto-animate-easing="ease-in-out"}
-
-::: {.r-hstack}
-
-::: {data-id="box3" style="background: #389826; width: 150px; height: 150px; border-radius: 50%; display: grid; place-content: center; text-align: center;"}
-Ground Truthing
-:::
-
-::: {data-id="box2" style="background: #cb3c33; width: 150px; height: 150px; border-radius: 50%; display: grid; place-content: center; text-align: center; opacity: 0.5;"}
-Probabilistic Models
-:::
-
-::: {data-id="box1" style="background: #9558b2; width: 150px; height: 150px; border-radius: 50%; display: grid; place-content: center; text-align: center; opacity: 0.5;"}
-Counterfactual Reasoning
-:::
-:::
-
-#### Objective
-
-Let $\mathcal{D}={(x,y)}$ denote our true population of input-output pairs. Then we want to find a subsample of the true population
-
-$$\mathcal{D}_n \subset \mathcal{D}$$
-
-such that 
-
-$$\mathcal{D}_n \sim p(\mathcal{D})$$
-
-> Lots of open questions and work to be done, but not here and today.
-
-## Towards Trustworthy AI {auto-animate=true auto-animate-easing="ease-in-out"}
-
-::: {.r-hstack}
-::: {data-id="box3" style="background: #389826; width: 150px; height: 150px; border-radius: 50%; display: grid; place-content: center; text-align: center; opacity: 0.5;"}
-Ground Truthing
-:::
-
-::: {data-id="box2" style="background: #cb3c33; width: 150px; height: 150px; border-radius: 50%; display: grid; place-content: center; text-align: center; opacity: 0.5;"}
-Probabilistic Models
-:::
-
-::: {data-id="box1" style="background: #9558b2; width: 150px; height: 150px; border-radius: 50%; display: grid; place-content: center; text-align: center; align-items: center;"}
-Counterfactual Reasoning
-:::
-:::
-
-:::{.fragment .semi-fade-out}
-
-#### Objective
-
-Let $\hat\theta$ denote our MLE estimate (or MAP in the probabilistic setting). Then we are interested in understanding how predictions of our model change with respect to input changes.
-
-$$\nabla_x p(y|x,\mathcal{D}_n)$$
-
-- Counterfactual reasoning boils down to simple questions: what if $x \Rightarrow x\prime$?
-- By (strategically) perturbing features and checking the model output, we can (begin to) understand how the model makes its decisions.
-
-:::
-
-. . .
-
-> If interested, check out my other talk.
 
 ## Towards Trustworthy AI {auto-animate=true auto-animate-easing="ease-in-out"}
 
@@ -162,7 +99,6 @@ What does @wilson2020case mean by this? What should we do?
 
 > Don't put all your 🥚 in one 🧺.
 
-. . .
 
 :::{.incremental}
 - In Deep Learning we typically maximise highly non-convex functions full of local optima and saddle points.
@@ -221,7 +157,7 @@ Deep Ensembles [@lakshminarayanan2016simple]
 :::
 
 :::{.fragment .fade-left fragment-index=5}
-Laplace Redux [@daxberger2021laplace]
+Laplace Redux [@immer2020improving,@daxberger2021laplace]
 :::
 
 . . .
@@ -231,7 +167,7 @@ Laplace Redux [@daxberger2021laplace]
 :::
 
 :::{.column width="50%"}
-![Simulation of changing posteriour predictive distribution.](www/intro.gif){#fig-intro}
+![Simulation of changing posteriour predictive distribution. Image by author.](www/intro.gif){#fig-intro}
 :::
 
 ::::
@@ -255,57 +191,352 @@ Laplace Redux [@daxberger2021laplace]
 
 > Now we can rely on MC or Probit Approximation to compute posterior predictive (classification).
 
-# Laplace Redux in Julia 📦
+# Laplace Redux in Julia 
+
+## [`LaplaceRedux.jl`](https://github.com/pat-alt/LaplaceRedux.jl) - a small package 📦
+
+[![Dev](https://img.shields.io/badge/docs-dev-blue.svg)](https://pat-alt.github.io/LaplaceRedux.jl/dev) [![Build Status](https://github.com/pat-alt/LaplaceRedux.jl/actions/workflows/CI.yml/badge.svg?branch=main)](https://github.com/pat-alt/LaplaceRedux.jl/actions/workflows/CI.yml?query=branch%3Amain) [![Coverage](https://codecov.io/gh/pat-alt/LaplaceRedux.jl/branch/main/graph/badge.svg)](https://codecov.io/gh/pat-alt/LaplaceRedux.jl)
+
+> What started out as my first coding project Julia ... 
+
+:::{.incremental}
+- Big fan of **learning by coding** so after reading the first chapters of @murphy2022probabilistic I decided to code up Bayesian Logisitic Regression from scratch. 
+- I also wanted to learn Julia at the time, so tried to hit two birds with one stone. 
+- **Outcome**: 1. This [blog post](https://towardsdatascience.com/bayesian-logistic-regression-53df017ba90f). 2. I have since been hooked on Julia. 
+:::
+
+. . .
+
+> ... has turned into a small package 📦  with great potential.
+
+:::{.incremental}
+- When coming across the NeurIPS 2021 paper on Laplace Redux for deep learning [@daxberger2021laplace], I figured I could step it up a notch.
+- **Outcome**: `LaplaceRedux.jl` and another [blog post](https://towardsdatascience.com/go-deep-but-also-go-bayesian-ab25efa6f7b).
+:::
+
+. . . 
+
+So let's add the package ...
+
+```julia
+using Pkg
+Pkg.add("https://github.com/pat-alt/LaplaceRedux.jl")
+```
+
+... and use it. 
+
+```{julia}
+using LaplaceRedux
+```
 
 ## From Bayesian Logistic Regression ...
 
+::::{.columns}::::
+:::{.column width='50%'}
+#### From maths ...
+
+. . .
+
+We assume a Gaussian prior for our weights ...
 $$
-p(\theta) \sim \mathcal{N} \left( \theta | \mathbf{0}, \sigma_0^2 \mathbf{I} \right)=\mathcal{N} \left( \theta | \mathbf{0}, \mathbf{H}_0^{-1} \right)
+p(\theta) \sim \mathcal{N} \left( \theta | \mathbf{0}, \lambda^{-1} \mathbf{I} \right)=\mathcal{N} \left( \theta | \mathbf{0}, \mathbf{H}_0^{-1} \right)
 $$ {#eq-prior}
+
+. . .
+
+... wich corresponds to logit binary crossentropy loss with weight decay:
 
 $$
 \ell(\theta)= - \sum_{n}^N [y_n \log \mu_n + (1-y_n)\log (1-\mu_n)] + \\ \frac{1}{2} (\theta-\theta_0)^T\mathbf{H}_0(\theta-\theta_0)
-$$ {#eq-prior}
+$$ {#eq-loss}
+
+. . .
+
+For Logistic Regression we have the Hessian in closed form (p. 338 in @murphy2022probabilistic):
+
+$$
+\nabla_{\theta}\nabla_{\theta}^\mathsf{T}\ell(\theta) = \frac{1}{N} \sum_{n}^N(\mu_n(1-\mu_n)\mathbf{x}_n)\mathbf{x}_n^\mathsf{T} + \mathbf{H}_0
+$$ {#eq-hessian}
+
+:::
+:::{.column width='50%'}
+#### ... to code
+. . . 
+
+```julia
+# Hessian:
+function ∇∇𝓁(θ,θ_0,H_0,X,y)
+    N = length(y)
+    μ = sigmoid(θ,X)
+    H = ∑(μ[n] * (1-μ[n]) * X[n,:] * X[n,:]' for n=1:N)
+    return H + H_0
+end
+```
+
+> Gotta love Julia ❤️💜💚
+
+. . .
+
+```{julia}
+#| echo: false
+# Import libraries.
+using Plots, PlotThemes, Statistics, LaplaceRedux
+theme(:wong)
+# Number of points to generate.
+xs, y = LaplaceRedux.Data.toy_data_linear(100)
+X = hcat(xs...); # bring into tabular format
+data = zip(xs,y);
+```
+
+Logistic Regression can be done in `Flux` ...
+
+```{julia}
+using Flux
+# Initializing weights as zeros only for illustrative purposes:
+nn = Chain(Dense(zeros(1,2),zeros(1))) 
+```
+
+. . .
+
+```{julia}
+#| echo: false
+λ = 0.5
+sqnorm(x) = sum(abs2, x)
+weight_regularization(λ=λ) = 1/2 * λ^2 * sum(sqnorm, Flux.params(nn))
+loss(x, y; λ=λ) = Flux.Losses.logitbinarycrossentropy(nn(x), y) + weight_regularization(λ)
+```
+
+
+```{julia}
+#| echo: false
+using Flux.Optimise: update!, ADAM
+opt = ADAM()
+epochs = 50
+
+for epoch = 1:epochs
+  for d in data
+    gs = gradient(Flux.params(nn)) do
+      l = loss(d...)
+    end
+    update!(opt, Flux.params(nn), gs)
+  end
+end
+```
+
+... but now we autograd! Leveraged in `LaplaceRedux`.
+
+```{julia}
+la = Laplace(nn, λ=λ)
+fit!(la, data)
+```
+
+```{julia}
+#| echo: false
+p_plugin = plot_contour(X',y,la;title="Plugin",type=:plugin);
+p_laplace = plot_contour(X',y,la;title="Laplace")
+# Plot the posterior distribution with a contour plot.
+plt = plot(p_plugin, p_laplace, layout=(1,2), size=(1000,400))
+savefig(plt, joinpath(www_path,"posterior_predictive_logit.png"))
+```
+
+![Posterior predictive distribution of Logistic regression in the 2D feature space using plugin estimator (left) and Laplace approximation (right). Image by author.](www/posterior_predictive_logit.png){#fig-pred-logit width="70%"}
+
+:::
+::::
+
+```{julia}
+#| echo: false
+Λ = [1e10, 0.5, 1e-10]
+plts = []
+nns = []
+for λ ∈ Λ
+  nn = Chain(Dense(zeros(1,2),zeros(1)))
+  # train
+  epochs = 50
+  for epoch = 1:epochs
+    for d in data
+      gs = gradient(Flux.params(nn)) do
+        l = loss(d...;λ=λ)
+      end
+      update!(opt, Flux.params(nn), gs)
+    end
+  end
+  # laplace
+  la = Laplace(nn, λ=λ)
+  fit!(la, data)  
+  # plot 
+  plt = plot_contour(X',y,la;title="σ₀²=$(1/λ)")
+  plts = vcat(plts..., plt)
+  nns = vcat(nns..., nn)
+end
+plt = plot(plts..., layout=(1,3), size=(1200,300))
+savefig(plt, joinpath(www_path,"posterior_predictive_prior_logit.png"))
+```
 
 ## ... to Bayesian Neural Networks
 
-# Considerations
+::::{.columns}::::
+:::{.column width='30%'}
+```{julia}
+#| echo: false
+# Number of points to generate:
+xs, y = LaplaceRedux.Data.toy_data_non_linear(200)
+X = hcat(xs...); # bring into tabular format
+data = zip(xs,y)
+```
+
+#### Code
+
+. . .
+
+An actual MLP ...
+
+```{julia}
+# Build MLP:
+n_hidden = 32
+D = size(X)[1]
+nn = Chain(
+    Dense(
+      randn(n_hidden,D)./10,
+      zeros(n_hidden), σ
+    ),
+    Dense(
+      randn(1,n_hidden)./10,
+      zeros(1)
+    )
+)  
+```
+
+```{julia}
+#| echo: false
+λ = 0.01
+sqnorm(x) = sum(abs2, x)
+weight_regularization(λ=λ) = 1/2 * λ^2 * sum(sqnorm, Flux.params(nn))
+loss(x, y; λ=λ) = Flux.Losses.logitbinarycrossentropy(nn(x), y) + weight_regularization(λ)
+```
+
+```{julia}
+#| echo: false
+# Training:
+epochs = 200
+for epoch = 1:epochs
+  for d in data
+    gs = gradient(Flux.params(nn)) do
+      l = loss(d...)
+    end
+    update!(opt, Flux.params(nn), gs)
+  end
+end
+```
+
+. . .
+
+... same API call:
+
+```{julia}
+la = Laplace(
+  nn, λ=λ, 
+  subset_of_weights=:last_layer
+)
+fit!(la, data)
+```
+
+```{julia}
+#| echo: false
+p_plugin = plot_contour(X',y,la;title="Plugin",type=:plugin)
+p_laplace = plot_contour(X',y,la;title="Laplace")
+# Plot the posterior distribution with a contour plot.
+plt = plot(p_plugin, p_laplace, layout=(1,2), size=(1000,400))
+savefig(plt, joinpath(www_path,"posterior_predictive_mlp.png"))
+```
+
+. . .
+
+:::
+:::{.column width='70%'}
+#### Results
+
+. . .
+
+![Posterior predictive distribution of MLP in the 2D feature space using plugin estimator (left) and Laplace approximation (right). Image by author.](www/posterior_predictive_mlp.png){#fig-pred-mlp width="100%"}
+:::
+::::
+
+## A quick note on the prior 
+
+```{julia}
+#| echo: false
+Λ = [1e10, 0.01, 1e-10]
+plts = []
+nns = []
+for λ ∈ Λ
+  nn = Chain(
+      Dense(randn(n_hidden,D)./10,zeros(n_hidden), σ),
+      Dense(randn(1,n_hidden)./10,zeros(1))
+  )  
+  # train
+  epochs = 200
+  for epoch = 1:epochs
+    for d in data
+      gs = gradient(Flux.params(nn)) do
+        l = loss(d...;λ=λ)
+      end
+      update!(opt, Flux.params(nn), gs)
+    end
+  end
+  # laplace
+  la = Laplace(nn, λ=λ)
+  fit!(la, data)  
+  # plot 
+  plt = plot_contour(X',y,la;title="σ₀²=$(1/λ)")
+  plts = vcat(plts..., plt)
+  nns = vcat(nns..., nn)
+end
+plt = plot(plts..., layout=(1,3), size=(1200,300))
+savefig(plt, joinpath(www_path,"posterior_predictive_prior.png"))
+```
+
+
+Low prior uncertainty $\rightarrow$ posterior dominated by prior. High prior uncertainty $\rightarrow$ posterior approaches MLE.
+
+#### Logistic Regression
+
+![Prior uncertainty increases from left to right (Logsitic Regression). Image by author.](www/posterior_predictive_prior_logit.png){#fig-pred-prior-logit width="75%"}
+
+#### MLP
+
+![Prior uncertainty increases from left to right (MLP). Image by author.](www/posterior_predictive_prior.png){#fig-pred-prior width="75%"}
+
 
 ## A crucial detail I skipped
 
-> We're really using linearized neural networks ...
+> We're really been using linearized neural networks ...
+
+. . .
 
 ::::{.columns}
 
 :::{.column width="50%"}
+#### MC fails
+
 :::{.incremental}
 - Could do Monte Carlo for true BNN predictive, but this performs poorly when using approximations for the Hessian.
 - Instead we rely on **linear expansion** of predictive around mode [@immer2020improving].
 - **Intuition**: Hessian approximation involves linearization, then so should the predictive. 
-- Finally:
-  - **Regression**: we're done.
-  - **Classification**: probit approximation.
 :::
+
+. . .
+
+> Applying the GNN approximation [...] turns the underlying probabilistic model locally from a BNN into a GLM [...] Because we have effectively done inference in the GGN-linearized model, we should instead predict using these modified features.
+> --- @immer2020improving
+
 :::
 
 :::{.column width="50%"}
-![](www/mc_fail.png)
+![MC samples from the Laplace posterior [@lawrence2001variational].](www/mc_fail.png){#fig-mc-fail}
 :::
 
 ::::
-
-
-
-
-
-## Other things to consider
-
-:::{.incremental}
-- Hessian approximations still quadratically large: use factorizations.
-- Hyperparameter tuning: what about that prior?
-- Scaling things up: subnetwork inference.
-- Early stopping: do we really end up at the mode?
-:::
 
 # Goals and Ambitions 🎯
 
@@ -335,7 +566,7 @@ Submit to [JuliaCon 2022](https://juliacon.org/2022/) and share the idea.
 
 . . .
 
-Package is pure-play at this point and needs a lot of work.
+Package is bare-bones at this point and needs a lot of work.
 
 :::{.incremental}
 - **Goal**: reach same level of maturity as Python [counterpart](https://aleximmer.github.io/Laplace/). (Beautiful work btw!)
@@ -350,6 +581,33 @@ Package is pure-play at this point and needs a lot of work.
 
 ::::
 
+## Specific Goals
+
+::::{.columns}
+
+:::{.column width="50%"}
+#### Easy
+
+- Still missing support for multi-class and regression. 
+- Due diligence: peer review and unit testing.
+
+#### Harder
+
+- Hessian approximations still quadratically large: use factorizations.
+- Hyperparameter tuning: what about that prior?
+- Scaling things up: subnetwork inference.
+- Early stopping: do we really end up at the mode?
+- ...
+
+:::
+
+:::{.column width="50%"}
+<iframe src="https://giphy.com/embed/dUHdTk3tvry9NETa67" width="480" height="400" frameBorder="0" class="giphy-embed" allowFullScreen></iframe><p><a href="https://giphy.com/gifs/theoffice-nbc-the-office-tv-dUHdTk3tvry9NETa67">via GIPHY</a></p>
+:::
+
+::::
+
+
 ## More Resources 📚
 
 ::::{.columns}
@@ -357,8 +615,8 @@ Package is pure-play at this point and needs a lot of work.
 :::{.column width="60%"}
 > Read on ...
 
-- Blog post (1) -- Bayesian Logisitic Regression: [[TDS](https://towardsdatascience.com/individual-recourse-for-black-box-models-5e9ed1e4b4cc), [homepage](https://www.paltmeyer.com/blog/posts/individual-recourse-for-black-box-models/)].
-- Blog post (2) -- Bayesian Deep Learning: [[TDS](https://towardsdatascience.com/a-new-tool-for-explainable-ai-65834e757c28), [homepage](https://www.paltmeyer.com/blog/posts/a-new-tool-for-explainable-ai/)].
+- Blog post (1) -- Bayesian Logisitic Regression: [[TDS](https://towardsdatascience.com/bayesian-logistic-regression-53df017ba90f), [homepage](https://www.paltmeyer.com/blog/posts/bayesian-logit/)].
+- Blog post (2) -- Bayesian Deep Learning: [[TDS](https://towardsdatascience.com/go-deep-but-also-go-bayesian-ab25efa6f7b), [homepage](https://www.paltmeyer.com/blog/posts/effortsless-bayesian-dl/)].
 - Detailed slide pack generously shared by [Professor José Miguel Hernández-Lobato](https://jmhl.org/): [[pdf](https://github.com/pat-alt/LaplaceRedux.jl/blob/main/dev/resources/juliacon22/slides_lobato.pdf)]
 - Package [docs](https://www.paltmeyer.com/CounterfactualExplanations.jl/dev/).
 
