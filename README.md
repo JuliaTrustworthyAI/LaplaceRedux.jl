@@ -1,8 +1,13 @@
+
 # LaplaceRedux
 
 [![Dev](https://img.shields.io/badge/docs-dev-blue.svg)](https://pat-alt.github.io/LaplaceRedux.jl/dev) [![Build Status](https://github.com/pat-alt/LaplaceRedux.jl/actions/workflows/CI.yml/badge.svg?branch=main)](https://github.com/pat-alt/LaplaceRedux.jl/actions/workflows/CI.yml?query=branch%3Amain) [![Coverage](https://codecov.io/gh/pat-alt/LaplaceRedux.jl/branch/main/graph/badge.svg)](https://codecov.io/gh/pat-alt/LaplaceRedux.jl)
 
 This is a small library that can be used for effortless Bayesian Deep Learning and Logisitic Regression trough Laplace Approximation. It is inspired by this Python [library](https://aleximmer.github.io/Laplace/index.html#setup) and its companion [paper](https://arxiv.org/abs/2106.14806).
+
+## News 📣
+
+**JuliaCon 2022**: This project will be presented at JuliaCon 2022 in July 2022. See here for the preliminary slide pack: \[[html](https://www.paltmeyer.com/LaplaceRedux.jl/dev/resources/juliacon22/presentation.html#/title-slide)\]
 
 ## Installation
 

@@ -1,3 +1,4 @@
+
 ``` @meta
 CurrentModule = LaplaceRedux
 ```
@@ -7,6 +8,10 @@ CurrentModule = LaplaceRedux
 Documentation for [LaplaceRedux.jl](https://github.com/pat-alt/LaplaceRedux.jl).
 
 This is a small library that can be used for effortless Bayesian Deep Learning and Logisitic Regression trough Laplace Approximation. It is inspired by this Python [library](https://aleximmer.github.io/Laplace/index.html#setup) and its companion [paper](https://arxiv.org/abs/2106.14806).
+
+## News 📣
+
+**JuliaCon 2022**: This project will be presented at JuliaCon 2022 in July 2022. See here for the preliminary slide pack: \[[html](https://www.paltmeyer.com/LaplaceRedux.jl/dev/resources/juliacon22/presentation.html#/title-slide)\]
 
 ## Installation
 
@@ -30,6 +35,6 @@ Calling `predict(nn,X)` for some features `X` will produce posterior predictions
 
 ![](https://raw.githubusercontent.com/pat-alt/LaplaceRedux.jl/main/docs/src/tutorials/www/posterior_predictive_mlp.png)
 
-## Limitations and Goals.
+## Limitations.
 
-This library currently offers native support only for models composed and trained in Flux. It is also limited to binary classification problems.
+This library currently offers native support only for models composed and trained in Flux. It is also limited to binary classification problems. Finally, it also requires additional testing.
