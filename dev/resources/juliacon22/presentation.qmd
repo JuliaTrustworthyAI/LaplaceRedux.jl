@@ -30,70 +30,17 @@ include("dev/utils.jl")
 www_path = "dev/resources/juliacon22/www"
 ```
 
-
 ## Overview
 
 :::{.incremental}
-- The case for Bayesian Deep Learning
+- The Case for Bayesian Deep Learning
 - Laplace Redux in Julia 📦
     - From Bayesian Logistic Regression ...
-    - ... to Bayesian Neural Networks
+    - ... to Bayesian Neural Networks.
 - Goals and Ambitions 🎯
 :::
 
-# The case for Bayesian Deep Learning
-
-## Towards Trustworthy AI {auto-animate=true auto-animate-easing="ease-in-out"}
-
-::: {.r-hstack}
-
-::: {data-id="box3" style="background: #389826; width: 150px; height: 150px; border-radius: 50%; display: grid; place-content: center; text-align: center;"}
-Ground Truthing
-:::
-
-::: {data-id="box2" style="background: #cb3c33; width: 150px; height: 150px; border-radius: 50%; display: grid; place-content: center; text-align: center;"}
-Probabilistic Models
-:::
-
-::: {data-id="box1" style="background: #9558b2; width: 150px; height: 150px; border-radius: 50%; display: grid; place-content: center; text-align: center;"}
-Counterfactual Reasoning
-:::
-:::
-
-## Towards Trustworthy AI {auto-animate=true auto-animate-easing="ease-in-out"}
-
-::: {.r-hstack style="text-align: center;"}
-::: {data-id="box3" style="background: #389826; width: 150px; height: 150px; border-radius: 50%; display: grid; place-content: center; text-align: center; opacity: 0.5;"}
-Ground Truthing
-:::
-
-::: {data-id="box2" style="background: #cb3c33; width: 150px; height: 150px; border-radius: 50%; display: grid; place-content: center; text-align: center;"}
-Probabilistic Models
-:::
-
-::: {data-id="box1" style="background: #9558b2; width: 150px; height: 150px; border-radius: 50%; display: grid; place-content: center; text-align: center; opacity: 0.5;"}
-Counterfactual Reasoning
-:::
-:::
-
-#### Objective
-
-Let $p(\mathcal{D}_n|\theta)$ denote the likelihood of observing our subsample $\mathcal{D}_n$ under some model parameterized by $\theta$. Then we typically want to maximize this likelihood with respect to the parameters [@murphy2022probabilistic]:
-
-$$\arg \max_{\theta} p(\mathcal{D}_n|\theta)$$
-
-:::{.incremental}
-- In an ideal world we can rely on parsimonious and interpretable models [@rudin2019stop].
-- In practice these models often have performance limitations.
-- Black-box models like deep neural networks are popular, but also the very opposite of parsimonious.
-:::
-
-. . .
-
-> [...] deep neural networks are typically very underspecified by the available data, and [...] parameters [therefore] correspond to a diverse variety of compelling explanations for the data. 
-> [@wilson2020case]
-
-What does @wilson2020case mean by this? What should we do?
+# The Case for Bayesian Deep Learning
 
 ## Bayesian Model Averaging
 
@@ -102,9 +49,13 @@ What does @wilson2020case mean by this? What should we do?
 
 :::{.incremental}
 - In Deep Learning we typically maximise highly non-convex functions full of local optima and saddle points.
-- Stochastic Gradient Descent (and modern extensions) help us to avoid these.
-- But the bottom line is that there may be many $\hat\theta_1, ..., \hat\theta_m$ that are slightly different, but yield similar performance.
+- There may be many $\hat\theta_1, ..., \hat\theta_m$ that are slightly different, but yield similar performance.
 :::
+
+. . .
+
+> [...] parameters correspond to a diverse variety of compelling explanations for the data. 
+> [@wilson2020case]
 
 . . .
 
@@ -157,7 +108,7 @@ Deep Ensembles [@lakshminarayanan2016simple]
 :::
 
 :::{.fragment .fade-left fragment-index=5}
-Laplace Redux [@immer2020improving,@daxberger2021laplace]
+Laplace Redux (@immer2020improving,@daxberger2021laplace)
 :::
 
 . . .
@@ -244,7 +195,7 @@ $$ {#eq-prior}
 
 . . .
 
-... wich corresponds to logit binary crossentropy loss with weight decay:
+... which corresponds to logit binary crossentropy loss with weight decay:
 
 $$
 \ell(\theta)= - \sum_{n}^N [y_n \log \mu_n + (1-y_n)\log (1-\mu_n)] + \\ \frac{1}{2} (\theta-\theta_0)^T\mathbf{H}_0(\theta-\theta_0)

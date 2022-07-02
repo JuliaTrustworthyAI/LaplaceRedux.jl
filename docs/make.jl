@@ -19,7 +19,8 @@ makedocs(;
             "Logistic Regression" => "tutorials/logit.md",
             "MLP" => "tutorials/mlp.md"
         ],
-        "Reference" => "reference.md"
+        "Reference" => "reference.md",
+        "Additional Resources" => "resources/resources.md"
     ],
 )
 

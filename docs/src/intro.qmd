@@ -1,5 +1,9 @@
 This is a small library that can be used for effortless Bayesian Deep Learning and Logisitic Regression trough Laplace Approximation. It is inspired by this Python [library](https://aleximmer.github.io/Laplace/index.html#setup) and its companion [paper](https://arxiv.org/abs/2106.14806).
 
+## News 📣
+
+**JuliaCon 2022**: This project will be presented at JuliaCon 2022 in July 2022. See here for the preliminary slide pack: [html](https://www.paltmeyer.com/LaplaceRedux.jl/dev/resources/juliacon22/presentation/)
+
 ## Installation
 
 This package is not registered, but can be installed from Github as follows:
