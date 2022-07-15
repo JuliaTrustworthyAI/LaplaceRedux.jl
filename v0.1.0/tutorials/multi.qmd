@@ -1,0 +1,53 @@
+---
+format: 
+  commonmark:
+    variant: -raw_html
+    wrap: none
+    self-contained: true
+crossref:
+  fig-prefix: Figure
+  tbl-prefix: Table
+bibliography: https://raw.githubusercontent.com/pat-alt/bib/main/bib.bib
+output: asis
+execute: 
+  echo: true
+  eval: false
+jupyter: julia-1.6
+---
+
+```@meta
+CurrentModule = LaplaceRedux
+```
+
+# Multi-class problem
+
+```{julia}
+# Import libraries.
+using Flux, Plots, Random, PlotThemes, Statistics, LaplaceRedux
+theme(:lime)
+```
+
+```{julia}
+x, y = toy_data_multi()
+X = hcat(x...)
+y_train = Flux.onehotbatch(y, unique(y))
+y_train = Flux.unstack(y_train',1)
+plt = plot()
+plot_data!(plt,X',y)
+```
+
+```{julia}
+ps = Flux.params(nn)
+data = zip(x,y_train)
+n_hidden = 32
+D = size(X)[1]
+nn = Chain(
+    Dense(D, n_hidden, σ),
+    Dense(n_hidden, 1)
+)  
+λ = 0.01
+sqnorm(x) = sum(abs2, x)
+weight_regularization(λ=λ) = 1/2 * λ^2 * sum(sqnorm, Flux.params(nn))
+loss(x, y) = Flux.Losses.logitbinarycrossentropy(nn(x), y) + weight_regularization();
+```
+
