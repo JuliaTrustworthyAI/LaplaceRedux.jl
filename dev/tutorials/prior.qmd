@@ -1,0 +1,83 @@
+---
+format: 
+  commonmark:
+    variant: -raw_html
+    wrap: none
+    self-contained: true
+crossref:
+  fig-prefix: Figure
+  tbl-prefix: Table
+bibliography: https://raw.githubusercontent.com/pat-alt/bib/main/bib.bib
+output: asis
+execute: 
+  echo: true
+  eval: false
+---
+
+```@meta
+CurrentModule = LaplaceRedux
+```
+
+```{julia}
+#| echo: false
+using Pkg; Pkg.activate("docs")
+# Import libraries
+using Flux, Plots, Random, PlotThemes, Statistics, LaplaceRedux
+theme(:lime)
+using Logging
+disable_logging(Logging.Info)
+include("dev/utils.jl") # some plotting functions
+www_path = "docs/src/tutorials/www"
+```
+
+## A quick note on the prior 
+
+Low prior uncertainty $\rightarrow$ posterior dominated by prior. High prior uncertainty $\rightarrow$ posterior approaches MLE.
+
+```{julia}
+# Number of points to generate:
+xs, y = LaplaceRedux.Data.toy_data_non_linear(200)
+X = hcat(xs...); # bring into tabular format
+data = zip(xs,y)
+```
+
+
+```{julia}
+#| echo: false
+n_hidden = 32
+D = size(X)[1]
+Λ = [1e10, 0.01, 1e-10]
+plts = []
+nns = []
+opt=Flux.Adam()
+for λ ∈ Λ
+    nn = Chain(
+        Dense(randn(n_hidden,D)./10,zeros(n_hidden), σ),
+        Dense(randn(1,n_hidden)./10,zeros(1))
+    )  
+    sqnorm(x) = sum(abs2, x)
+    weight_regularization(λ=λ) = 1/2 * λ^2 * sum(sqnorm, Flux.params(nn))
+    loss(x, y; λ=λ) = Flux.Losses.logitbinarycrossentropy(nn(x), y) + weight_regularization(λ)
+    # train
+    epochs = 200
+    for epoch = 1:epochs
+        for d in data
+        gs = gradient(Flux.params(nn)) do
+            l = loss(d...;λ=λ)
+        end
+        Flux.update!(opt, Flux.params(nn), gs)
+        end
+    end
+    # laplace
+    la = Laplace(nn, λ=λ)
+    fit!(la, data)  
+    # plot 
+    plt = plot_contour(X',y,la;title="σ₀²=$(1/λ)")
+    plts = vcat(plts..., plt)
+    nns = vcat(nns..., nn)
+end
+plt = plot(plts..., layout=(1,3), size=(1200,300))
+savefig(plt, joinpath(www_path,"posterior_predictive_prior.png"))
+```
+
+![](www/posterior_predictive_prior.png)
