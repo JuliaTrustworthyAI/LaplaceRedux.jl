@@ -12,7 +12,7 @@ using Flux
 
     # Multi-layer:
     nn = Chain(Dense(2,2,σ),Dense(2,1))
-    la = Laplace(nn)
+    la = Laplace(nn; subset_of_weights=:last_layer)
     @test la.n_params == 3
     la = Laplace(nn; subset_of_weights=:all)
     @test la.n_params == 9
@@ -22,7 +22,7 @@ end
 @testset "Parameters" begin
     
     nn = Chain(Dense(2,2,σ),Dense(2,1))
-    la = Laplace(nn)
+    la = Laplace(nn; subset_of_weights=:last_layer)
     @test LaplaceRedux.get_params(la) == collect(Flux.params(nn))[(end-1):end]
 
     la = Laplace(nn; subset_of_weights=:all)

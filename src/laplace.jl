@@ -12,6 +12,17 @@ mutable struct Laplace
     n_params::Union{Int,Nothing}
 end
 
+using Parameters
+
+@with_kw struct LaplaceParams 
+    loss_type::Symbol=:logitbinarycrossentropy
+    subset_of_weights::Symbol=:all
+    hessian_structure::Symbol=:full
+    backend::Symbol=:EmpiricalFisher
+    λ::Real=1
+    H₀::Union{Nothing, AbstractMatrix}=nothing
+end
+
 """
     Laplace(model::Any; loss_type=:logitbinarycrossentropy, subset_of_weights=:last_layer, hessian_structure=:full,backend=:EmpiricalFisher,λ=1)    
 
@@ -26,17 +37,35 @@ la = Laplace(nn)
 ```
 
 """
-function Laplace(model::Any; loss_type=:logitbinarycrossentropy, subset_of_weights=:last_layer, hessian_structure=:full,backend=:EmpiricalFisher,λ=1) 
-    # Initialize:
-    H₀ = UniformScaling(λ)
+function Laplace(model::Any;kwargs...) 
+
+    # Load hyperparameters:
+    args = LaplaceParams(;kwargs...)
+
+    # Prior:
+    if isnothing(args.H₀)
+        H₀ = UniformScaling(args.λ)
+    else
+        H₀ = args.H₀
+    end
+
+    # Model: 
     nn = model
-    loss(x, y) = getfield(Flux.Losses,loss_type)(nn(x), y)
+    loss(x, y) = getfield(Flux.Losses,args.loss_type)(nn(x), y)
+
     # Instantiate:
-    la = Laplace(model, loss, subset_of_weights, hessian_structure, nothing, H₀, nothing, nothing, nothing)
+    la = Laplace(model, loss, args.subset_of_weights, args.hessian_structure, nothing, H₀, nothing, nothing, nothing)
     params = get_params(la)
-    la.curvature = getfield(Curvature,backend)(nn,la.loss,params) # instantiate chosen curvature interface
+    la.curvature = getfield(Curvature,args.backend)(nn,la.loss,params) # instantiate chosen curvature interface
     la.n_params = length(reduce(vcat, [vec(θ) for θ ∈ params]))
+
+    # Sanity:
+    if isa(la.H₀, AbstractMatrix)
+        @assert all(size(la.H₀) .== la.n_params) "Dimensions of prior Hessian $(size(la.H₀)) do not align with number of parameters ($(Fala.n_params))"
+    end
+
     return la
+
 end
 
 """
@@ -87,7 +116,7 @@ Fits the Laplace approximation for a data set.
 
 ```julia-repl
 using Flux, LaplaceRedux
-x, y = toy_data_linear()
+x, y = LaplaceRedux.Data.toy_data_linear()
 data = zip(x,y)
 nn = Chain(Dense(2,1))
 la = Laplace(nn)
@@ -173,3 +202,16 @@ function plugin(la::Laplace, X::AbstractArray)
     return p
 end
 
+using Flux.Optimise: ADAM
+"""
+    optimize_prior_precision(la::Laplace; n_steps=100, lr=1e-1, init_prior_prec=1.)
+    
+Optimize the prior precision post-hoc through empirical Bayes (marginal log-likelihood maximization).
+"""
+function optimize_prior_precision(la::Laplace; n_steps=100, lr=1e-1, init_prior_prec=1.)
+    la.H₀ = Diagonal(init_prior_prec)
+    opt = ADAM(lr)
+    for i in 1:n_steps
+
+    end
+end
