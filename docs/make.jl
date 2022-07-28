@@ -17,7 +17,8 @@ makedocs(;
         "Home" => "index.md",
         "Tutorials" => [
             "Logistic Regression" => "tutorials/logit.md",
-            "MLP" => "tutorials/mlp.md"
+            "MLP" => "tutorials/mlp.md",
+            "A note on the prior ..." => "tutorials/prior.md",
         ],
         "Reference" => "reference.md",
         "Additional Resources" => "resources/resources.md"
