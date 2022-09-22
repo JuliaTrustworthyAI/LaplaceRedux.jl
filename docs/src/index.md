@@ -11,7 +11,7 @@ Documentation for [LaplaceRedux.jl](https://github.com/pat-alt/LaplaceRedux.jl).
 
 ## News 📣
 
-**JuliaCon 2022**: This project will be presented at JuliaCon 2022 in July 2022. See here for the preliminary slide pack: \[[html](https://www.paltmeyer.com/LaplaceRedux.jl/dev/resources/juliacon22/presentation.html#/title-slide)\]
+**JuliaCon 2022**: This project was presented at JuliaCon 2022 in July 2022. See [here](https://pretalx.com/juliacon-2022/talk/Z7MXFS/) for details.
 
 ## Installation
 
