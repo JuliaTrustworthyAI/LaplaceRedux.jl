@@ -1,0 +1,40 @@
+---
+format: latex
+bibliography: ref.bib
+execute:
+    freeze: true
+    eval: false
+    echo: false
+jupyter: julia-1.7
+---
+
+```{julia}
+using Pkg; Pkg.activate("paper")
+using CounterfactualExplanations, Plots, PlotThemes, Flux
+theme(:wong)
+default(size=(500, 375))
+www_path = "paper/www"
+```
+
+# Background {#sec-intro}
+
+Over the past decade Deep Learning (DL) has arguably been one of the dominating subdisciplines of Artificial Intelligence. Despite the tremendous success of deep neural networks, practitioners and researchers have also pointed to a vast number of pitfalls that have so far inhibited the use of DL in safety-critical applications. Among other things these pitfalls include a lack adversarial robustness [@goodfellow2014explaining] and an inherent opaqueness of deep neural networks, often described as the Black-Box problem. The number of parameters relative to the size of the available data is generally huge: 
+
+> [...] deep neural networks are typically very underspecified by the available data, and [...] parameters [therefore] correspond to a diverse variety of compelling explanations for the data. 
+> [@wilson2020case]
+
+A scenario like this very much calls for treating predictions from deep learning models probabilistically [@wilson2020case]. It is therefore not surprising that interest in Bayesian Deep Learning has grown in recent years as researchers have tackled the problem from a wide range of angles including: MCMC (see [`Turing`](https://turing.ml/dev/tutorials/03-bayesian-neural-network/)), Variational Inference [@blundell2015weight], Monte Carlo Dropout [@gal2016dropout] and Deep Ensembles [@lakshminarayanan2016simple]. Laplace Redux (@immer2020improving,@daxberger2021laplace) is one of the most recent and promising approaches to Bayesian DL. 
+
+# Laplace Approximation for Deep Learning
+
+Laplace Approximation (LA) actually dates back to the 18th century, but it has long been neglected by the deep learning community, because early attempts at using it in this context failed [@lawrence2001variational]. 
+
+
+
+Then LA relies on the fact that the second-order Taylor expansion of the weight posteriour $p(\theta|\mathcal{D})$ amounts to a multivariate Gaussian centered around the maximum a posteriori (MAP) estimate $\hat{\theta}=\arg\max_{\theta}p(\theta|\mathcal{D})$ with covariance equal to the inverse Hessian of our loss function evaluated at the mode $\hat{\Sigma}=(\mathbf{H}(\mathbf{\hat{\theta}}))^{-1}$. 
+
+# Laplace Redux for Deep Learning
+
+# Conclusions
+
+# Acknowledgements

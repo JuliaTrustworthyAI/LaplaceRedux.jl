@@ -1,0 +1,91 @@
+This is BibTeX, Version 0.99d (TeX Live 2022)
+Capacity: max_strings=200000, hash_size=200000, hash_prime=170003
+The top-level auxiliary file: paper.aux
+The style file: juliacon.bst
+Database file #1: ref.bib
+Warning--I didn't find a database entry for "o2016weapons"
+Warning--I didn't find a database entry for "upadhyay2021towards"
+Warning--I didn't find a database entry for "wilson2019case.pdf"
+Warning--I didn't find a database entry for "adult1996"
+Warning--I didn't find a database entry for "boston1993"
+Warning--I didn't find a database entry for "compas2016"
+Warning--I didn't find a database entry for "germancredit1994"
+Warning--empty note in antoran2020getting
+Warning--empty journal in arrieta2020explainable
+Warning--empty year in arrieta2020explainable
+Warning--empty journal in borch2022machine
+Warning--empty year in borch2022machine
+Warning--empty year in buolamwini2018gender
+Warning--empty note in fan2020interpretability
+Warning--empty note in goodfellow2014explaining
+Warning--empty journal in innes2018flux
+Warning--empty year in innes2018flux
+Warning--empty note in joshi2019realistic
+Warning--empty note in karimi2020survey
+Warning--empty year in karimi2021algorithmic
+Warning--empty note in karimi2020algorithmic
+Warning--empty year in kaur2020interpreting
+Warning--empty note in lakshminarayanan2016simple
+Warning--empty journal in lecun1998mnist
+Warning--empty year in lecun1998mnist
+Warning--empty journal in miller2019explanation
+Warning--empty year in miller2019explanation
+Warning--empty year in molnar2020interpretable
+Warning--empty year in mothilal2020explaining
+Warning--empty note in pawelczyk2021carla
+Warning--empty year in poyiadzi2020face
+Warning--empty journal in rudin2019stop
+Warning--empty year in rudin2019stop
+Warning--empty year in schut2021generating
+Warning--empty journal in slack2021counterfactual
+Warning--empty year in slack2021counterfactual
+Warning--empty year in slack2020fooling
+Warning--empty journal in sturm2014simple
+Warning--empty year in sturm2014simple
+Warning--empty year in ustun2019actionable
+Warning--empty year in varshney2022trustworthy
+Warning--empty note in verma2020counterfactual
+Warning--empty journal in wachter2017counterfactual
+Warning--empty year in wachter2017counterfactual
+You've used 28 entries,
+            2314 wiz_defined-function locations,
+            656 strings with 9552 characters,
+and the built_in function-call counts, 10374 in all, are:
+= -- 990
+> -- 551
+< -- 9
++ -- 221
+- -- 190
+* -- 764
+:= -- 1685
+add.period$ -- 85
+call.type$ -- 28
+change.case$ -- 175
+chr.to.int$ -- 0
+cite$ -- 65
+duplicate$ -- 392
+empty$ -- 771
+format.name$ -- 190
+if$ -- 2169
+int.to.chr$ -- 0
+int.to.str$ -- 28
+missing$ -- 21
+newline$ -- 142
+num.names$ -- 56
+pop$ -- 267
+preamble$ -- 1
+purify$ -- 149
+quote$ -- 0
+skip$ -- 289
+stack$ -- 0
+substring$ -- 502
+swap$ -- 97
+text.length$ -- 9
+text.prefix$ -- 0
+top$ -- 0
+type$ -- 108
+warning$ -- 37
+while$ -- 91
+width$ -- 30
+write$ -- 262
+(There were 44 warnings)
