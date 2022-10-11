@@ -1,8 +1,6 @@
 ---
 format: latex
-bibliography: ref.bib
 execute:
-    freeze: true
     eval: false
     echo: false
 jupyter: julia-1.7
@@ -18,14 +16,14 @@ www_path = "paper/www"
 
 # Background {#sec-intro}
 
-Over the past decade Deep Learning (DL) has arguably been one of the dominating subdisciplines of Artificial Intelligence. Despite the tremendous success of deep neural networks, practitioners and researchers have also pointed to a vast number of pitfalls that have so far inhibited the use of DL in safety-critical applications. Among other things these pitfalls include a lack adversarial robustness [@goodfellow2014explaining] and an inherent opaqueness of deep neural networks, often described as the Black-Box problem. The number of parameters relative to the size of the available data is generally huge: 
+Over the past decade Deep Learning (DL) has arguably been one of the dominating subdisciplines of Artificial Intelligence. Despite the tremendous success of deep neural networks, practitioners and researchers have also pointed to a vast number of pitfalls that have so far inhibited the use of DL in safety-critical applications. Among other things these pitfalls include a lack adversarial robustness \cite{goodfellow2014explaining} and an inherent opaqueness of deep neural networks, often described as the Black-Box problem. The number of parameters relative to the size of the available data is generally huge: 
 
 > [...] deep neural networks are typically very underspecified by the available data, and [...] parameters [therefore] correspond to a diverse variety of compelling explanations for the data. 
-> [@wilson2020case]
+> \cite{wilson2020case}
 
-A scenario like this very much calls for treating predictions from deep learning models probabilistically [@wilson2020case]. It is therefore not surprising that interest in Bayesian Deep Learning has grown in recent years as researchers have tackled the problem from a wide range of angles including: MCMC (see [`Turing`](https://turing.ml/dev/tutorials/03-bayesian-neural-network/)), Variational Inference [@blundell2015weight], Monte Carlo Dropout [@gal2016dropout] and Deep Ensembles [@lakshminarayanan2016simple]. Laplace Redux (@immer2020improving,@daxberger2021laplace) is one of the most recent and promising approaches to Bayesian neural networks (BNN). 
+A scenario like this very much calls for treating predictions from deep learning models probabilistically \cite{wilson2020case}. It is therefore not surprising that interest in Bayesian Deep Learning has grown in recent years as researchers have tackled the problem from a wide range of angles including: MCMC (see [`Turing`](https://turing.ml/dev/tutorials/03-bayesian-neural-network/)), Variational Inference \cite{blundell2015weight}, Monte Carlo Dropout \cite{gal2016dropout} and Deep Ensembles \cite{lakshminarayanan2016simple}. Laplace Redux (\cite{immer2020improving},\cite{daxberger2021laplace}) is one of the most recent and promising approaches to Bayesian neural networks (BNN). 
 
-# Laplace Approximation for Deep Learning
+# Laplace Approximation for Deep Learning {#sec-body}
 
 Let $\mathcal{D}=\{x,y\}_{n=1}^N$ denote our feature-label pairs and let $f(x;\theta)=y$ denote some deep neural network specified by its parameters $\theta$. We are interested in eventually estimating the posterior predictive distribution given by the following Bayesian model average (BMA):
 
@@ -35,16 +33,18 @@ $$ {#eq-bma}
 
 To do so we first need to compute the weight posterior $p(\theta|\mathcal{D})$. Laplace Approximation (LA) relies on the fact that the second-order Taylor expansion of this posteriour amounts to a multivariate Gaussian centered around the maximum a posteriori (MAP) estimate $\hat{\theta}=\arg\max_{\theta}p(\theta|\mathcal{D})$ with covariance equal to the inverse Hessian of our loss function evaluated at the mode $\hat{\Sigma}=(\mathbf{H}(\mathbf{\hat{\theta}}))^{-1}$. In other words, we can train our deep neural network in the usual way by minimizing the negative log likelihood $\ell(\mathbf{w})=-\log p(y|x,\mathcal{D})$. To obtain Gaussian LA weight posterior we then only need to compute the Hessian evaluated at the obtained MAP estimate. 
 
-Laplace Approximation itself actually dates back to the 18th century, but despite its simplicity it has long been neglected by the deep learning community. One reason for this may be that for large neural networks with many parameters the exact Hessian computation is prohibitive. On can rely on linearised approximations of the Hessian, but those still scale quandratically in the number of parameters. Fortunately, recent work has shown that block-diagonal factorizations can be successfully applied in this context [@daxberger2021laplace]. 
+Laplace Approximation itself actually dates back to the 18th century, but despite its simplicity it has long been neglected by the deep learning community. One reason for this may be that for large neural networks with many parameters the exact Hessian computation is prohibitive. On can rely on linearised approximations of the Hessian, but those still scale quandratically in the number of parameters. Fortunately, recent work has shown that block-diagonal factorizations can be successfully applied in this context \cite{daxberger2021laplace}. 
 
-Another reason for why LA has been neglected in the past, is that early attempts at using LA for deep learning actually failed: simply sampling from the LA weight posterior to compute the exact BNN posterior predictive distribution in @eq-bma does not work when using approximations for the Hessian [@lawrence2001variational]. Instead we rely on a linear expansion of predictive around mode as demonstrated by Immer et al. (2020) [@immer2020improving]. Formally, we use a locally linearized version of our BNN:
+Another reason for why LA has been neglected in the past, is that early attempts at using LA for deep learning actually failed: simply sampling from the LA weight posterior to compute the exact BNN posterior predictive distribution in @eq-bma does not work when using approximations for the Hessian \cite{lawrence2001variational}. Instead we rely on a linear expansion of predictive around mode as demonstrated by Immer et al. (2020) \cite{immer2020improving}. Formally, we use a locally linearized version of our BNN:
 
-$$
+<!-- $$
 f^{\hat{\theta}}_{\text{lin}}(x;\theta)= f(x;\hat{\theta}) + \mathcal{J}_{\theta}
-$$ {#eq-glm}
-
+$$ {#eq-glm} -->
  
 
-# Conclusions
+# Conclusions {#sec-con}
 
-# Acknowledgements
+Bleh
+
+
+# Acknowledgements {#sec-ack}

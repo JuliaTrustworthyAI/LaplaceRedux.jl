@@ -1,172 +1,46 @@
-\begin{thebibliography}{10}
+\begin{thebibliography}{1}
 
-\bibitem{antoran2020getting}
-Javier Antorán, Umang Bhatt, Tameem Adel, Adrian Weller, and José~Miguel
-  Hernández-Lobato.
-Getting a clue: {{A}} method for explaining uncertainty estimates.
-arxiv:\href{http://arxiv.org/abs/2006.06848}{2006.06848}.
-
-\bibitem{arrieta2020explainable}
-Alejandro~Barredo Arrieta, Natalia Diaz-Rodriguez, Javier Del~Ser, Adrien
-  Bennetot, Siham Tabik, Alberto Barbado, Salvador Garcia, Sergio Gil-Lopez,
-  Daniel Molina, Richard Benjamins, et~al.
-Explainable {{Artificial Intelligence}} ({{XAI}}): {{Concepts}}, taxonomies,
-  opportunities and challenges toward responsible {{AI}}.
-58:82--115.
-
-\bibitem{borch2022machine}
-Christian Borch.
-Machine learning, knowledge risk, and principal-agent problems in automated
-  trading.
-page 101852.
-
-\bibitem{buolamwini2018gender}
-Joy Buolamwini and Timnit Gebru.
-Gender shades: {{Intersectional}} accuracy disparities in commercial gender
-  classification.
-In {\em Conference on Fairness, Accountability and Transparency}, pages 77--91.
+\bibitem{blundell2015weight}
+Charles Blundell, Julien Cornebise, Koray Kavukcuoglu, and Daan Wierstra.
+Weight uncertainty in neural network.
+In {\em International Conference on Machine Learning}, pages 1613--1622.
   {PMLR}.
 
-\bibitem{fan2020interpretability}
-Fenglei Fan, Jinjun Xiong, and Ge~Wang.
-On interpretability of artificial neural networks.
-arxiv:\href{http://arxiv.org/abs/2001.02522}{2001.02522}.
+\bibitem{daxberger2021laplace}
+Erik Daxberger, Agustinus Kristiadi, Alexander Immer, Runa Eschenhagen,
+  Matthias Bauer, and Philipp Hennig.
+Laplace {{Redux-Effortless Bayesian Deep Learning}}.
+34.
+
+\bibitem{gal2016dropout}
+Yarin Gal and Zoubin Ghahramani.
+Dropout as a bayesian approximation: {{Representing}} model uncertainty in deep
+  learning.
+In {\em International Conference on Machine Learning}, pages 1050--1059.
+  {PMLR}.
 
 \bibitem{goodfellow2014explaining}
 Ian~J Goodfellow, Jonathon Shlens, and Christian Szegedy.
 Explaining and harnessing adversarial examples.
 arxiv:\href{http://arxiv.org/abs/1412.6572}{1412.6572}.
 
-\bibitem{innes2018flux}
-Mike Innes.
-Flux: {{Elegant}} machine learning with {{Julia}}.
-3(25):602.
-
-\bibitem{joshi2019realistic}
-Shalmali Joshi, Oluwasanmi Koyejo, Warut Vijitbenjaronk, Been Kim, and Joydeep
-  Ghosh.
-Towards realistic individual recourse and actionable explanations in black-box
-  decision making systems.
-arxiv:\href{http://arxiv.org/abs/1907.09615}{1907.09615}.
-
-\bibitem{karimi2020survey}
-Amir-Hossein Karimi, Gilles Barthe, Bernhard Schölkopf, and Isabel Valera.
-A survey of algorithmic recourse: Definitions, formulations, solutions, and
-  prospects.
-arxiv:\href{http://arxiv.org/abs/2010.04050}{2010.04050}.
-
-\bibitem{karimi2021algorithmic}
-Amir-Hossein Karimi, Bernhard Schölkopf, and Isabel Valera.
-Algorithmic recourse: From counterfactual explanations to interventions.
-In {\em Proceedings of the 2021 {{ACM Conference}} on {{Fairness}},
-  {{Accountability}}, and {{Transparency}}}, pages 353--362.
-
-\bibitem{karimi2020algorithmic}
-Amir-Hossein Karimi, Julius Von~Kügelgen, Bernhard Schölkopf, and Isabel
-  Valera.
-Algorithmic recourse under imperfect causal knowledge: A probabilistic
-  approach.
-arxiv:\href{http://arxiv.org/abs/2006.06831}{2006.06831}.
-
-\bibitem{kaur2020interpreting}
-Harmanpreet Kaur, Harsha Nori, Samuel Jenkins, Rich Caruana, Hanna Wallach, and
-  Jennifer Wortman~Vaughan.
-Interpreting interpretability: Understanding data scientists' use of
-  interpretability tools for machine learning.
-In {\em Proceedings of the 2020 {{CHI}} Conference on Human Factors in
-  Computing Systems}, pages 1--14.
+\bibitem{immer2020improving}
+Alexander Immer, Maciej Korzepa, and Matthias Bauer.
+Improving predictions of bayesian neural networks via local linearization.
+arxiv:\href{http://arxiv.org/abs/2008.08400}{2008.08400}.
 
 \bibitem{lakshminarayanan2016simple}
 Balaji Lakshminarayanan, Alexander Pritzel, and Charles Blundell.
 Simple and scalable predictive uncertainty estimation using deep ensembles.
 arxiv:\href{http://arxiv.org/abs/1612.01474}{1612.01474}.
 
-\bibitem{lecun1998mnist}
-Yann LeCun.
-The {{MNIST}} database of handwritten digits.
+\bibitem{lawrence2001variational}
+Neil~David Lawrence.
+Variational inference in probabilistic models.
 
-\bibitem{miller2019explanation}
-Tim Miller.
-Explanation in artificial intelligence: {{Insights}} from the social sciences.
-267:1--38.
-
-\bibitem{molnar2020interpretable}
-Christoph Molnar.
-{\em Interpretable Machine Learning}.
-{Lulu. com}.
-
-\bibitem{mothilal2020explaining}
-Ramaravind~K Mothilal, Amit Sharma, and Chenhao Tan.
-Explaining machine learning classifiers through diverse counterfactual
-  explanations.
-In {\em Proceedings of the 2020 {{Conference}} on {{Fairness}},
-  {{Accountability}}, and {{Transparency}}}, pages 607--617.
-
-\bibitem{pawelczyk2021carla}
-Martin Pawelczyk, Sascha Bielawski, Johannes van~den Heuvel, Tobias Richter,
-  and Gjergji Kasneci.
-Carla: A python library to benchmark algorithmic recourse and counterfactual
-  explanation algorithms.
-arxiv:\href{http://arxiv.org/abs/2108.00783}{2108.00783}.
-
-\bibitem{poyiadzi2020face}
-Rafael Poyiadzi, Kacper Sokol, Raul Santos-Rodriguez, Tijl De~Bie, and Peter
-  Flach.
-{{FACE}}: {{Feasible}} and actionable counterfactual explanations.
-In {\em Proceedings of the {{AAAI}}/{{ACM Conference}} on {{AI}}, {{Ethics}},
-  and {{Society}}}, pages 344--350.
-
-\bibitem{rudin2019stop}
-Cynthia Rudin.
-Stop explaining black box machine learning models for high stakes decisions and
-  use interpretable models instead.
-1(5):206--215.
-
-\bibitem{schut2021generating}
-Lisa Schut, Oscar Key, Rory Mc~Grath, Luca Costabello, Bogdan Sacaleanu, Yarin
-  Gal, et~al.
-Generating {{Interpretable Counterfactual Explanations By Implicit
-  Minimisation}} of {{Epistemic}} and {{Aleatoric Uncertainties}}.
-In {\em International {{Conference}} on {{Artificial Intelligence}} and
-  {{Statistics}}}, pages 1756--1764. {PMLR}.
-
-\bibitem{slack2021counterfactual}
-Dylan Slack, Anna Hilgard, Himabindu Lakkaraju, and Sameer Singh.
-Counterfactual explanations can be manipulated.
-34.
-
-\bibitem{slack2020fooling}
-Dylan Slack, Sophie Hilgard, Emily Jia, Sameer Singh, and Himabindu Lakkaraju.
-Fooling lime and shap: {{Adversarial}} attacks on post hoc explanation methods.
-In {\em Proceedings of the {{AAAI}}/{{ACM Conference}} on {{AI}}, {{Ethics}},
-  and {{Society}}}, pages 180--186.
-
-\bibitem{sturm2014simple}
-Bob~L Sturm.
-A simple method to determine if a music information retrieval system is a
-  “horse”.
-16(6):1636--1644.
-
-\bibitem{ustun2019actionable}
-Berk Ustun, Alexander Spangher, and Yang Liu.
-Actionable recourse in linear classification.
-In {\em Proceedings of the {{Conference}} on {{Fairness}}, {{Accountability}},
-  and {{Transparency}}}, pages 10--19.
-
-\bibitem{varshney2022trustworthy}
-Kush~R. Varshney.
-{\em Trustworthy {{Machine Learning}}}.
-{Independently Published}.
-
-\bibitem{verma2020counterfactual}
-Sahil Verma, John Dickerson, and Keegan Hines.
-Counterfactual explanations for machine learning: {{A}} review.
-arxiv:\href{http://arxiv.org/abs/2010.10596}{2010.10596}.
-
-\bibitem{wachter2017counterfactual}
-Sandra Wachter, Brent Mittelstadt, and Chris Russell.
-Counterfactual explanations without opening the black box: {{Automated}}
-  decisions and the {{GDPR}}.
-31:841.
+\bibitem{wilson2020case}
+Andrew~Gordon Wilson.
+The case for {{Bayesian}} deep learning.
+arxiv:\href{http://arxiv.org/abs/2001.10995}{2001.10995}.
 
 \end{thebibliography}
