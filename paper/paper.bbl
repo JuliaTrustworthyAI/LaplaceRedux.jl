@@ -38,6 +38,12 @@ arxiv:\href{http://arxiv.org/abs/1612.01474}{1612.01474}.
 Neil~David Lawrence.
 Variational inference in probabilistic models.
 
+\bibitem{martens2015optimizing}
+James Martens and Roger Grosse.
+Optimizing neural networks with kronecker-factored approximate curvature.
+In {\em International conference on machine learning}, pages 2408--2417. PMLR,
+  2015.
+
 \bibitem{wilson2020case}
 Andrew~Gordon Wilson.
 The case for {{Bayesian}} deep learning.
