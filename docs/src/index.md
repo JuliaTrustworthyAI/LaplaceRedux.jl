@@ -15,7 +15,14 @@ Documentation for [LaplaceRedux.jl](https://github.com/pat-alt/LaplaceRedux.jl).
 
 ## Installation
 
-This package is not registered, but can be installed from Github as follows:
+This first minor version of the package has been registered and can be installed as follows:
+
+``` julia
+using Pkg
+Pkg.add("LaplaceRedux.jl")
+```
+
+The development version can be installed like so:
 
 ``` julia
 using Pkg

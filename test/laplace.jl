@@ -78,3 +78,53 @@ end
     end
 
 end
+
+
+@testset "Complete Workflow" begin
+    
+    using Flux
+    using Flux.Optimise: update!, Adam
+    using Statistics
+
+    # Number of points to generate.
+    xs, ys = LaplaceRedux.Data.toy_data_non_linear(200)
+    X = hcat(xs...) # bring into tabular format
+    data = zip(xs,ys)
+
+    # Neural network:
+    n_hidden = 32
+    D = size(X)[1]
+    nn = Chain(
+        Dense(D, n_hidden, σ),
+        Dense(n_hidden, 1)
+    )  
+    λ = 0.01
+    sqnorm(x) = sum(abs2, x)
+    weight_regularization(λ=λ) = 1/2 * λ^2 * sum(sqnorm, Flux.params(nn))
+    loss(x, y) = Flux.Losses.logitbinarycrossentropy(nn(x), y) + weight_regularization()
+
+    opt = Adam()
+    epochs = 200
+    avg_loss(data) = mean(map(d -> loss(d[1],d[2]), data))
+    show_every = epochs/10
+
+    for epoch = 1:epochs
+        for d in data
+            gs = gradient(Flux.params(nn)) do
+            l = loss(d...)
+            end
+            update!(opt, Flux.params(nn), gs)
+        end
+        if epoch % show_every == 0
+            println("Epoch " * string(epoch))
+            @show avg_loss(data)
+        end
+    end
+
+    la = Laplace(nn, λ=λ, subset_of_weights=:last_layer)
+    fit!(la, data)
+
+    p̂ = predict(la, X)
+    @test isa(p̂, Matrix)
+
+end
