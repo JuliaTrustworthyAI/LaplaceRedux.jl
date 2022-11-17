@@ -1,4 +1,6 @@
-using Flux, LinearAlgebra, .Curvature
+using .Curvature
+using Flux
+using LinearAlgebra
 
 mutable struct Laplace
     model::Flux.Chain
@@ -154,7 +156,7 @@ Compute the linearized GLM predictive variance as `𝐉ₙΣ𝐉ₙ'` where `�
 
 """
 function predictive_variance(la::Laplace,𝐉)
-    N = size(𝐉)[1]
+    N = size(𝐉, 1)
     Σ = map(n -> 𝐉[n,:]' * la.Σ * 𝐉[n,:], 1:N)
     return Σ
 end
@@ -180,14 +182,24 @@ predict(la, hcat(x...))
 """
 function predict(la::Laplace, X::AbstractArray; link_approx=:probit)
     ŷ, Σ = glm_predictive_distribution(la, X)
-    # Probit approximation
-    κ = 1 ./ sqrt.(1 .+ π/8 .* Σ) 
-    z = κ .* ŷ
-    # Truncation to avoid numerical over/underflow:
-    trunc = 8.0 
-    z = clamp.(z,-trunc,trunc)
-    p = exp.(z)
-    p = p ./ (1 .+ p)
+
+    # Regression:
+    if la.loss == Flux.Losses.mse
+        return ŷ, Σ
+    end
+
+    # Classification:
+    if link_approx==:probit
+        # Probit approximation
+        κ = 1 ./ sqrt.(1 .+ π/8 .* Σ) 
+        z = κ .* ŷ
+        if size(z,1) == 1
+            p = Flux.sigmoid(z)
+        else
+            p = Flux.softmax(z, dims=2)
+        end
+    end
+
     return p
 end
 
@@ -202,7 +214,7 @@ function plugin(la::Laplace, X::AbstractArray)
     return p
 end
 
-using Flux.Optimise: ADAM
+using Flux.Optimise: Adam
 """
     optimize_prior_precision(la::Laplace; n_steps=100, lr=1e-1, init_prior_prec=1.)
     
@@ -210,7 +222,7 @@ Optimize the prior precision post-hoc through empirical Bayes (marginal log-like
 """
 function optimize_prior_precision(la::Laplace; n_steps=100, lr=1e-1, init_prior_prec=1.)
     la.H₀ = Diagonal(init_prior_prec)
-    opt = ADAM(lr)
+    opt = Adam(lr)
     for i in 1:n_steps
 
     end

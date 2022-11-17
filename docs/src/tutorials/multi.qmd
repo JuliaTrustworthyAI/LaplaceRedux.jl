@@ -23,7 +23,7 @@ CurrentModule = LaplaceRedux
 
 ```{julia}
 # Import libraries.
-using Flux, Plots, Random, PlotThemes, Statistics, LaplaceRedux
+using Flux, Plots, Random, Statistics, LaplaceRedux
 theme(:lime)
 ```
 
@@ -50,4 +50,9 @@ sqnorm(x) = sum(abs2, x)
 weight_regularization(λ=λ) = 1/2 * λ^2 * sum(sqnorm, Flux.params(nn))
 loss(x, y) = Flux.Losses.logitbinarycrossentropy(nn(x), y) + weight_regularization();
 ```
+
+```{julia}
+
+```
+
 

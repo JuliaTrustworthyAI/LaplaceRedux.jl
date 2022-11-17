@@ -26,8 +26,8 @@ loss(x, y) = Flux.Losses.logitbinarycrossentropy(nn(x), y) + weight_regularizati
 The code below simply trains the model. After about 50 training epochs training loss stagnates.
 
 ``` julia
-using Flux.Optimise: update!, ADAM
-opt = ADAM()
+using Flux.Optimise: update!, Adam
+opt = Adam()
 epochs = 50
 avg_loss(data) = mean(map(d -> loss(d[1],d[2]), data))
 show_every = epochs/10
