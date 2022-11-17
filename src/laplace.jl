@@ -196,7 +196,7 @@ function predict(la::Laplace, X::AbstractArray; link_approx=:probit)
         if size(z,1) == 1
             p = Flux.sigmoid(z)
         else
-            p = Flux.softmax(z, dims=2)
+            p = Flux.softmax(z, dims=1)
         end
     end
 
@@ -210,7 +210,11 @@ Computes the plugin estimate.
 """
 function plugin(la::Laplace, X::AbstractArray)
     ŷ, Σ = glm_predictive_distribution(la, X)
-    p = Flux.σ.(ŷ)
+    if size(ŷ,1) == 1
+        p = Flux.σ.(ŷ)
+    else
+        p = Flux.softmax(ŷ, dims=1)
+    end
     return p
 end
 

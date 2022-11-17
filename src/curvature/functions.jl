@@ -21,7 +21,7 @@ end
 
 Compute the gradients with respect to the loss function: `∇ℓ(f(x;θ),y)` where `f: ℝᴰ ↦ ℝᴷ`.
 """
-function gradients(curvature::CurvatureInterface, X::AbstractArray, y::Number)
+function gradients(curvature::CurvatureInterface, X::AbstractArray, y::Union{Number, AbstractArray})
     model = curvature.model
     𝐠 = gradient(() -> curvature.loss(X,y),Flux.params(model)) 
     return 𝐠
