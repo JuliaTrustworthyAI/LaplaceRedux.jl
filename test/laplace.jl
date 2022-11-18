@@ -7,14 +7,14 @@ using Flux
 
     # One layer:
     nn = Chain(Dense(2,1))
-    la = Laplace(nn)
+    la = Laplace(nn; likelihood=:classification)
     @test la.n_params == 3
 
     # Multi-layer:
     nn = Chain(Dense(2,2,σ),Dense(2,1))
-    la = Laplace(nn; subset_of_weights=:last_layer)
+    la = Laplace(nn; likelihood=:regression, subset_of_weights=:last_layer)
     @test la.n_params == 3
-    la = Laplace(nn; subset_of_weights=:all)
+    la = Laplace(nn; likelihood=:classification, subset_of_weights=:all)
     @test la.n_params == 9
 
 end
@@ -22,10 +22,10 @@ end
 @testset "Parameters" begin
     
     nn = Chain(Dense(2,2,σ),Dense(2,1))
-    la = Laplace(nn; subset_of_weights=:last_layer)
+    la = Laplace(nn; likelihood=:classification, subset_of_weights=:last_layer)
     @test LaplaceRedux.get_params(la) == collect(Flux.params(nn))[(end-1):end]
 
-    la = Laplace(nn; subset_of_weights=:all)
+    la = Laplace(nn; likelihood=:classification, subset_of_weights=:all)
     @test LaplaceRedux.get_params(la) == collect(Flux.params(nn))
 
 end
@@ -36,7 +36,7 @@ end
 @testset "Hessian" begin
     
     nn = Chain(Dense([0 0]))
-    la = Laplace(nn)
+    la = Laplace(nn; likelihood=:classification)
 
     # (always ignoring constant)
     @testset "Empirical Fisher - full" begin
@@ -64,7 +64,7 @@ end
 @testset "Fitting" begin
 
     nn = Chain(Dense([0 0]))
-    la = Laplace(nn)
+    la = Laplace(nn; likelihood=:classification)
 
     hessian_exact(x,target) = (nn(x).-target).*(nn(x).*(1 .- nn(x)).*x*x') + la.H₀
 
@@ -121,7 +121,7 @@ end
         end
     end
 
-    la = Laplace(nn, λ=λ, subset_of_weights=:last_layer)
+    la = Laplace(nn; likelihood=:classification, λ=λ, subset_of_weights=:last_layer)
     fit!(la, data)
 
     p̂ = predict(la, X)

@@ -8,7 +8,7 @@ using Flux
 
     # One layer:
     nn = Chain(Dense(2,1))
-    la = Laplace(nn)
+    la = Laplace(nn; likelihood=:classification)
 
 end
 

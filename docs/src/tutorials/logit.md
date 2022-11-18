@@ -1,3 +1,4 @@
+
 ``` @meta
 CurrentModule = LaplaceRedux
 ```
@@ -8,12 +9,12 @@ We will use synthetic data with linearly separable samples:
 
 ``` julia
 # Number of points to generate.
-xs, ys = toy_data_linear(100)
+xs, ys = LaplaceRedux.Data.toy_data_linear(100)
 X = hcat(xs...) # bring into tabular format
 data = zip(xs,ys)
 ```
 
-Logisitic regression with weight decay can be implemented in Flux.jl as a single dense (linear) layer with binary logit crossentropy loss:
+Logistic regression with weight decay can be implemented in Flux.jl as a single dense (linear) layer with binary logit crossentropy loss:
 
 ``` julia
 nn = Chain(Dense(2,1))
@@ -34,10 +35,10 @@ show_every = epochs/10
 
 for epoch = 1:epochs
   for d in data
-    gs = gradient(params(nn)) do
+    gs = gradient(Flux.params(nn)) do
       l = loss(d...)
     end
-    update!(opt, params(nn), gs)
+    update!(opt, Flux.params(nn), gs)
   end
   if epoch % show_every == 0
     println("Epoch " * string(epoch))
@@ -51,10 +52,8 @@ end
 Laplace approximation for the posterior predictive can be implemented as follows:
 
 ``` julia
-la = Laplace(nn, λ=λ, subset_of_weights=:last_layer)
+la = Laplace(nn; likelihood=:classification, λ=λ, subset_of_weights=:last_layer)
 fit!(la, data)
 ```
 
 The plot below shows the resulting posterior predictive surface for the plugin estimator (left) and the Laplace approximation (right).
-
-![](www/posterior_predictive.png)

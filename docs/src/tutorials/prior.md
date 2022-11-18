@@ -13,5 +13,3 @@ xs, y = LaplaceRedux.Data.toy_data_non_linear(200)
 X = hcat(xs...); # bring into tabular format
 data = zip(xs,y)
 ```
-
-![](www/posterior_predictive_prior.png)
