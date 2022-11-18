@@ -62,7 +62,7 @@ for epoch = 1:epochs
 end
 ```
 
-## Laplace appoximation
+## Laplace Approximation
 
 Laplace approximation can be implemented as follows:
 
@@ -74,26 +74,24 @@ fit!(la, data)
 The plot below shows the resulting posterior predictive surface for the plugin estimator (left) and the Laplace approximation (right).
 
 ```{julia}
+#| output: true
+
 # Plot the posterior distribution with a contour plot.
 zoom=0
 p_plugin = plot_contour(X',ys,la;title="Plugin",type=:plugin,zoom=zoom)
 p_laplace = plot_contour(X',ys,la;title="Laplace",zoom=zoom)
-plt = plot(p_plugin, p_laplace, layout=(1,2), size=(1000,400))
-savefig(plt, joinpath(www_path, "posterior_predictive_mlp.png"))
+plot(p_plugin, p_laplace, layout=(1,2), size=(1000,400))
 ```
-
-![](www/posterior_predictive_mlp.png)
 
 Zooming out we can note that the plugin estimator produces high-confidence estimates in regions scarce of any samples. The Laplace approximation is much more conservative about these regions.
 
 ```{julia}
+#| output: true
+
 zoom=-50
 p_plugin = plot_contour(X',ys,la;title="Plugin",type=:plugin,zoom=zoom)
 p_laplace = plot_contour(X',ys,la;title="Laplace",zoom=zoom)
 # Plot the posterior distribution with a contour plot.
-plt = plot(p_plugin, p_laplace, layout=(1,2), size=(1000,400))
-savefig(plt, joinpath(www_path, "posterior_predictive_mlp_zoomed.png"))
+plot(p_plugin, p_laplace, layout=(1,2), size=(1000,400))
 ```
-
-![](www/posterior_predictive_mlp_zoomed.png)
 

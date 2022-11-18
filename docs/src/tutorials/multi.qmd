@@ -73,6 +73,8 @@ for epoch = 1:epochs
 end
 ```
 
+# Laplace Approximation
+
 ```{julia}
 la = Laplace(nn; likelihood=:classification, λ=λ, subset_of_weights=:last_layer)
 fit!(la, data)

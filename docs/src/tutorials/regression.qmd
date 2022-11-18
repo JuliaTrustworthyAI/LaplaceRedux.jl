@@ -14,12 +14,9 @@ www_path = "docs/src/tutorials/www"
 ```{julia}
 using LaplaceRedux.Data
 fun(x) = sin(2*π*x)
-x, y = Data.toy_data_regression(;fun=fun)
+x, y = Data.toy_data_regression(100;fun=fun)
 xs = [[x] for x in x]
 X = permutedims(x)
-scatter(x, y, label="ytrain")
-xrange = 0:0.01:1
-plot!(xrange, fun.(0:0.01:1), label="ytrue")
 ```
 
 # MLP
@@ -29,8 +26,8 @@ data = zip(xs,y)
 n_hidden = 50
 D = size(X,1)
 nn = Chain(
-    Dense(D, n_hidden, relu),
-    Dense(n_hidden, n_hidden, relu),
+    Dense(D, n_hidden, tanh_fast),
+    Dense(n_hidden, n_hidden, tanh_fast),
     Dense(n_hidden, 1)
 )  
 λ = 0.01
@@ -72,10 +69,16 @@ fit!(la, data)
 ```
 
 ```{julia}
-yhat = reduce(vcat, [predict(la, [x]) for x in xrange])
-plot!(xrange, yhat, color=:orange, label="yhat")
+xmin = -1
+xmax = 2
+scatter(x, y, label="ytrain", xlim=(xmin,xmax), ylim=(-3,3))
+xrange = range(xmin, xmax, length=100)
+# plot!(xrange, fun.(xrange), label="ytrue")
+_x = permutedims([x for x in xrange])
+fμ, fvar = predict(la, _x)
+fμ = vec(fμ)
+fσ = vec(sqrt.(fvar))
+plot!(xrange, fμ, color=2, label="yhat", ribbon = (fσ, fσ))
 ```
-
-
 
 
