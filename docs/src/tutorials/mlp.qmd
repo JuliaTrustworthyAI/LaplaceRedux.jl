@@ -6,13 +6,10 @@ CurrentModule = LaplaceRedux
 
 ```{julia}
 #| echo: false
-# Import libraries.
+using Pkg; Pkg.activate("docs")
+# Import libraries
 using Flux, Plots, Random, Statistics, LaplaceRedux
 theme(:lime)
-using Logging
-disable_logging(Logging.Info)
-include("dev/utils.jl") # some plotting functions
-www_path = "docs/src/tutorials/www"
 ```
 
 This time we use a synthetic dataset containing samples that are not linearly separable:
@@ -78,8 +75,8 @@ The plot below shows the resulting posterior predictive surface for the plugin e
 
 # Plot the posterior distribution with a contour plot.
 zoom=0
-p_plugin = plot_contour(X',ys,la;title="Plugin",type=:plugin,zoom=zoom)
-p_laplace = plot_contour(X',ys,la;title="Laplace",zoom=zoom)
+p_plugin = plot(la, X, ys; title="Plugin", link_approx=:plugin, clim=(0,1), zoom=zoom)
+p_laplace = plot(la, X, ys; title="Laplace", clim=(0,1), zoom=zoom)
 plot(p_plugin, p_laplace, layout=(1,2), size=(1000,400))
 ```
 
@@ -89,9 +86,8 @@ Zooming out we can note that the plugin estimator produces high-confidence estim
 #| output: true
 
 zoom=-50
-p_plugin = plot_contour(X',ys,la;title="Plugin",type=:plugin,zoom=zoom)
-p_laplace = plot_contour(X',ys,la;title="Laplace",zoom=zoom)
-# Plot the posterior distribution with a contour plot.
+p_plugin = plot(la, X, ys; title="Plugin", link_approx=:plugin, clim=(0,1), zoom=zoom)
+p_laplace = plot(la, X, ys; title="Laplace", clim=(0,1), zoom=zoom)
 plot(p_plugin, p_laplace, layout=(1,2), size=(1000,400))
 ```
 

@@ -1,4 +1,3 @@
-using Random
 """
     toy_data_linear(N=100)
 
@@ -12,7 +11,6 @@ toy_data_linear()
 function toy_data_linear(N=100)
     # Number of points to generate.
     M = round(Int, N / 2)
-    Random.seed!(1234)
 
     # Generate artificial data.
     x1s = rand(M) * 4.5; x2s = rand(M) * 4.5; 
@@ -25,7 +23,6 @@ function toy_data_linear(N=100)
     return xs, ts
 end
 
-using Random
 """
     toy_data_non_linear(N=100)
 
@@ -39,7 +36,6 @@ toy_data_non_linear()
 function toy_data_non_linear(N=100)
     # Number of points to generate.
     M = round(Int, N / 4)
-    Random.seed!(1234)
 
     # Generate artificial data.
     x1s = rand(M) * 4.5; x2s = rand(M) * 4.5; 
@@ -58,7 +54,7 @@ function toy_data_non_linear(N=100)
     return xs, ts
 end
 
-using Random
+
 """
     toy_data_multi(N=100)
 
@@ -72,7 +68,6 @@ toy_data_multi()
 function toy_data_multi(N=100)
     # Number of points to generate.
     M = round(Int, N / 4)
-    Random.seed!(1234)
 
     # Generate artificial data.
     x1s = rand(M) * 4.5; x2s = rand(M) * 4.5; 
@@ -91,6 +86,11 @@ function toy_data_multi(N=100)
     return xs, ts
 end
 
+"""
+    toy_data_regression(N=25, p=1; noise=0.3, fun::Function=f(x)=sin(2 * π * x))
+
+A helper function to generate synthetic data for regression.
+"""
 function toy_data_regression(N=25, p=1; noise=0.3, fun::Function=f(x)=sin(2 * π * x))
     X = rand(N)
     ε = randn(N) .* noise

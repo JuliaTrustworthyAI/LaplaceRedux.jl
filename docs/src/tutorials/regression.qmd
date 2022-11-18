@@ -4,22 +4,29 @@ CurrentModule = LaplaceRedux
 
 ```{julia}
 #| echo: false
-# Import libraries.
+using Pkg; Pkg.activate("docs")
+# Import libraries
 using Flux, Plots, Random, Statistics, LaplaceRedux
 theme(:lime)
-include("dev/utils.jl") # some plotting functions
-www_path = "docs/src/tutorials/www"
 ```
+
+## Data
+
+We first generate some synthetic data:
 
 ```{julia}
 using LaplaceRedux.Data
 fun(x) = sin(2*π*x)
-x, y = Data.toy_data_regression(100;fun=fun)
+n = 100     # number of observations
+σtrue = 0.3       # true observational noise
+x, y = Data.toy_data_regression(100;noise=σtrue,fun=fun)
 xs = [[x] for x in x]
 X = permutedims(x)
 ```
 
-# MLP
+## MLP
+
+We set up a model and loss with weight regularization:
 
 ```{julia}
 data = zip(xs,y)
@@ -36,7 +43,7 @@ weight_regularization(λ=λ) = 1/2 * λ^2 * sum(sqnorm, Flux.params(nn))
 loss(x, y) = Flux.Losses.mse(nn(x), y) + weight_regularization();
 ```
 
-The model is trained for 200 epochs before the training loss stagnates.
+We train the model:
 
 ```{julia}
 using Flux.Optimise: update!, Adam
@@ -64,21 +71,10 @@ end
 Laplace approximation can be implemented as follows:
 
 ```{julia}
-la = Laplace(nn; likelihood=:regression, λ=λ, subset_of_weights=:last_layer)
+la = Laplace(nn; likelihood=:regression, λ=λ, subset_of_weights=:last_layer, σ=σtrue)
 fit!(la, data)
+plot(la, X, y)
 ```
 
-```{julia}
-xmin = -1
-xmax = 2
-scatter(x, y, label="ytrain", xlim=(xmin,xmax), ylim=(-3,3))
-xrange = range(xmin, xmax, length=100)
-# plot!(xrange, fun.(xrange), label="ytrue")
-_x = permutedims([x for x in xrange])
-fμ, fvar = predict(la, _x)
-fμ = vec(fμ)
-fσ = vec(sqrt.(fvar))
-plot!(xrange, fμ, color=2, label="yhat", ribbon = (fσ, fσ))
-```
 
 

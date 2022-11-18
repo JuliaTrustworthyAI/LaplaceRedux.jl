@@ -12,4 +12,6 @@ include("laplace.jl")
 
 export Laplace, fit!, predict, plugin
 
+include("plotting.jl")
+
 end

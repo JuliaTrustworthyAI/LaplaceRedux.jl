@@ -17,7 +17,9 @@ makedocs(;
         "Home" => "index.md",
         "Tutorials" => [
             "Logistic Regression" => "tutorials/logit.md",
-            "MLP" => "tutorials/mlp.md",
+            "MLP Binary Classifier" => "tutorials/mlp.md",
+            "MLP Multi-Label Classifier" => "tutorials/multi.md",
+            "MLP Regression" => "tutorials/regression.md",
             "A note on the prior ..." => "tutorials/prior.md",
         ],
         "Reference" => "reference.md",

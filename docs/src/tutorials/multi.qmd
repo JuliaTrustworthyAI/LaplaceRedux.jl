@@ -1,32 +1,15 @@
----
-format: 
-  commonmark:
-    variant: -raw_html
-    wrap: none
-    self-contained: true
-crossref:
-  fig-prefix: Figure
-  tbl-prefix: Table
-bibliography: https://raw.githubusercontent.com/pat-alt/bib/main/bib.bib
-output: asis
-execute: 
-  echo: true
-  eval: false
-jupyter: julia-1.6
----
-
 ```@meta
 CurrentModule = LaplaceRedux
 ```
 
-# Multi-class problem
+## Multi-class problem
 
 ```{julia}
-# Import libraries.
+#| echo: false
+using Pkg; Pkg.activate("docs")
+# Import libraries
 using Flux, Plots, Random, Statistics, LaplaceRedux
 theme(:lime)
-include("dev/utils.jl") # some plotting functions
-www_path = "docs/src/tutorials/www"
 ```
 
 ```{julia}
@@ -46,7 +29,7 @@ nn = Chain(
     Dense(D, n_hidden, σ),
     Dense(n_hidden, out_dim)
 )  
-λ = 0.01
+λ = 0.1
 sqnorm(x) = sum(abs2, x)
 weight_regularization(λ=λ) = 1/2 * λ^2 * sum(sqnorm, Flux.params(nn))
 loss(x, y) = Flux.Losses.logitcrossentropy(nn(x), y) + weight_regularization();
@@ -60,20 +43,20 @@ avg_loss(data) = mean(map(d -> loss(d[1],d[2]), data))
 show_every = epochs/10
 
 for epoch = 1:epochs
-  for d in data
-    gs = gradient(Flux.params(nn)) do
-      l = loss(d...)
+    for d in data
+        gs = gradient(Flux.params(nn)) do
+            l = loss(d...)
+        end
+        update!(opt, Flux.params(nn), gs)
     end
-    update!(opt, Flux.params(nn), gs)
-  end
-  if epoch % show_every == 0
-    println("Epoch " * string(epoch))
-    @show avg_loss(data)
-  end
+    if epoch % show_every == 0
+        println("Epoch " * string(epoch))
+        @show avg_loss(data)
+    end
 end
 ```
 
-# Laplace Approximation
+## Laplace Approximation
 
 ```{julia}
 la = Laplace(nn; likelihood=:classification, λ=λ, subset_of_weights=:last_layer)
@@ -81,5 +64,25 @@ fit!(la, data)
 ```
 
 ```{julia}
+#| output: true
 
+_labels = sort(unique(y))
+plt_list = []
+for target in _labels
+    plt = plot(la, X, y; target=target, clim=(0,1))
+    push!(plt_list, plt)
+end
+plot(plt_list...)
+```
+
+```{julia}
+#| output: true
+
+_labels = sort(unique(y))
+plt_list = []
+for target in _labels
+    plt = plot(la, X, y; target=target, clim=(0,1), link_approx=:plugin)
+    push!(plt_list, plt)
+end
+plot(plt_list...)
 ```
