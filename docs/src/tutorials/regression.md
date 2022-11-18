@@ -68,3 +68,5 @@ la = Laplace(nn; likelihood=:regression, λ=λ, subset_of_weights=:last_layer, �
 fit!(la, data)
 plot(la, X, y)
 ```
+
+![](regression_files/figure-commonmark/cell-6-output-1.svg)

@@ -71,6 +71,8 @@ end
 Laplace approximation can be implemented as follows:
 
 ```{julia}
+#| output: true
+
 la = Laplace(nn; likelihood=:regression, λ=λ, subset_of_weights=:last_layer, σ=σtrue)
 fit!(la, data)
 plot(la, X, y)
