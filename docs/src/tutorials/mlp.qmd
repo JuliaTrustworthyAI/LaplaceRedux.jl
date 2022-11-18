@@ -28,7 +28,7 @@ For the classification task we build a neural network with weight decay composed
 
 ```{julia}
 n_hidden = 32
-D = size(X)[1]
+D = size(X,1)
 nn = Chain(
     Dense(D, n_hidden, σ),
     Dense(n_hidden, 1)
@@ -67,7 +67,7 @@ end
 Laplace approximation can be implemented as follows:
 
 ```{julia}
-la = Laplace(nn, λ=λ, subset_of_weights=:last_layer)
+la = Laplace(nn; likelihood=:classification, λ=λ, subset_of_weights=:last_layer)
 fit!(la, data)
 ```
 

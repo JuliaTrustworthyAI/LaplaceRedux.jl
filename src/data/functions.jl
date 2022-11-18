@@ -90,3 +90,10 @@ function toy_data_multi(N=100)
     ts = [ones(M); ones(M).*2; ones(M).*3; ones(M).*4];
     return xs, ts
 end
+
+function toy_data_regression(N=25, p=1; noise=0.3, fun::Function=f(x)=sin(2 * π * x))
+    X = rand(N)
+    ε = randn(N) .* noise
+    y = @.(fun(X)) + ε
+    return X, y
+end

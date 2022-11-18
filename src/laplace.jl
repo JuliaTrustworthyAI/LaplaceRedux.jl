@@ -4,7 +4,7 @@ using LinearAlgebra
 
 mutable struct Laplace
     model::Flux.Chain
-    loss::Function
+    likelihood::Symbol
     subset_of_weights::Symbol
     hessian_structure::Symbol
     curvature::Union{Curvature.CurvatureInterface,Nothing}
@@ -17,7 +17,6 @@ end
 using Parameters
 
 @with_kw struct LaplaceParams 
-    loss_type::Symbol=:logitbinarycrossentropy
     subset_of_weights::Symbol=:all
     hessian_structure::Symbol=:full
     backend::Symbol=:EmpiricalFisher
@@ -26,20 +25,11 @@ using Parameters
 end
 
 """
-    Laplace(model::Any; loss_type=:logitbinarycrossentropy, subset_of_weights=:last_layer, hessian_structure=:full,backend=:EmpiricalFisher,λ=1)    
+    Laplace(model::Any; loss_fun::Union{Symbol, Function}, kwargs...)    
 
 Wrapper function to prepare Laplace approximation.
-
-# Examples
-
-```julia-repl
-using Flux, LaplaceRedux
-nn = Chain(Dense(2,1))
-la = Laplace(nn)
-```
-
 """
-function Laplace(model::Any;kwargs...) 
+function Laplace(model::Any; likelihood::Symbol, kwargs...) 
 
     # Load hyperparameters:
     args = LaplaceParams(;kwargs...)
@@ -53,12 +43,11 @@ function Laplace(model::Any;kwargs...)
 
     # Model: 
     nn = model
-    loss(x, y) = getfield(Flux.Losses,args.loss_type)(nn(x), y)
 
     # Instantiate:
-    la = Laplace(model, loss, args.subset_of_weights, args.hessian_structure, nothing, H₀, nothing, nothing, nothing)
+    la = Laplace(model, likelihood, args.subset_of_weights, args.hessian_structure, nothing, H₀, nothing, nothing, nothing)
     params = get_params(la)
-    la.curvature = getfield(Curvature,args.backend)(nn,la.loss,params) # instantiate chosen curvature interface
+    la.curvature = getfield(Curvature,args.backend)(nn,likelihood,params) # instantiate chosen curvature interface
     la.n_params = length(reduce(vcat, [vec(θ) for θ ∈ params]))
 
     # Sanity:
@@ -184,7 +173,7 @@ function predict(la::Laplace, X::AbstractArray; link_approx=:probit)
     ŷ, Σ = glm_predictive_distribution(la, X)
 
     # Regression:
-    if la.loss == Flux.Losses.mse
+    if la.likelihood == :regression
         return ŷ, Σ
     end
 

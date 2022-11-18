@@ -1,27 +1,9 @@
----
-format: 
-  commonmark:
-    variant: -raw_html
-    wrap: none
-    self-contained: true
-crossref:
-  fig-prefix: Figure
-  tbl-prefix: Table
-bibliography: https://raw.githubusercontent.com/pat-alt/bib/main/bib.bib
-output: asis
-execute: 
-  echo: true
-  eval: false
-jupyter: julia-1.6
----
-
 ```@meta
 CurrentModule = LaplaceRedux
 ```
 
-# Multi-class problem
-
 ```{julia}
+#| echo: false
 # Import libraries.
 using Flux, Plots, Random, Statistics, LaplaceRedux
 theme(:lime)
@@ -31,31 +13,38 @@ www_path = "docs/src/tutorials/www"
 
 ```{julia}
 using LaplaceRedux.Data
-x, y = Data.toy_data_multi()
-X = hcat(x...)
-y_train = Flux.onehotbatch(y, unique(y))
-y_train = Flux.unstack(y_train',1)
+fun(x) = sin(2*π*x)
+x, y = Data.toy_data_regression(;fun=fun)
+xs = [[x] for x in x]
+X = permutedims(x)
+scatter(x, y, label="ytrain")
+xrange = 0:0.01:1
+plot!(xrange, fun.(0:0.01:1), label="ytrue")
 ```
 
+# MLP
+
 ```{julia}
-data = zip(x,y_train)
-n_hidden = 32
+data = zip(xs,y)
+n_hidden = 50
 D = size(X,1)
-out_dim = length(unique(y))
 nn = Chain(
-    Dense(D, n_hidden, σ),
-    Dense(n_hidden, out_dim)
+    Dense(D, n_hidden, relu),
+    Dense(n_hidden, n_hidden, relu),
+    Dense(n_hidden, 1)
 )  
 λ = 0.01
 sqnorm(x) = sum(abs2, x)
 weight_regularization(λ=λ) = 1/2 * λ^2 * sum(sqnorm, Flux.params(nn))
-loss(x, y) = Flux.Losses.logitcrossentropy(nn(x), y) + weight_regularization();
+loss(x, y) = Flux.Losses.mse(nn(x), y) + weight_regularization();
 ```
+
+The model is trained for 200 epochs before the training loss stagnates.
 
 ```{julia}
 using Flux.Optimise: update!, Adam
 opt = Adam()
-epochs = 200
+epochs = 100
 avg_loss(data) = mean(map(d -> loss(d[1],d[2]), data))
 show_every = epochs/10
 
@@ -73,11 +62,20 @@ for epoch = 1:epochs
 end
 ```
 
+## Laplace Approximation
+
+Laplace approximation can be implemented as follows:
+
 ```{julia}
-la = Laplace(nn; likelihood=:classification, λ=λ, subset_of_weights=:last_layer)
+la = Laplace(nn; likelihood=:regression, λ=λ, subset_of_weights=:last_layer)
 fit!(la, data)
 ```
 
 ```{julia}
-
+yhat = reduce(vcat, [predict(la, [x]) for x in xrange])
+plot!(xrange, yhat, color=:orange, label="yhat")
 ```
+
+
+
+
