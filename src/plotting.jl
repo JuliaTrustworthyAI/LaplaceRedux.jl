@@ -20,7 +20,7 @@ function Plots.plot(
 
         # Surface range:
         if isnothing(xlims)
-            xlims = (minimum(X, dims=2),maximum(X, dims=2)).+(zoom,-zoom)
+            xlims = (minimum(X),maximum(X)).+(zoom,-zoom)
         else
             xlims = xlims .+ (zoom,-zoom)
         end

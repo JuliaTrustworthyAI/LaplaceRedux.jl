@@ -1,3 +1,4 @@
+
 ``` @meta
 CurrentModule = LaplaceRedux
 ```
@@ -8,7 +9,7 @@ This time we use a synthetic dataset containing samples that are not linearly se
 
 ``` julia
 # Number of points to generate.
-xs, ys = toy_data_non_linear(200)
+xs, ys = LaplaceRedux.Data.toy_data_non_linear(200)
 X = hcat(xs...) # bring into tabular format
 data = zip(xs,ys)
 ```
@@ -17,7 +18,7 @@ For the classification task we build a neural network with weight decay composed
 
 ``` julia
 n_hidden = 32
-D = size(X)[1]
+D = size(X,1)
 nn = Chain(
     Dense(D, n_hidden, σ),
     Dense(n_hidden, 1)
@@ -39,10 +40,10 @@ show_every = epochs/10
 
 for epoch = 1:epochs
   for d in data
-    gs = gradient(params(nn)) do
+    gs = gradient(Flux.params(nn)) do
       l = loss(d...)
     end
-    update!(opt, params(nn), gs)
+    update!(opt, Flux.params(nn), gs)
   end
   if epoch % show_every == 0
     println("Epoch " * string(epoch))
@@ -51,12 +52,12 @@ for epoch = 1:epochs
 end
 ```
 
-## Laplace appoximation
+## Laplace Approximation
 
 Laplace approximation can be implemented as follows:
 
 ``` julia
-la = Laplace(nn, λ=λ, subset_of_weights=:last_layer)
+la = Laplace(nn; likelihood=:classification, λ=λ, subset_of_weights=:last_layer)
 fit!(la, data)
 ```
 
@@ -65,23 +66,20 @@ The plot below shows the resulting posterior predictive surface for the plugin e
 ``` julia
 # Plot the posterior distribution with a contour plot.
 zoom=0
-p_plugin = plot_contour(X',ys,la;title="Plugin",type=:plugin,zoom=zoom)
-p_laplace = plot_contour(X',ys,la;title="Laplace",zoom=zoom)
-plt = plot(p_plugin, p_laplace, layout=(1,2), size=(1000,400))
-savefig(plt, joinpath(www_path, "posterior_predictive_mlp.png"))
+p_plugin = plot(la, X, ys; title="Plugin", link_approx=:plugin, clim=(0,1), zoom=zoom)
+p_laplace = plot(la, X, ys; title="Laplace", clim=(0,1), zoom=zoom)
+plot(p_plugin, p_laplace, layout=(1,2), size=(1000,400))
 ```
 
-![](www/posterior_predictive_mlp.png)
+![](mlp_files/figure-commonmark/cell-7-output-1.svg)
 
 Zooming out we can note that the plugin estimator produces high-confidence estimates in regions scarce of any samples. The Laplace approximation is much more conservative about these regions.
 
 ``` julia
 zoom=-50
-p_plugin = plot_contour(X',ys,la;title="Plugin",type=:plugin,zoom=zoom)
-p_laplace = plot_contour(X',ys,la;title="Laplace",zoom=zoom)
-# Plot the posterior distribution with a contour plot.
-plt = plot(p_plugin, p_laplace, layout=(1,2), size=(1000,400))
-savefig(plt, joinpath(www_path, "posterior_predictive_mlp_zoomed.png"))
+p_plugin = plot(la, X, ys; title="Plugin", link_approx=:plugin, clim=(0,1), zoom=zoom)
+p_laplace = plot(la, X, ys; title="Laplace", clim=(0,1), zoom=zoom)
+plot(p_plugin, p_laplace, layout=(1,2), size=(1000,400))
 ```
 
-![](www/posterior_predictive_mlp_zoomed.png)
+![](mlp_files/figure-commonmark/cell-8-output-1.svg)
