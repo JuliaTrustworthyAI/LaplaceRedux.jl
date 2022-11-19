@@ -26,3 +26,4 @@ Manifest.toml
 .vscode
 dev/artifacts/data/
 dev/resources/build
+/.quarto/

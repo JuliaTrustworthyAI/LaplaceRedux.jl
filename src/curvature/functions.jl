@@ -1,4 +1,8 @@
-using Flux, Zygote
+using Flux
+using ..LaplaceRedux: get_loss_fun
+using Zygote
+
+"Basetype for any curvature interface."
 abstract type CurvatureInterface end 
 
 """
@@ -21,15 +25,25 @@ end
 
 Compute the gradients with respect to the loss function: `∇ℓ(f(x;θ),y)` where `f: ℝᴰ ↦ ℝᴷ`.
 """
-function gradients(curvature::CurvatureInterface, X::AbstractArray, y::Number)
+function gradients(curvature::CurvatureInterface, X::AbstractArray, y::Union{Number, AbstractArray})
     model = curvature.model
-    𝐠 = gradient(() -> curvature.loss(X,y),Flux.params(model)) 
+    𝐠 = gradient(() -> curvature.loss_fun(X,y),Flux.params(model)) 
     return 𝐠
 end
+
+"Constructor for Empirical Fisher."
 struct EmpiricalFisher <: CurvatureInterface
     model::Any
-    loss::Function
+    loss_fun::Function
     params::AbstractArray
+end
+
+function EmpiricalFisher(model::Any, likelihood::Symbol, params::AbstractArray)
+
+    # Define loss function:
+    loss_fun = get_loss_fun(likelihood, model)
+
+    EmpiricalFisher(model, loss_fun, params)
 end
 
 """

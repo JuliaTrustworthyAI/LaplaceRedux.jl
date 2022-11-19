@@ -1,11 +1,14 @@
-using Flux, LinearAlgebra, .Curvature
+using .Curvature
+using Flux
+using LinearAlgebra
 
 mutable struct Laplace
     model::Flux.Chain
-    loss::Function
+    likelihood::Symbol
     subset_of_weights::Symbol
     hessian_structure::Symbol
     curvature::Union{Curvature.CurvatureInterface,Nothing}
+    σ::Real
     H₀::Any
     H::Union{AbstractArray,Nothing}
     Σ::Union{AbstractArray,Nothing}
@@ -15,29 +18,20 @@ end
 using Parameters
 
 @with_kw struct LaplaceParams 
-    loss_type::Symbol=:logitbinarycrossentropy
     subset_of_weights::Symbol=:all
     hessian_structure::Symbol=:full
     backend::Symbol=:EmpiricalFisher
+    σ::Real=1
     λ::Real=1
     H₀::Union{Nothing, AbstractMatrix}=nothing
 end
 
 """
-    Laplace(model::Any; loss_type=:logitbinarycrossentropy, subset_of_weights=:last_layer, hessian_structure=:full,backend=:EmpiricalFisher,λ=1)    
+    Laplace(model::Any; loss_fun::Union{Symbol, Function}, kwargs...)    
 
 Wrapper function to prepare Laplace approximation.
-
-# Examples
-
-```julia-repl
-using Flux, LaplaceRedux
-nn = Chain(Dense(2,1))
-la = Laplace(nn)
-```
-
 """
-function Laplace(model::Any;kwargs...) 
+function Laplace(model::Any; likelihood::Symbol, kwargs...) 
 
     # Load hyperparameters:
     args = LaplaceParams(;kwargs...)
@@ -51,12 +45,11 @@ function Laplace(model::Any;kwargs...)
 
     # Model: 
     nn = model
-    loss(x, y) = getfield(Flux.Losses,args.loss_type)(nn(x), y)
 
     # Instantiate:
-    la = Laplace(model, loss, args.subset_of_weights, args.hessian_structure, nothing, H₀, nothing, nothing, nothing)
+    la = Laplace(model, likelihood, args.subset_of_weights, args.hessian_structure, nothing, args.σ, H₀, nothing, nothing, nothing)
     params = get_params(la)
-    la.curvature = getfield(Curvature,args.backend)(nn,la.loss,params) # instantiate chosen curvature interface
+    la.curvature = getfield(Curvature,args.backend)(nn,likelihood,params) # instantiate chosen curvature interface
     la.n_params = length(reduce(vcat, [vec(θ) for θ ∈ params]))
 
     # Sanity:
@@ -66,6 +59,15 @@ function Laplace(model::Any;kwargs...)
 
     return la
 
+end
+
+"""
+    outdim(la::Laplace)
+
+Helper function to determine the output dimension of a `Flux.Chain` with Laplace approximation.
+"""
+function outdim(la::Laplace)
+    return outdim(la.model)
 end
 
 """
@@ -141,10 +143,10 @@ end
 Computes the linearized GLM predictive.
 """
 function glm_predictive_distribution(la::Laplace, X::AbstractArray)
-    𝐉, ŷ = Curvature.jacobians(la.curvature,X)
-    Σ = predictive_variance(la,𝐉)
-    Σ = reshape(Σ, size(ŷ)...)
-    return ŷ, Σ
+    𝐉, fμ = Curvature.jacobians(la.curvature,X)
+    fvar = predictive_variance(la,𝐉)
+    fvar = reshape(fvar, size(fμ)...)
+    return fμ, fvar
 end
 
 """
@@ -154,9 +156,9 @@ Compute the linearized GLM predictive variance as `𝐉ₙΣ𝐉ₙ'` where `�
 
 """
 function predictive_variance(la::Laplace,𝐉)
-    N = size(𝐉)[1]
-    Σ = map(n -> 𝐉[n,:]' * la.Σ * 𝐉[n,:], 1:N)
-    return Σ
+    N = size(𝐉, 1)
+    fvar = map(n -> 𝐉[n,:]' * la.Σ * 𝐉[n,:], 1:N)
+    return fvar
 end
 
 # Posterior predictions:
@@ -179,30 +181,47 @@ predict(la, hcat(x...))
 
 """
 function predict(la::Laplace, X::AbstractArray; link_approx=:probit)
-    ŷ, Σ = glm_predictive_distribution(la, X)
-    # Probit approximation
-    κ = 1 ./ sqrt.(1 .+ π/8 .* Σ) 
-    z = κ .* ŷ
-    # Truncation to avoid numerical over/underflow:
-    trunc = 8.0 
-    z = clamp.(z,-trunc,trunc)
-    p = exp.(z)
-    p = p ./ (1 .+ p)
-    return p
+    fμ, fvar = glm_predictive_distribution(la, X)
+
+    # Regression:
+    if la.likelihood == :regression
+        return fμ, fvar
+    end
+
+    # Classification:
+    if la.likelihood == :classification
+        
+        # Probit approximation
+        if link_approx==:probit
+            κ = 1 ./ sqrt.(1 .+ π/8 .* fvar) 
+            z = κ .* fμ
+        end
+
+        if link_approx==:plugin
+            z = fμ
+        end
+
+        # Sigmoid/Softmax
+        if outdim(la) == 1
+            p = Flux.sigmoid(z)
+        else
+            p = Flux.softmax(z, dims=1)
+        end
+
+        return p
+    end
 end
 
 """
-    plugin(la::Laplace, X::AbstractArray)
+    (la::Laplace)(X::AbstractArray; kwrgs...)
 
-Computes the plugin estimate.
+Calling a model with Laplace Approximation on an array of inputs is equivalent to explicitly calling the `predict` function.
 """
-function plugin(la::Laplace, X::AbstractArray)
-    ŷ, Σ = glm_predictive_distribution(la, X)
-    p = Flux.σ.(ŷ)
-    return p
+function (la::Laplace)(X::AbstractArray; kwrgs...)
+    return predict(la, X; kwrgs...)
 end
 
-using Flux.Optimise: ADAM
+using Flux.Optimise: Adam
 """
     optimize_prior_precision(la::Laplace; n_steps=100, lr=1e-1, init_prior_prec=1.)
     
@@ -210,7 +229,7 @@ Optimize the prior precision post-hoc through empirical Bayes (marginal log-like
 """
 function optimize_prior_precision(la::Laplace; n_steps=100, lr=1e-1, init_prior_prec=1.)
     la.H₀ = Diagonal(init_prior_prec)
-    opt = ADAM(lr)
+    opt = Adam(lr)
     for i in 1:n_steps
 
     end

@@ -24,7 +24,7 @@ execute:
 ```{julia}
 #| echo: false
 using Pkg; Pkg.activate("dev")
-using Plots, PlotThemes
+using Plots
 theme(:wong)
 include("dev/utils.jl")
 www_path = "dev/resources/juliacon22/www"
@@ -231,7 +231,7 @@ end
 ```{julia}
 #| echo: false
 # Import libraries.
-using Plots, PlotThemes, Statistics, LaplaceRedux
+using Plots, Statistics, LaplaceRedux
 theme(:wong)
 # Number of points to generate.
 xs, y = LaplaceRedux.Data.toy_data_linear(100)
@@ -260,8 +260,8 @@ loss(x, y; λ=λ) = Flux.Losses.logitbinarycrossentropy(nn(x), y) + weight_regul
 
 ```{julia}
 #| echo: false
-using Flux.Optimise: update!, ADAM
-opt = ADAM()
+using Flux.Optimise: update!, Adam
+opt = Adam()
 epochs = 50
 
 for epoch = 1:epochs
