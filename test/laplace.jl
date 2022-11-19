@@ -2,6 +2,9 @@ using LaplaceRedux
 using LaplaceRedux.Curvature
 using LaplaceRedux.Data
 using Flux
+using Flux.Optimise: update!, Adam
+using Plots
+using Statistics
 
 @testset "Construction" begin
 
@@ -81,50 +84,100 @@ end
 
 
 @testset "Complete Workflow" begin
-    
-    using Flux
-    using Flux.Optimise: update!, Adam
-    using Statistics
 
-    # Number of points to generate.
-    xs, ys = LaplaceRedux.Data.toy_data_non_linear(200)
-    X = hcat(xs...) # bring into tabular format
-    data = zip(xs,ys)
+    # SETUP
+    n = 100
+    data_dict = Dict()
 
-    # Neural network:
-    n_hidden = 32
-    D = size(X)[1]
-    nn = Chain(
-        Dense(D, n_hidden, σ),
-        Dense(n_hidden, 1)
-    )  
-    λ = 0.01
-    sqnorm(x) = sum(abs2, x)
-    weight_regularization(λ=λ) = 1/2 * λ^2 * sum(sqnorm, Flux.params(nn))
-    loss(x, y) = Flux.Losses.logitbinarycrossentropy(nn(x), y) + weight_regularization()
+    # Classification binary:
+    xs, y = LaplaceRedux.Data.toy_data_non_linear(n)
+    X = hcat(xs...) 
+    data = zip(xs,y)
+    data_dict[:classification_binary] = Dict(
+        :data => data,
+        :X => X,
+        :y => y,
+        :outdim => 1,
+        :loss_fun => :logitbinarycrossentropy,
+        :likelihood => :classification,
+    )
 
-    opt = Adam()
-    epochs = 200
-    avg_loss(data) = mean(map(d -> loss(d[1],d[2]), data))
-    show_every = epochs/10
+    # Classification Multi:
+    xs, y = LaplaceRedux.Data.toy_data_multi(n)
+    X = hcat(xs...) 
+    ytrain = Flux.onehotbatch(y, unique(y))
+    ytrain = Flux.unstack(ytrain';dims=1)
+    data = zip(xs,ytrain)
+    data_dict[:classification_multi] = Dict(
+        :data => data,
+        :X => X,
+        :y => y,
+        :outdim => length(first(ytrain)),
+        :loss_fun => :logitcrossentropy,
+        :likelihood => :classification,
+    )
 
-    for epoch = 1:epochs
-        for d in data
-            gs = gradient(Flux.params(nn)) do
-            l = loss(d...)
+    # Regression:
+    x, y = LaplaceRedux.Data.toy_data_regression(n)
+    xs = [[x] for x in x]
+    X = hcat(xs...) 
+    data = zip(xs,y)
+    data_dict[:regression] = Dict(
+        :data => data,
+        :X => X,
+        :y => y,
+        :outdim => 1,
+        :loss_fun => :mse,
+        :likelihood => :regression,
+    )
+
+    # WORKFLOWS
+
+    for (likelihood, val) in data_dict
+        @testset "$(likelihood)" begin
+
+            # Unpack:
+            data = val[:data]
+            X = val[:X]
+            y = val[:y]
+            outdim = val[:outdim]
+            loss_fun = val[:loss_fun]
+            likelihood = val[:likelihood]
+
+            # Neural network:
+            n_hidden = 32
+            D = size(X,1)
+            nn = Chain(
+                Dense(D, n_hidden, σ),
+                Dense(n_hidden, outdim)
+            )  
+            λ = 0.01
+            sqnorm(x) = sum(abs2, x)
+            weight_regularization(λ=λ) = 1/2 * λ^2 * sum(sqnorm, Flux.params(nn))
+            loss(x, y) = getfield(Flux.Losses, loss_fun)(nn(x), y) + weight_regularization()
+
+            opt = Adam()
+            epochs = 200
+            avg_loss(data) = mean(map(d -> loss(d[1],d[2]), data))
+            show_every = epochs/10
+
+            for epoch = 1:epochs
+                for d in data
+                    gs = gradient(Flux.params(nn)) do
+                    l = loss(d...)
+                    end
+                    update!(opt, Flux.params(nn), gs)
+                end
+                if epoch % show_every == 0
+                    println("Epoch " * string(epoch))
+                    @show avg_loss(data)
+                end
             end
-            update!(opt, Flux.params(nn), gs)
-        end
-        if epoch % show_every == 0
-            println("Epoch " * string(epoch))
-            @show avg_loss(data)
+
+            la = Laplace(nn; likelihood=likelihood, λ=λ, subset_of_weights=:last_layer)
+            fit!(la, data)
+            plt = plot(la, X, y)
         end
     end
-
-    la = Laplace(nn; likelihood=:classification, λ=λ, subset_of_weights=:last_layer)
-    fit!(la, data)
-
-    p̂ = predict(la, X)
-    @test isa(p̂, Matrix)
 
 end
