@@ -3,7 +3,7 @@
 CurrentModule = LaplaceRedux
 ```
 
-!!! Note "In Progress"  
+!!! note "In Progress"  
     This documentation is still incomplete.
 
 ## A quick note on the prior
