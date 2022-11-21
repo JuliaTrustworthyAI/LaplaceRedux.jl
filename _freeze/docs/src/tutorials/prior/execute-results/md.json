@@ -1,7 +1,7 @@
 {
   "hash": "5901c209903be0ba9cbb824de3dc6f52",
   "result": {
-    "markdown": "```@meta\nCurrentModule = LaplaceRedux\n```\n\n\n\n| !!! Note \\\"In Progress\\\"\n|     This documentation is still incomplete. \n\n## A quick note on the prior \n\nLow prior uncertainty $\\rightarrow$ posterior dominated by prior. High prior uncertainty $\\rightarrow$ posterior approaches MLE.\n\n::: {.cell execution_count=2}\n``` {.julia .cell-code}\n# Number of points to generate:\nxs, y = LaplaceRedux.Data.toy_data_non_linear(200)\nX = hcat(xs...); # bring into tabular format\ndata = zip(xs,y)\n```\n:::\n\n\n::: {.cell execution_count=3}\n\n::: {.cell-output .cell-output-display execution_count=24}\n![](prior_files/figure-commonmark/cell-4-output-1.svg){}\n:::\n:::\n\n\n",
+    "markdown": "```@meta\nCurrentModule = LaplaceRedux\n```\n\n\n\n| !!! Note \\\"In Progress\\\"\n|     This documentation is still incomplete. \n\n## A quick note on the prior \n\nLow prior uncertainty $\\rightarrow$ posterior dominated by prior. High prior uncertainty $\\rightarrow$ posterior approaches MLE.\n\n::: {.cell execution_count=2}\n``` {.julia .cell-code}\n# Number of points to generate:\nxs, y = LaplaceRedux.Data.toy_data_non_linear(200)\nX = hcat(xs...); # bring into tabular format\ndata = zip(xs,y)\n```\n:::\n\n\n::: {.cell execution_count=3}\n\n::: {.cell-output .cell-output-display execution_count=29}\n![](prior_files/figure-commonmark/cell-4-output-1.svg){}\n:::\n:::\n\n\n",
     "supporting": [
       "prior_files"
     ],

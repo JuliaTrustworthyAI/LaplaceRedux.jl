@@ -31,7 +31,7 @@ Pkg.add("https://github.com/pat-alt/LaplaceRedux.jl")
 
 ### Regression
 
-A complete worked example for a regression model can be found in the[docs](https://www.paltmeyer.com/LaplaceRedux.jl/dev/tutorials/regression/). Here we jump straight to Laplace Approximation and take the pre-trained model `nn` as given. Then LA can be implemented as follows, where we specify the model `likelihood` and supply pre-determined values for the prior precision `λ` and the observational noise `σ`. The plot show the fitted values overlayed with a 95% confidence interval. As expected, predictive uncertainty quickly increases in areas that are not populated by any training data.
+A complete worked example for a regression model can be found in the [docs](https://www.paltmeyer.com/LaplaceRedux.jl/dev/tutorials/regression/). Here we jump straight to Laplace Approximation and take the pre-trained model `nn` as given. Then LA can be implemented as follows, where we specify the model `likelihood` and supply pre-determined values for the prior precision `λ` and the observational noise `σ`. The plot show the fitted values overlayed with a 95% confidence interval. As expected, predictive uncertainty quickly increases in areas that are not populated by any training data.
 
 ``` julia
 la = Laplace(nn; likelihood=:regression, λ=λ, σ=σtrue)
