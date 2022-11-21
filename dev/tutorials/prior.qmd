@@ -10,7 +10,7 @@ using Flux, Plots, Random, Statistics, LaplaceRedux
 theme(:lime)
 ```
 
-| !!! Note \"In Progress\"
+| !!! note \"In Progress\"
 |     This documentation is still incomplete. 
 
 ## A quick note on the prior 
