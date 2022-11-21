@@ -3,12 +3,16 @@ format:
   commonmark:
     variant: -raw_html
     wrap: none
-    self-contained: true
+execute: 
+  freeze: auto
+  echo: true
+  eval: true
+  output: false
 crossref:
   fig-prefix: Figure
   tbl-prefix: Table
 bibliography: https://raw.githubusercontent.com/pat-alt/bib/main/bib.bib
-output: asis
+jupyter: julia-1.8
 ---
 
 # LaplaceRedux
@@ -19,6 +23,6 @@ output: asis
 [![Coverage](https://codecov.io/gh/pat-alt/LaplaceRedux.jl/branch/main/graph/badge.svg)](https://codecov.io/gh/pat-alt/LaplaceRedux.jl)
 [![Code Style: Blue](https://img.shields.io/badge/code%20style-blue-4495d1.svg)](https://github.com/invenia/BlueStyle)
 [![ColPrac: Contributor's Guide on Collaborative Practices for Community Packages](https://img.shields.io/badge/ColPrac-Contributor's%20Guide-blueviolet)](https://github.com/SciML/ColPrac)
+[![Twitter Badge](https://img.shields.io/twitter/url/https/twitter.com/paltmey.svg?style=social&label=Follow%20%40paltmey)](https://twitter.com/paltmey)
 
-```{r, child='docs/src/intro.qmd'}
-```
+{{< include docs/src/intro.qmd >}}
