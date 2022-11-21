@@ -10,6 +10,9 @@ using Flux, Plots, Random, Statistics, LaplaceRedux
 theme(:lime)
 ```
 
+| !!! Note \"In Progress\"
+|     This documentation is still incomplete. 
+
 ## A quick note on the prior 
 
 Low prior uncertainty $\rightarrow$ posterior dominated by prior. High prior uncertainty $\rightarrow$ posterior approaches MLE.
@@ -24,6 +27,8 @@ data = zip(xs,y)
 
 ```{julia}
 #| echo: false
+#| output: true
+
 n_hidden = 32
 D = size(X)[1]
 Λ = [1e10, 0.01, 1e-10]
