@@ -84,7 +84,7 @@ end
 
 
 """
-function log_marginal_likelihood(la::Laplace; P₀::Union{Nothing,UniformScaling}=nothing, σ::Union{Nothing, Real}=nothing)
+function log_marginal_likelihood(la::Laplace; P₀::Union{Nothing,AbstractMatrix,UniformScaling}=nothing, σ::Union{Nothing, Real}=nothing)
 
     # update prior precision:
     if !isnothing(P₀)

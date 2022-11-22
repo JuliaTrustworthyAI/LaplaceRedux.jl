@@ -1,6 +1,8 @@
 using .Curvature
 using Flux
+using Flux.Optimise: Adam
 using LinearAlgebra
+using Zygote
 
 mutable struct Laplace
     model::Flux.Chain
@@ -205,16 +207,31 @@ function (la::Laplace)(X::AbstractArray; kwrgs...)
     return predict(la, X; kwrgs...)
 end
 
-using Flux.Optimise: Adam
 """
     optimize_prior_precision(la::Laplace; n_steps=100, lr=1e-1, init_prior_prec=1.)
     
 Optimize the prior precision post-hoc through empirical Bayes (marginal log-likelihood maximization).
 """
-function optimize_prior_precision(la::Laplace; n_steps=100, lr=1e-1, init_prior_prec=1.)
-    la.P₀ = Diagonal(init_prior_prec)
-    opt = Adam(lr)
-    for i in 1:n_steps
+function optimize_prior(
+    la::Laplace; 
+    n_steps::Int=100, lr::Real=1e-1,
+    λinit::Union{Nothing,Real}=nothing,
+    σinit::Union{Nothing,Real}=nothing
+)
 
+    # Setup:
+    P₀ = isnothing(λinit) ? la.P₀(la.n_params) : Diagonal(init_prior_prec)
+    σ = isnothing(σinit) ? la.σ : σinit
+    ps = Zygote.Params([P₀, σ])
+    opt = Adam(lr)
+
+    # Optimization:
+    i = 0
+    while i < n_steps
+        gs = gradient(-log_marginal_likelihood(la; P₀=P₀, σ=σ), P₀, σ)
+        update!(opt, ps, gs)
+        i += 1
     end
+
+    return P₀, σ
 end
