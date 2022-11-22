@@ -9,8 +9,9 @@ mutable struct Laplace
     hessian_structure::Symbol
     curvature::Union{Curvature.CurvatureInterface,Nothing}
     σ::Real
-    H₀::Any
-    H::Union{AbstractArray,Nothing}
+    μ₀::Real
+    P₀::UniformScaling
+    P::Union{AbstractArray,Nothing}
     Σ::Union{AbstractArray,Nothing}
     n_params::Union{Int,Nothing}
 end
@@ -21,9 +22,10 @@ using Parameters
     subset_of_weights::Symbol=:all
     hessian_structure::Symbol=:full
     backend::Symbol=:EmpiricalFisher
-    σ::Real=1
-    λ::Real=1
-    H₀::Union{Nothing, AbstractMatrix}=nothing
+    σ::Real=1.0
+    μ₀::Real=0.0
+    λ::Real=1.0
+    P₀::Union{Nothing,UniformScaling}=nothing
 end
 
 """
@@ -35,69 +37,31 @@ function Laplace(model::Any; likelihood::Symbol, kwargs...)
 
     # Load hyperparameters:
     args = LaplaceParams(;kwargs...)
-
-    # Prior:
-    if isnothing(args.H₀)
-        H₀ = UniformScaling(args.λ)
-    else
-        H₀ = args.H₀
-    end
-
-    # Model: 
+    @assert !(args.σ != 1.0 && likelihood != :regression) "Observation noise σ ≠ 1 only available for regression."
+    P₀ = isnothing(args.P₀) ? UniformScaling(args.λ) : args.P₀
     nn = model
 
-    # Instantiate:
-    la = Laplace(model, likelihood, args.subset_of_weights, args.hessian_structure, nothing, args.σ, H₀, nothing, nothing, nothing)
+    # Instantiate LA:
+    la = Laplace(
+        model, likelihood, 
+        args.subset_of_weights, args.hessian_structure, nothing, 
+        args.σ, args.μ₀, P₀, nothing, nothing, nothing
+    )
     params = get_params(la)
     la.curvature = getfield(Curvature,args.backend)(nn,likelihood,params) # instantiate chosen curvature interface
     la.n_params = length(reduce(vcat, [vec(θ) for θ ∈ params]))
 
     # Sanity:
-    if isa(la.H₀, AbstractMatrix)
-        @assert all(size(la.H₀) .== la.n_params) "Dimensions of prior Hessian $(size(la.H₀)) do not align with number of parameters ($(Fala.n_params))"
+    if isa(la.P₀, AbstractMatrix)
+        @assert all(size(la.P₀) .== la.n_params) "Dimensions of prior Hessian $(size(la.P₀)) do not align with number of parameters ($(Fala.n_params))"
     end
 
     return la
 
 end
 
-"""
-    outdim(la::Laplace)
-
-Helper function to determine the output dimension of a `Flux.Chain` with Laplace approximation.
-"""
-function outdim(la::Laplace)
-    return outdim(la.model)
-end
-
-"""
-    get_params(la::Laplace) 
-
-Retrieves the desired (sub)set of model parameters and stores them in a list.
-
-# Examples
-
-```julia-repl
-using Flux, LaplaceRedux
-nn = Chain(Dense(2,1))
-la = Laplace(nn)
-LaplaceRedux.get_params(la)
-```
-
-"""
-function get_params(la::Laplace)
-    nn = la.model
-    params = Flux.params(nn)
-    n_elements = length(params)
-    if la.subset_of_weights == :all
-        params = [θ for θ ∈ params] # get all parameters and constants in logitbinarycrossentropy
-    elseif la.subset_of_weights == :last_layer
-        params = [params[n_elements-1],params[n_elements]] # only get last parameters and constants
-    else
-        @error "`subset_of_weights` of weights should be one of the following: `[:all, :last_layer]`"
-    end 
-    return params
-end
+# Traits:
+include("traits.jl")
 
 """
     hessian_approximation(la::Laplace, d)
@@ -105,8 +69,8 @@ end
 Computes the local Hessian approximation at a single data `d`.
 """
 function hessian_approximation(la::Laplace, d)
-    H = getfield(Curvature, la.hessian_structure)(la.curvature,d)
-    return H
+    P = getfield(Curvature, la.hessian_structure)(la.curvature,d)
+    return P
 end
 
 """
@@ -132,8 +96,8 @@ function fit!(la::Laplace,data)
     for d in data
         H += hessian_approximation(la, d)
     end
-    la.H = H + la.H₀ # posterior precision
-    la.Σ = inv(la.H) # posterior covariance
+    la.P = H + la.P₀ # posterior precision
+    la.Σ = inv(la.P) # posterior covariance
     
 end
 
@@ -152,7 +116,7 @@ end
 """
     predictive_variance(la::Laplace,𝐉)
 
-Compute the linearized GLM predictive variance as `𝐉ₙΣ𝐉ₙ'` where `𝐉=∇f(x;θ)|θ̂` is the Jacobian evaluated at the MAP estimate and `Σ = H⁻¹`.
+Compute the linearized GLM predictive variance as `𝐉ₙΣ𝐉ₙ'` where `𝐉=∇f(x;θ)|θ̂` is the Jacobian evaluated at the MAP estimate and `Σ = P⁻¹`.
 
 """
 function predictive_variance(la::Laplace,𝐉)
@@ -228,7 +192,7 @@ using Flux.Optimise: Adam
 Optimize the prior precision post-hoc through empirical Bayes (marginal log-likelihood maximization).
 """
 function optimize_prior_precision(la::Laplace; n_steps=100, lr=1e-1, init_prior_prec=1.)
-    la.H₀ = Diagonal(init_prior_prec)
+    la.P₀ = Diagonal(init_prior_prec)
     opt = Adam(lr)
     for i in 1:n_steps
 

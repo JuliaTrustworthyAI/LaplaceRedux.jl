@@ -38,8 +38,9 @@ function Plots.plot(
         _x = permutedims([x for x in x_range])
         fμ, fvar = la(_x)
         fμ = vec(fμ)
-        fσ = vec(sqrt.(fvar .+ la.σ^2))  
-        plot!(x_range, fμ, color=2, label="yhat", ribbon = (fσ, fσ))
+        fσ = vec(sqrt.(fvar))
+        pred_std = sqrt.(fσ.^2 .+ la.σ^2)  
+        plot!(x_range, fμ, color=2, label="yhat", ribbon = (pred_std, pred_std))
 
     else
 

@@ -16,10 +16,9 @@ We first generate some synthetic data:
 
 ```{julia}
 using LaplaceRedux.Data
-fun(x) = sin(2*π*x)
 n = 100           # number of observations
 σtrue = 0.3       # true observational noise
-x, y = Data.toy_data_regression(100;noise=σtrue,fun=fun)
+x, y = Data.toy_data_regression(n;noise=σtrue)
 xs = [[x] for x in x]
 X = permutedims(x)
 ```
@@ -37,10 +36,7 @@ nn = Chain(
     Dense(n_hidden, n_hidden, tanh_fast),
     Dense(n_hidden, 1)
 )  
-λ = 0.01
-sqnorm(x) = sum(abs2, x)
-weight_regularization(λ=λ) = 1/2 * λ^2 * sum(sqnorm, Flux.params(nn))
-loss(x, y) = Flux.Losses.mse(nn(x), y) + weight_regularization();
+loss(x, y) = Flux.Losses.mse(nn(x), y)
 ```
 
 We train the model:
