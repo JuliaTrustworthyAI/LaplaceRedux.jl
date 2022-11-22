@@ -12,7 +12,7 @@ mutable struct Laplace
     curvature::Union{Curvature.CurvatureInterface,Nothing}
     σ::Real
     μ₀::Real
-    P₀::UniformScaling
+    P₀::Union{AbstractMatrix,UniformScaling}
     H::Union{AbstractArray,Nothing}
     P::Union{AbstractArray,Nothing}
     Σ::Union{AbstractArray,Nothing}
@@ -58,10 +58,11 @@ function Laplace(model::Any; likelihood::Symbol, kwargs...)
     params = get_params(la)
     la.curvature = getfield(Curvature,args.backend)(nn,likelihood,params)   # curvature interface
     la.n_params = length(reduce(vcat, [vec(θ) for θ ∈ params]))             # number of params
+    la.P₀ = la.P₀(la.n_params)
 
     # Sanity:
     if isa(la.P₀, AbstractMatrix)
-        @assert all(size(la.P₀) .== la.n_params) "Dimensions of prior Hessian $(size(la.P₀)) do not align with number of parameters ($(Fala.n_params))"
+        @assert all(size(la.P₀) .== la.n_params) "Dimensions of prior Hessian $(size(la.P₀)) do not align with number of parameters ($(la.n_params))"
     end
 
     return la
@@ -220,7 +221,7 @@ function optimize_prior(
 )
 
     # Setup:
-    P₀ = isnothing(λinit) ? la.P₀(la.n_params) : Diagonal(init_prior_prec)
+    P₀ = isnothing(λinit) ? la.P₀ : Diagonal(init_prior_prec)
     σ = isnothing(σinit) ? la.σ : σinit
     ps = Zygote.Params([P₀, σ])
     opt = Adam(lr)

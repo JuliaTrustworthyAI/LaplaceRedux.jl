@@ -73,8 +73,8 @@ _init_H(la::Laplace) = zeros(la.n_params, la.n_params)
 
 """
 function _weight_penalty(la::Laplace)
-    μ = get_params(la)  # MAP
-    μ₀ = la.μ₀          # prior
+    μ = vec(reduce(hcat,get_params(la)))    # MAP
+    μ₀ = la.μ₀                              # prior
     Δ = μ .- μ₀
     return Δ'la.P₀*Δ
 end
