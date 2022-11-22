@@ -47,15 +47,18 @@ end
         target = 1
         x = [1,1]
         grad = [-0.5,-0.5] # analytical solution for gradient
-        @test LaplaceRedux.hessian_approximation(la, (x,target))[1:2,1:2] == grad * grad'
+        _, H = LaplaceRedux.hessian_approximation(la, (x,target))
+        @test H[1:2,1:2] == grad * grad'
 
         x = [-1,-1]
         grad = [0.5,0.5] # analytical solution for gradient
-        @test LaplaceRedux.hessian_approximation(la, (x,target))[1:2,1:2] == grad * grad'
+        _, H = LaplaceRedux.hessian_approximation(la, (x,target))
+        @test H[1:2,1:2] == grad * grad'
 
         x = [0,0]
         grad = [0,0] # analytical solution for gradient
-        @test LaplaceRedux.hessian_approximation(la, (x,target))[1:2,1:2] == grad * grad'
+        _, H = LaplaceRedux.hessian_approximation(la, (x,target))
+        @test H[1:2,1:2] == grad * grad'
         
     end
     

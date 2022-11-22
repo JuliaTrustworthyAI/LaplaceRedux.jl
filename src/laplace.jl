@@ -11,9 +11,12 @@ mutable struct Laplace
     σ::Real
     μ₀::Real
     P₀::UniformScaling
+    H::Union{AbstractArray,Nothing}
     P::Union{AbstractArray,Nothing}
     Σ::Union{AbstractArray,Nothing}
     n_params::Union{Int,Nothing}
+    n_data::Union{Int,Nothing}
+    loss::Real
 end
 
 using Parameters
@@ -26,6 +29,7 @@ using Parameters
     μ₀::Real=0.0
     λ::Real=1.0
     P₀::Union{Nothing,UniformScaling}=nothing
+    loss::Real=0.0
 end
 
 """
@@ -45,11 +49,13 @@ function Laplace(model::Any; likelihood::Symbol, kwargs...)
     la = Laplace(
         model, likelihood, 
         args.subset_of_weights, args.hessian_structure, nothing, 
-        args.σ, args.μ₀, P₀, nothing, nothing, nothing
+        args.σ, args.μ₀, P₀, 
+        nothing, nothing, nothing, nothing, nothing,
+        args.loss
     )
     params = get_params(la)
-    la.curvature = getfield(Curvature,args.backend)(nn,likelihood,params) # instantiate chosen curvature interface
-    la.n_params = length(reduce(vcat, [vec(θ) for θ ∈ params]))
+    la.curvature = getfield(Curvature,args.backend)(nn,likelihood,params)   # curvature interface
+    la.n_params = length(reduce(vcat, [vec(θ) for θ ∈ params]))             # number of params
 
     # Sanity:
     if isa(la.P₀, AbstractMatrix)
@@ -69,8 +75,8 @@ include("traits.jl")
 Computes the local Hessian approximation at a single data `d`.
 """
 function hessian_approximation(la::Laplace, d)
-    P = getfield(Curvature, la.hessian_structure)(la.curvature,d)
-    return P
+    loss, H = getfield(Curvature, la.hessian_structure)(la.curvature,d)
+    return loss, H
 end
 
 """
@@ -90,14 +96,28 @@ fit!(la, data)
 ```
 
 """
-function fit!(la::Laplace,data)
+function fit!(la::Laplace, data; override::Bool=true)
 
-    H = zeros(la.n_params,la.n_params)
-    for d in data
-        H += hessian_approximation(la, d)
+    if override
+        H = _init_H(la)
+        loss = 0.0
+        n_data = 0
     end
-    la.P = H + la.P₀ # posterior precision
-    la.Σ = inv(la.P) # posterior covariance
+
+    # Training:
+    for d in data
+        loss_batch, H_batch = hessian_approximation(la, d)
+        loss += loss_batch
+        H += H_batch
+        n_data += 1
+    end
+
+    # Store output:
+    la.loss = loss      # Loss
+    la.H = H            # Hessian
+    la.P = H + la.P₀    # posterior precision
+    la.Σ = inv(la.P)    # posterior covariance
+    la.n_data = n_data  # number of observations
     
 end
 

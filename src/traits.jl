@@ -61,12 +61,21 @@ end
 _H_factor(la::Laplace) = 1 / (la.σ^2)
 
 """
+    _init_H(la::Laplace)
+
+
+"""
+_init_H(la::Laplace) = zeros(la.n_params, la.n_params)
+
+"""
     _weight_penalty(la::Laplace)
 
 
 """
 function _weight_penalty(la::Laplace)
-    Δ = la.μ .- la.μ₀
+    μ = get_params(la)  # MAP
+    μ₀ = la.μ₀          # prior
+    Δ = μ .- μ₀
     return Δ'la.P₀*Δ
 end
 
