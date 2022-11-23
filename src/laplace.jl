@@ -227,17 +227,19 @@ Optimize the prior precision post-hoc through empirical Bayes (marginal log-like
 """
 function optimize_prior!(
     la::Laplace; 
-    n_steps::Int=100, lr::Real=1e-1,
+    n_steps::Int=100, lr::Real=1e-2,
     λinit::Union{Nothing,Real}=nothing,
-    σinit::Union{Nothing,Real}=nothing
+    σinit::Union{Nothing,Real}=nothing,
+    verbose::Bool=false
 )
 
     # Setup:
-    P₀ = isnothing(λinit) ? unique(diag(la.P₀)) : λinit     # prior precision (scalar)
+    P₀ = isnothing(λinit) ? unique(diag(la.P₀)) : [λinit]   # prior precision (scalar)
     σ = isnothing(σinit) ? [la.σ] : [σinit]                 # noise (scalar)
     ps = Flux.params(P₀,σ)
     opt = Adam(lr)
     loss(P₀,σ) = - log_marginal_likelihood(la; P₀=P₀[1], σ=σ[1])
+    show_every = round(n_steps/10)
 
     # Optimization:
     i = 0
@@ -249,6 +251,14 @@ function optimize_prior!(
         la.P = la.H + la.P₀
         la.Σ = inv(la.P)
         i += 1
+        if verbose
+            if i % show_every == 0
+                println("Iteration $(i): P₀=$(P₀[1]), σ=$(σ[1])")
+                @show loss(P₀, σ)
+            end
+        end
     end
+
+    
 
 end

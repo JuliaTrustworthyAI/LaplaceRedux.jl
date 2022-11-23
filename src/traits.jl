@@ -112,7 +112,7 @@ log_det_ratio(la::Laplace) = log_det_posterior_precision(la) - log_det_prior_pre
 
 
 """
-log_det_prior_precision(la::Laplace) = logdet(la.P₀)
+log_det_prior_precision(la::Laplace) = sum(log.(diag(la.P₀)))
 
 """
     log_det_posterior_precision(la::Laplace)

@@ -7,7 +7,7 @@ CurrentModule = LaplaceRedux
 using Pkg; Pkg.activate("docs")
 # Import libraries
 using Flux, Plots, Random, Statistics, LaplaceRedux
-theme(:lime)
+theme(:wong)
 ```
 
 ## Data
@@ -16,8 +16,8 @@ We first generate some synthetic data:
 
 ```{julia}
 using LaplaceRedux.Data
-n = 200           # number of observations
-σtrue = 0.3       # true observational noise
+n = 150       # number of observations
+σtrue = 0.30  # true observational noise
 x, y = Data.toy_data_regression(n;noise=σtrue)
 xs = [[x] for x in x]
 X = permutedims(x)
@@ -32,8 +32,7 @@ data = zip(xs,y)
 n_hidden = 50
 D = size(X,1)
 nn = Chain(
-    Dense(D, n_hidden, tanh_fast),
-    # Dense(n_hidden, n_hidden, tanh_fast),
+    Dense(D, n_hidden, tanh),
     Dense(n_hidden, 1)
 )  
 loss(x, y) = Flux.Losses.mse(nn(x), y)
@@ -43,7 +42,7 @@ We train the model:
 
 ```{julia}
 using Flux.Optimise: update!, Adam
-opt = Adam(1e-2)
+opt = Adam(1e-3)
 epochs = 1000
 avg_loss(data) = mean(map(d -> loss(d[1],d[2]), data))
 show_every = epochs/10
@@ -72,13 +71,14 @@ Laplace approximation can be implemented as follows:
 subset_w = :all
 la = Laplace(nn; likelihood=:regression, subset_of_weights=subset_w)
 fit!(la, data)
-plot(la, X, y)
+plot(la, X, y; zoom=-5, size=(400,400))
 ```
 
 ```{julia}
-optimize_prior!(la)
-plot(la, X, y)
+optimize_prior!(la; verbose=true, n_steps=250, λinit=0.1)
+plot(la, X, y; zoom=-5, size=(400,400))
 ```
+
 
 
 
