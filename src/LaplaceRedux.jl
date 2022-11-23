@@ -10,7 +10,7 @@ using .Curvature
 
 include("laplace.jl")
 
-export Laplace, fit!, predict, optimize_prior
+export Laplace, fit!, predict, optimize_prior!
 
 include("plotting.jl")
 

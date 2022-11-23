@@ -16,7 +16,7 @@ We first generate some synthetic data:
 
 ```{julia}
 using LaplaceRedux.Data
-n = 100           # number of observations
+n = 200           # number of observations
 σtrue = 0.3       # true observational noise
 x, y = Data.toy_data_regression(n;noise=σtrue)
 xs = [[x] for x in x]
@@ -33,7 +33,7 @@ n_hidden = 50
 D = size(X,1)
 nn = Chain(
     Dense(D, n_hidden, tanh_fast),
-    Dense(n_hidden, n_hidden, tanh_fast),
+    # Dense(n_hidden, n_hidden, tanh_fast),
     Dense(n_hidden, 1)
 )  
 loss(x, y) = Flux.Losses.mse(nn(x), y)
@@ -43,8 +43,8 @@ We train the model:
 
 ```{julia}
 using Flux.Optimise: update!, Adam
-opt = Adam()
-epochs = 100
+opt = Adam(1e-2)
+epochs = 1000
 avg_loss(data) = mean(map(d -> loss(d[1],d[2]), data))
 show_every = epochs/10
 
@@ -69,16 +69,16 @@ Laplace approximation can be implemented as follows:
 ```{julia}
 #| output: true
 
-λ = 0.01
-la = Laplace(nn; likelihood=:regression, λ=λ, subset_of_weights=:last_layer, σ=σtrue)
+subset_w = :all
+la = Laplace(nn; likelihood=:regression, subset_of_weights=subset_w)
 fit!(la, data)
 plot(la, X, y)
 ```
 
 ```{julia}
-P₀, σ = optimize_prior(la)
-la.P₀ = P₀
-la.σ = σ
+optimize_prior!(la)
+la.P = la.H + P₀
+la.Σ = inv(la.P)
 plot(la, X, y)
 ```
 

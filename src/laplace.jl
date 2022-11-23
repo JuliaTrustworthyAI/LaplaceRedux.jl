@@ -1,6 +1,7 @@
 using .Curvature
 using Flux
 using Flux.Optimise: Adam, update!
+using Flux.Optimisers: destructure
 using LinearAlgebra
 
 mutable struct Laplace
@@ -11,6 +12,7 @@ mutable struct Laplace
     curvature::Union{Curvature.CurvatureInterface,Nothing}
     σ::Real
     μ₀::Real
+    μ::AbstractVector
     P₀::Union{AbstractMatrix,UniformScaling}
     H::Union{AbstractArray,Nothing}
     P::Union{AbstractArray,Nothing}
@@ -47,18 +49,20 @@ function Laplace(model::Any; likelihood::Symbol, kwargs...)
     P₀ = isnothing(args.P₀) ? UniformScaling(args.λ) : args.P₀
     nn = model
     n_out = outdim(nn)
+    μ, _ = destructure(nn)
 
     # Instantiate LA:
     la = Laplace(
         model, likelihood, 
         args.subset_of_weights, args.hessian_structure, nothing, 
-        args.σ, args.μ₀, P₀, 
+        args.σ, args.μ₀, μ, P₀, 
         nothing, nothing, nothing, nothing, nothing,
         n_out, args.loss
     )
     params = get_params(la)
     la.curvature = getfield(Curvature,args.backend)(nn,likelihood,params)   # curvature interface
     la.n_params = length(reduce(vcat, [vec(θ) for θ ∈ params]))             # number of params
+    la.μ = la.μ[(end-la.n_params+1):end]                                    # adjust weight vector
     if typeof(la.P₀) <: UniformScaling
         la.P₀ = la.P₀(la.n_params)
     end
@@ -212,11 +216,16 @@ function (la::Laplace)(X::AbstractArray; kwrgs...)
 end
 
 """
-    optimize_prior_precision(la::Laplace; n_steps=100, lr=1e-1, init_prior_prec=1.)
+    optimize_prior!(
+        la::Laplace; 
+        n_steps::Int=100, lr::Real=1e-1,
+        λinit::Union{Nothing,Real}=nothing,
+        σinit::Union{Nothing,Real}=nothing
+    )
     
 Optimize the prior precision post-hoc through empirical Bayes (marginal log-likelihood maximization).
 """
-function optimize_prior(
+function optimize_prior!(
     la::Laplace; 
     n_steps::Int=100, lr::Real=1e-1,
     λinit::Union{Nothing,Real}=nothing,
@@ -224,7 +233,7 @@ function optimize_prior(
 )
 
     # Setup:
-    P₀ = isnothing(λinit) ? la.P₀ : Diagonal(init_prior_prec)
+    P₀ = isnothing(λinit) ? la.P₀ : UniformScaling(λinit)(la.n_params)
     σ = isnothing(σinit) ? [la.σ] : [σinit]
     ps = Flux.params(P₀,σ)
     opt = Adam(lr)
@@ -240,5 +249,4 @@ function optimize_prior(
         i += 1
     end
 
-    return P₀, σ[1]
 end

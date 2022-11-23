@@ -71,8 +71,8 @@ _init_H(la::Laplace) = zeros(la.n_params, la.n_params)
 
 """
 function _weight_penalty(la::Laplace)
-    μ = vec(reduce(hcat,get_params(la)))    # MAP
-    μ₀ = la.μ₀                              # prior
+    μ = la.μ    # MAP
+    μ₀ = la.μ₀  # prior
     Δ = μ .- μ₀
     return Δ'la.P₀*Δ
 end
@@ -82,7 +82,7 @@ end
 
 
 """
-function log_marginal_likelihood(la::Laplace; P₀::Union{Nothing,AbstractMatrix,UniformScaling}=nothing, σ::Union{Nothing, Real}=nothing)
+function log_marginal_likelihood(la::Laplace; P₀::Union{Nothing,AbstractMatrix}=nothing, σ::Union{Nothing, Real}=nothing)
 
     # update prior precision:
     if !isnothing(P₀)
