@@ -5,9 +5,7 @@ using LinearAlgebra
 
 Helper function to determine the output dimension of a `Flux.Chain` with Laplace approximation.
 """
-function outdim(la::Laplace)
-    return outdim(la.model)
-end
+outdim(la::Laplace) = la.n_out
 
 """
     get_params(la::Laplace) 
@@ -47,10 +45,10 @@ function log_likelihood(la::Laplace)
     factor = - _H_factor(la)
     if la.likelihood == :regression
         c = la.n_data * outdim(la) * log(la.σ * sqrt(2 * pi))
-        return factor * la.loss - c
     else
-        return factor * la.loss
+        c = 0
     end
+    return factor * la.loss - c
 end
 
 """

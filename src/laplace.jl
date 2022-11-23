@@ -1,8 +1,7 @@
 using .Curvature
 using Flux
-using Flux.Optimise: Adam
+using Flux.Optimise: Adam, update!
 using LinearAlgebra
-using Zygote
 
 mutable struct Laplace
     model::Flux.Chain
@@ -18,6 +17,7 @@ mutable struct Laplace
     Σ::Union{AbstractArray,Nothing}
     n_params::Union{Int,Nothing}
     n_data::Union{Int,Nothing}
+    n_out::Union{Int,Nothing}
     loss::Real
 end
 
@@ -46,6 +46,7 @@ function Laplace(model::Any; likelihood::Symbol, kwargs...)
     @assert !(args.σ != 1.0 && likelihood != :regression) "Observation noise σ ≠ 1 only available for regression."
     P₀ = isnothing(args.P₀) ? UniformScaling(args.λ) : args.P₀
     nn = model
+    n_out = outdim(nn)
 
     # Instantiate LA:
     la = Laplace(
@@ -53,7 +54,7 @@ function Laplace(model::Any; likelihood::Symbol, kwargs...)
         args.subset_of_weights, args.hessian_structure, nothing, 
         args.σ, args.μ₀, P₀, 
         nothing, nothing, nothing, nothing, nothing,
-        args.loss
+        n_out, args.loss
     )
     params = get_params(la)
     la.curvature = getfield(Curvature,args.backend)(nn,likelihood,params)   # curvature interface
@@ -222,14 +223,17 @@ function optimize_prior(
 
     # Setup:
     P₀ = isnothing(λinit) ? la.P₀ : Diagonal(init_prior_prec)
-    σ = isnothing(σinit) ? la.σ : σinit
-    ps = Zygote.Params([P₀, σ])
+    σ = isnothing(σinit) ? [la.σ] : [σinit]
+    ps = Flux.params(P₀,σ)
     opt = Adam(lr)
+    loss(P₀,σ) = - log_marginal_likelihood(la; P₀=P₀, σ=σ[1])
 
     # Optimization:
     i = 0
     while i < n_steps
-        gs = gradient(-log_marginal_likelihood(la; P₀=P₀, σ=σ), P₀, σ)
+        gs = gradient(ps) do 
+            loss(P₀, σ)
+        end
         update!(opt, ps, gs)
         i += 1
     end
