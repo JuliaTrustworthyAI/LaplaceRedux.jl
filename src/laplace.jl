@@ -30,7 +30,7 @@ using Parameters
     σ::Real=1.0
     μ₀::Real=0.0
     λ::Real=1.0
-    P₀::Union{Nothing,UniformScaling}=nothing
+    P₀::Union{Nothing,AbstractMatrix,UniformScaling}=nothing
     loss::Real=0.0
 end
 
@@ -59,7 +59,9 @@ function Laplace(model::Any; likelihood::Symbol, kwargs...)
     params = get_params(la)
     la.curvature = getfield(Curvature,args.backend)(nn,likelihood,params)   # curvature interface
     la.n_params = length(reduce(vcat, [vec(θ) for θ ∈ params]))             # number of params
-    la.P₀ = la.P₀(la.n_params)
+    if typeof(la.P₀) <: UniformScaling
+        la.P₀ = la.P₀(la.n_params)
+    end
 
     # Sanity:
     if isa(la.P₀, AbstractMatrix)
@@ -238,5 +240,5 @@ function optimize_prior(
         i += 1
     end
 
-    return P₀, σ
+    return P₀, σ[1]
 end

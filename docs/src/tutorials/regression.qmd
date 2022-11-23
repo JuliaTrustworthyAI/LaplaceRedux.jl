@@ -76,8 +76,12 @@ plot(la, X, y)
 ```
 
 ```{julia}
-optimize_prior(la)
+P₀, σ = optimize_prior(la)
+la.P₀ = P₀
+la.σ = σ
+plot(la, X, y)
 ```
+
 
 
 
