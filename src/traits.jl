@@ -44,7 +44,7 @@ end
 function log_likelihood(la::Laplace)
     factor = - _H_factor(la)
     if la.likelihood == :regression
-        c = la.n_data * outdim(la) * log(la.σ * sqrt(2 * pi))
+        c = la.n_data * la.n_out * log(la.σ * sqrt(2 * pi))
     else
         c = 0
     end

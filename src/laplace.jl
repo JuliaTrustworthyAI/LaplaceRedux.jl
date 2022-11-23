@@ -234,9 +234,9 @@ function optimize_prior!(
 )
 
     # Setup:
-    P₀ = isnothing(λinit) ? unique(diag(la.P₀)) : [λinit]   # prior precision (scalar)
-    σ = isnothing(σinit) ? [la.σ] : [σinit]                 # noise (scalar)
-    ps = Flux.params(P₀,σ)
+    logP₀ = isnothing(λinit) ? log.(unique(diag(la.P₀))) : log.([λinit])   # prior precision (scalar)
+    logσ = isnothing(σinit) ? log.([la.σ]) : log.([σinit])                 # noise (scalar)
+    ps = Flux.params(logP₀,logσ)
     opt = Adam(lr)
     loss(P₀,σ) = - log_marginal_likelihood(la; P₀=P₀[1], σ=σ[1])
     show_every = round(n_steps/10)
@@ -245,20 +245,19 @@ function optimize_prior!(
     i = 0
     while i < n_steps
         gs = gradient(ps) do 
-            loss(P₀, σ)
+            loss(exp.(logP₀), exp.(logσ))
         end
         update!(opt, ps, gs)
-        la.P = la.H + la.P₀
-        la.Σ = inv(la.P)
         i += 1
         if verbose
             if i % show_every == 0
-                println("Iteration $(i): P₀=$(P₀[1]), σ=$(σ[1])")
-                @show loss(P₀, σ)
+                println("Iteration $(i): P₀=$(exp(logP₀[1])), σ=$(exp(logσ[1]))")
+                @show loss(exp.(logP₀), exp.(logσ))
             end
         end
     end
 
+    la.P = la.H + la.P₀
+    la.Σ = inv(la.P)
     
-
 end
