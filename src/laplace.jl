@@ -233,11 +233,11 @@ function optimize_prior!(
 )
 
     # Setup:
-    P₀ = isnothing(λinit) ? la.P₀ : UniformScaling(λinit)(la.n_params)
-    σ = isnothing(σinit) ? [la.σ] : [σinit]
+    P₀ = isnothing(λinit) ? unique(diag(la.P₀)) : λinit     # prior precision (scalar)
+    σ = isnothing(σinit) ? [la.σ] : [σinit]                 # noise (scalar)
     ps = Flux.params(P₀,σ)
     opt = Adam(lr)
-    loss(P₀,σ) = - log_marginal_likelihood(la; P₀=P₀, σ=σ[1])
+    loss(P₀,σ) = - log_marginal_likelihood(la; P₀=P₀[1], σ=σ[1])
 
     # Optimization:
     i = 0
@@ -246,6 +246,8 @@ function optimize_prior!(
             loss(P₀, σ)
         end
         update!(opt, ps, gs)
+        la.P = la.H + la.P₀
+        la.Σ = inv(la.P)
         i += 1
     end
 

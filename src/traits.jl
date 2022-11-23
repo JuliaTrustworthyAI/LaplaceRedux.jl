@@ -82,11 +82,11 @@ end
 
 
 """
-function log_marginal_likelihood(la::Laplace; P₀::Union{Nothing,AbstractMatrix}=nothing, σ::Union{Nothing, Real}=nothing)
+function log_marginal_likelihood(la::Laplace; P₀::Union{Nothing,AbstractFloat,AbstractMatrix}=nothing, σ::Union{Nothing, Real}=nothing)
 
     # update prior precision:
     if !isnothing(P₀)
-        la.P₀ = P₀
+        la.P₀ = typeof(P₀) <: AbstractFloat ? UniformScaling(P₀)(la.n_params) : P₀
     end
 
     # update observation noise:
