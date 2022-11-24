@@ -47,36 +47,39 @@ end
         target = 1
         x = [1,1]
         grad = [-0.5,-0.5] # analytical solution for gradient
-        @test LaplaceRedux.hessian_approximation(la, (x,target))[1:2,1:2] == grad * grad'
+        _, H = LaplaceRedux.hessian_approximation(la, (x,target))
+        @test H[1:2,1:2] == grad * grad'
 
         x = [-1,-1]
         grad = [0.5,0.5] # analytical solution for gradient
-        @test LaplaceRedux.hessian_approximation(la, (x,target))[1:2,1:2] == grad * grad'
+        _, H = LaplaceRedux.hessian_approximation(la, (x,target))
+        @test H[1:2,1:2] == grad * grad'
 
         x = [0,0]
         grad = [0,0] # analytical solution for gradient
-        @test LaplaceRedux.hessian_approximation(la, (x,target))[1:2,1:2] == grad * grad'
+        _, H = LaplaceRedux.hessian_approximation(la, (x,target))
+        @test H[1:2,1:2] == grad * grad'
         
     end
     
 end
 
 
-# We know the analytical expression for the Hessian of logit binary cross entropy loss for a single-layer neural net with sigmoid activation just corresponds to the Hessian in logistic regression (see for example: https://www.paltmeyer.com/blog/posts/bayesian-logit/): ∇ℓ=(μ-y)(μ(1-μ)xx'). With a weight-penalty (Gaussian prior), the Hessian becomes: ∇ℓ=∑(μ-y)(μ(1-μ)xx')+H₀. We can use this analytical expression to see if we get the expected results.
+# We know the analytical expression for the Hessian of logit binary cross entropy loss for a single-layer neural net with sigmoid activation just corresponds to the Pessian in logistic regression (see for example: https://www.paltmeyer.com/blog/posts/bayesian-logit/): ∇ℓ=(μ-y)(μ(1-μ)xx'). With a weight-penalty (Gaussian prior), the Hessian becomes: ∇ℓ=∑(μ-y)(μ(1-μ)xx')+P₀. We can use this analytical expression to see if we get the expected results.
 
 @testset "Fitting" begin
 
     nn = Chain(Dense([0 0]))
     la = Laplace(nn; likelihood=:classification)
 
-    hessian_exact(x,target) = (nn(x).-target).*(nn(x).*(1 .- nn(x)).*x*x') + la.H₀
+    hessian_exact(x,target) = (nn(x).-target).*(nn(x).*(1 .- nn(x)).*x*x') + la.P₀[1:2,1:2]
 
     @testset "Empirical Fisher - full" begin
         
         target = [1]
         x = [[0,0]]
         fit!(la,zip(x,target))
-        @test la.H[1:2,1:2] == hessian_exact(x[1],target[1])
+        @test la.P[1:2,1:2] == hessian_exact(x[1],target[1])
 
     end
 
@@ -176,6 +179,7 @@ end
 
             la = Laplace(nn; likelihood=likelihood, λ=λ, subset_of_weights=:last_layer)
             fit!(la, data)
+            optimize_prior!(la)
             plt = plot(la, X, y)
         end
     end

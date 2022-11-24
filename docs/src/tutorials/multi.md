@@ -22,16 +22,13 @@ nn = Chain(
     Dense(D, n_hidden, σ),
     Dense(n_hidden, out_dim)
 )  
-λ = 0.1
-sqnorm(x) = sum(abs2, x)
-weight_regularization(λ=λ) = 1/2 * λ^2 * sum(sqnorm, Flux.params(nn))
-loss(x, y) = Flux.Losses.logitcrossentropy(nn(x), y) + weight_regularization();
+loss(x, y) = Flux.Losses.logitcrossentropy(nn(x), y)
 ```
 
 ``` julia
 using Flux.Optimise: update!, Adam
 opt = Adam()
-epochs = 200
+epochs = 100
 avg_loss(data) = mean(map(d -> loss(d[1],d[2]), data))
 show_every = epochs/10
 
@@ -52,8 +49,9 @@ end
 ## Laplace Approximation
 
 ``` julia
-la = Laplace(nn; likelihood=:classification, λ=λ, subset_of_weights=:last_layer)
+la = Laplace(nn; likelihood=:classification)
 fit!(la, data)
+optimize_prior!(la; verbose=true, n_steps=500)
 ```
 
 ``` julia

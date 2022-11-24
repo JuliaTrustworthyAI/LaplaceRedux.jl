@@ -8,9 +8,10 @@ using .Data
 include("curvature/Curvature.jl")
 using .Curvature
 
-include("laplace.jl")
+include("baselaplace.jl")       # abstract base type and methods
+include("laplace.jl")           # full Laplace
 
-export Laplace, fit!, predict, plugin
+export Laplace, fit!, predict, optimize_prior!
 
 include("plotting.jl")
 

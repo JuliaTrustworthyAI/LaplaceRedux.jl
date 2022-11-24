@@ -91,8 +91,8 @@ end
 
 A helper function to generate synthetic data for regression.
 """
-function toy_data_regression(N=25, p=1; noise=0.3, fun::Function=f(x)=sin(2 * π * x))
-    X = rand(N)
+function toy_data_regression(N=25, p=1; noise=0.3, fun::Function=f(x)=sin(x), xmax::AbstractFloat=8.0)
+    X = rand(N) * xmax
     ε = randn(N) .* noise
     y = @.(fun(X)) + ε
     return X, y

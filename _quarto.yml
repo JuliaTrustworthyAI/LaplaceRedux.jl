@@ -6,6 +6,7 @@ crossref:
   fig-prefix: Figure
   tbl-prefix: Table
 bibliography: https://raw.githubusercontent.com/pat-alt/bib/main/bib.bib
+fig-format: png
 
 execute: 
   freeze: auto

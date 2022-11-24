@@ -1,18 +1,26 @@
 using .Curvature
 using Flux
+using Flux.Optimise: Adam, update!
+using Flux.Optimisers: destructure
 using LinearAlgebra
 
-mutable struct Laplace
+mutable struct Laplace <: BaseLaplace
     model::Flux.Chain
     likelihood::Symbol
     subset_of_weights::Symbol
     hessian_structure::Symbol
     curvature::Union{Curvature.CurvatureInterface,Nothing}
     σ::Real
-    H₀::Any
+    μ₀::Real
+    μ::AbstractVector
+    P₀::Union{AbstractMatrix,UniformScaling}
     H::Union{AbstractArray,Nothing}
+    P::Union{AbstractArray,Nothing}
     Σ::Union{AbstractArray,Nothing}
     n_params::Union{Int,Nothing}
+    n_data::Union{Int,Nothing}
+    n_out::Union{Int,Nothing}
+    loss::Real
 end
 
 using Parameters
@@ -21,9 +29,11 @@ using Parameters
     subset_of_weights::Symbol=:all
     hessian_structure::Symbol=:full
     backend::Symbol=:EmpiricalFisher
-    σ::Real=1
-    λ::Real=1
-    H₀::Union{Nothing, AbstractMatrix}=nothing
+    σ::Real=1.0
+    μ₀::Real=0.0
+    λ::Real=1.0
+    P₀::Union{Nothing,AbstractMatrix,UniformScaling}=nothing
+    loss::Real=0.0
 end
 
 """
@@ -35,69 +45,38 @@ function Laplace(model::Any; likelihood::Symbol, kwargs...)
 
     # Load hyperparameters:
     args = LaplaceParams(;kwargs...)
+    @assert !(args.σ != 1.0 && likelihood != :regression) "Observation noise σ ≠ 1 only available for regression."
+    P₀ = isnothing(args.P₀) ? UniformScaling(args.λ) : args.P₀
+    nn = model
+    n_out = outdim(nn)
+    μ = reduce(vcat, [vec(θ) for θ ∈ Flux.params(nn)])
 
-    # Prior:
-    if isnothing(args.H₀)
-        H₀ = UniformScaling(args.λ)
-    else
-        H₀ = args.H₀
+    # Instantiate LA:
+    la = Laplace(
+        model, likelihood, 
+        args.subset_of_weights, args.hessian_structure, nothing, 
+        args.σ, args.μ₀, μ, P₀, 
+        nothing, nothing, nothing, nothing, nothing,
+        n_out, args.loss
+    )
+    params = get_params(la)
+    la.curvature = getfield(Curvature,args.backend)(nn,likelihood,params)   # curvature interface
+    la.n_params = length(reduce(vcat, [vec(θ) for θ ∈ params]))             # number of params
+    la.μ = la.μ[(end-la.n_params+1):end]                                    # adjust weight vector
+    if typeof(la.P₀) <: UniformScaling
+        la.P₀ = la.P₀(la.n_params)
     end
 
-    # Model: 
-    nn = model
-
-    # Instantiate:
-    la = Laplace(model, likelihood, args.subset_of_weights, args.hessian_structure, nothing, args.σ, H₀, nothing, nothing, nothing)
-    params = get_params(la)
-    la.curvature = getfield(Curvature,args.backend)(nn,likelihood,params) # instantiate chosen curvature interface
-    la.n_params = length(reduce(vcat, [vec(θ) for θ ∈ params]))
-
     # Sanity:
-    if isa(la.H₀, AbstractMatrix)
-        @assert all(size(la.H₀) .== la.n_params) "Dimensions of prior Hessian $(size(la.H₀)) do not align with number of parameters ($(Fala.n_params))"
+    if isa(la.P₀, AbstractMatrix)
+        @assert all(size(la.P₀) .== la.n_params) "Dimensions of prior Hessian $(size(la.P₀)) do not align with number of parameters ($(la.n_params))"
     end
 
     return la
 
 end
 
-"""
-    outdim(la::Laplace)
 
-Helper function to determine the output dimension of a `Flux.Chain` with Laplace approximation.
-"""
-function outdim(la::Laplace)
-    return outdim(la.model)
-end
-
-"""
-    get_params(la::Laplace) 
-
-Retrieves the desired (sub)set of model parameters and stores them in a list.
-
-# Examples
-
-```julia-repl
-using Flux, LaplaceRedux
-nn = Chain(Dense(2,1))
-la = Laplace(nn)
-LaplaceRedux.get_params(la)
-```
-
-"""
-function get_params(la::Laplace)
-    nn = la.model
-    params = Flux.params(nn)
-    n_elements = length(params)
-    if la.subset_of_weights == :all
-        params = [θ for θ ∈ params] # get all parameters and constants in logitbinarycrossentropy
-    elseif la.subset_of_weights == :last_layer
-        params = [params[n_elements-1],params[n_elements]] # only get last parameters and constants
-    else
-        @error "`subset_of_weights` of weights should be one of the following: `[:all, :last_layer]`"
-    end 
-    return params
-end
 
 """
     hessian_approximation(la::Laplace, d)
@@ -105,8 +84,8 @@ end
 Computes the local Hessian approximation at a single data `d`.
 """
 function hessian_approximation(la::Laplace, d)
-    H = getfield(Curvature, la.hessian_structure)(la.curvature,d)
-    return H
+    loss, H = getfield(Curvature, la.hessian_structure)(la.curvature,d)
+    return loss, H
 end
 
 """
@@ -126,14 +105,28 @@ fit!(la, data)
 ```
 
 """
-function fit!(la::Laplace,data)
+function fit!(la::Laplace, data; override::Bool=true)
 
-    H = zeros(la.n_params,la.n_params)
-    for d in data
-        H += hessian_approximation(la, d)
+    if override
+        H = _init_H(la)
+        loss = 0.0
+        n_data = 0
     end
-    la.H = H + la.H₀ # posterior precision
-    la.Σ = inv(la.H) # posterior covariance
+
+    # Training:
+    for d in data
+        loss_batch, H_batch = hessian_approximation(la, d)
+        loss += loss_batch
+        H += H_batch
+        n_data += 1
+    end
+
+    # Store output:
+    la.loss = loss                      # Loss
+    la.H = H                            # Hessian
+    la.P = posterior_precision(la)      # posterior precision
+    la.Σ = posterior_covariance(la)     # posterior covariance
+    la.n_data = n_data                  # number of observations
     
 end
 
@@ -144,20 +137,20 @@ Computes the linearized GLM predictive.
 """
 function glm_predictive_distribution(la::Laplace, X::AbstractArray)
     𝐉, fμ = Curvature.jacobians(la.curvature,X)
-    fvar = predictive_variance(la,𝐉)
+    fvar = functional_variance(la,𝐉)
     fvar = reshape(fvar, size(fμ)...)
     return fμ, fvar
 end
 
 """
-    predictive_variance(la::Laplace,𝐉)
+    functional_variance(la::Laplace,𝐉)
 
-Compute the linearized GLM predictive variance as `𝐉ₙΣ𝐉ₙ'` where `𝐉=∇f(x;θ)|θ̂` is the Jacobian evaluated at the MAP estimate and `Σ = H⁻¹`.
+Compute the linearized GLM predictive variance as `𝐉ₙΣ𝐉ₙ'` where `𝐉=∇f(x;θ)|θ̂` is the Jacobian evaluated at the MAP estimate and `Σ = P⁻¹`.
 
 """
-function predictive_variance(la::Laplace,𝐉)
-    N = size(𝐉, 1)
-    fvar = map(n -> 𝐉[n,:]' * la.Σ * 𝐉[n,:], 1:N)
+function functional_variance(la::Laplace,𝐉)
+    Σ = posterior_covariance(la)
+    fvar = map(j -> j' * Σ * j, eachrow(𝐉))
     return fvar
 end
 
@@ -221,16 +214,55 @@ function (la::Laplace)(X::AbstractArray; kwrgs...)
     return predict(la, X; kwrgs...)
 end
 
-using Flux.Optimise: Adam
 """
-    optimize_prior_precision(la::Laplace; n_steps=100, lr=1e-1, init_prior_prec=1.)
+    optimize_prior!(
+        la::Laplace; 
+        n_steps::Int=100, lr::Real=1e-1,
+        λinit::Union{Nothing,Real}=nothing,
+        σinit::Union{Nothing,Real}=nothing
+    )
     
-Optimize the prior precision post-hoc through empirical Bayes (marginal log-likelihood maximization).
+Optimize the prior precision post-hoc through Empirical Bayes (marginal log-likelihood maximization).
 """
-function optimize_prior_precision(la::Laplace; n_steps=100, lr=1e-1, init_prior_prec=1.)
-    la.H₀ = Diagonal(init_prior_prec)
-    opt = Adam(lr)
-    for i in 1:n_steps
+function optimize_prior!(
+    la::Laplace; 
+    n_steps::Int=100, lr::Real=1e-1,
+    λinit::Union{Nothing,Real}=nothing,
+    σinit::Union{Nothing,Real}=nothing,
+    verbose::Bool=false,
+    tune_σ::Bool=la.likelihood==:regression
+)
 
+    # Setup:
+    logP₀ = isnothing(λinit) ? log.(unique(diag(la.P₀))) : log.([λinit])   # prior precision (scalar)
+    logσ = isnothing(σinit) ? log.([la.σ]) : log.([σinit])                 # noise (scalar)
+    opt = Adam(lr)
+    show_every = round(n_steps/10)
+    i = 0
+    if tune_σ
+        @assert la.likelihood == :regression "Observational noise σ tuning only applicable to regression."
+        ps = Flux.params(logP₀,logσ)
+    else
+        if la.likelihood == :regression
+            @warn "You have specified not to tune observational noise σ, even though this is a regression model. Are you sure you do not want to tune σ?"
+        end
+        ps = Flux.params(logP₀)
     end
+    loss(P₀,σ) = - log_marginal_likelihood(la; P₀=P₀[1], σ=σ[1])
+
+    # Optimization:
+    while i < n_steps
+        gs = gradient(ps) do 
+            loss(exp.(logP₀), exp.(logσ))
+        end
+        update!(opt, ps, gs)
+        i += 1
+        if verbose
+            if i % show_every == 0
+                println("Iteration $(i): P₀=$(exp(logP₀[1])), σ=$(exp(logσ[1]))")
+                @show loss(exp.(logP₀), exp.(logσ))
+            end
+        end
+    end
+
 end

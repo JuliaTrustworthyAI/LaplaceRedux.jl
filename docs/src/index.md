@@ -31,12 +31,13 @@ Pkg.add("https://github.com/pat-alt/LaplaceRedux.jl")
 
 ### Regression
 
-A complete worked example for a regression model can be found in the [docs](https://www.paltmeyer.com/LaplaceRedux.jl/dev/tutorials/regression/). Here we jump straight to Laplace Approximation and take the pre-trained model `nn` as given. Then LA can be implemented as follows, where we specify the model `likelihood` and supply pre-determined values for the prior precision `λ` and the observational noise `σ`. The plot show the fitted values overlayed with a 95% confidence interval. As expected, predictive uncertainty quickly increases in areas that are not populated by any training data.
+A complete worked example for a regression model can be found in the [docs](https://www.paltmeyer.com/LaplaceRedux.jl/dev/tutorials/regression/). Here we jump straight to Laplace Approximation and take the pre-trained model `nn` as given. Then LA can be implemented as follows, where we specify the model `likelihood`. The plot show the fitted values overlayed with a 95% confidence interval. As expected, predictive uncertainty quickly increases in areas that are not populated by any training data.
 
 ``` julia
-la = Laplace(nn; likelihood=:regression, λ=λ, σ=σtrue)
+la = Laplace(nn; likelihood=:regression)
 fit!(la, data)
-plot(la, X, y)
+optimize_prior!(la)
+plot(la, X, y; zoom=-5, size=(400,400))
 ```
 
 ![](index_files/figure-commonmark/cell-4-output-1.svg)
@@ -46,16 +47,56 @@ plot(la, X, y)
 Once again we jump straight to LA and refer to the [docs](https://www.paltmeyer.com/LaplaceRedux.jl/dev/tutorials/mlp/) for a complete worked example involving binary classification. In this case we need to specify `likelihood=:classification`. The plot below shows the resulting posterior predictive distributions as contours in the two-dimensional feature space: note how the **Plugin** Approximation on the left compares to the Laplace Approximation on the right.
 
 ``` julia
-la = Laplace(nn; likelihood=:classification, λ=λ)
+la = Laplace(nn; likelihood=:classification)
 fit!(la, data)
+la_untuned = deepcopy(la)   # saving for plotting
+optimize_prior!(la; verbose=true, n_steps=500)
 
 # Plot the posterior predictive distribution:
+zoom=0
 p_plugin = plot(la, X, ys; title="Plugin", link_approx=:plugin, clim=(0,1))
-p_laplace = plot(la, X, ys; title="Laplace", clim=(0,1))
-plot(p_plugin, p_laplace, layout=(1,2), size=(1000,400))
+p_untuned = plot(la_untuned, X, ys; title="LA - raw (λ=$(unique(diag(la_untuned.P₀))[1]))", clim=(0,1), zoom=zoom)
+p_laplace = plot(la, X, ys; title="LA - tuned (λ=$(round(unique(diag(la.P₀))[1],digits=2)))", clim=(0,1), zoom=zoom)
+plot(p_plugin, p_untuned, p_laplace, layout=(1,3), size=(1700,400))
 ```
 
-![](index_files/figure-commonmark/cell-6-output-1.svg)
+    Iteration 50: P₀=0.06080220040262144, σ=1.0
+
+    loss(exp.(logP₀), exp.(logσ)) = 25.700731337819576
+    Iteration 100: P₀=0.03864448374363554, σ=1.0
+
+
+    loss(exp.(logP₀), exp.(logσ)) = 24.385333791169938
+
+    Iteration 150: P₀=0.03407170744815622, σ=1.0
+    loss(exp.(logP₀), exp.(logσ)) = 24.300861656631366
+    Iteration 200: P₀=0.03291185032022732, σ=1.0
+
+
+    loss(exp.(logP₀), exp.(logσ)) = 24.295534970827646
+
+    Iteration 250: P₀=0.032685898252189316, σ=1.0
+    loss(exp.(logP₀), exp.(logσ)) = 24.295354166355335
+    Iteration 300: P₀=0.032658417387831706, σ=1.0
+
+
+    loss(exp.(logP₀), exp.(logσ)) = 24.29535183069232
+
+    Iteration 350: P₀=0.03265709523177021, σ=1.0
+    loss(exp.(logP₀), exp.(logσ)) = 24.2953518263952
+    Iteration 400: P₀=0.03265717759247646, σ=1.0
+
+
+    loss(exp.(logP₀), exp.(logσ)) = 24.2953518263726
+
+    Iteration 450: P₀=0.032657184624387665, σ=1.0
+    loss(exp.(logP₀), exp.(logσ)) = 24.295351826372727
+    Iteration 500: P₀=0.03265718403952106, σ=1.0
+
+
+    loss(exp.(logP₀), exp.(logσ)) = 24.295351826372492
+
+![](index_files/figure-commonmark/cell-6-output-12.svg)
 
 ## 📢 JuliaCon 2022
 

@@ -23,10 +23,7 @@ nn = Chain(
     Dense(D, n_hidden, σ),
     Dense(n_hidden, 1)
 )  
-λ = 0.01
-sqnorm(x) = sum(abs2, x)
-weight_regularization(λ=λ) = 1/2 * λ^2 * sum(sqnorm, Flux.params(nn))
-loss(x, y) = Flux.Losses.logitbinarycrossentropy(nn(x), y) + weight_regularization();
+loss(x, y) = Flux.Losses.logitbinarycrossentropy(nn(x), y) 
 ```
 
 The model is trained for 200 epochs before the training loss stagnates.
@@ -34,7 +31,7 @@ The model is trained for 200 epochs before the training loss stagnates.
 ``` julia
 using Flux.Optimise: update!, Adam
 opt = Adam()
-epochs = 200
+epochs = 100
 avg_loss(data) = mean(map(d -> loss(d[1],d[2]), data))
 show_every = epochs/10
 
@@ -57,8 +54,10 @@ end
 Laplace approximation can be implemented as follows:
 
 ``` julia
-la = Laplace(nn; likelihood=:classification, λ=λ, subset_of_weights=:last_layer)
+la = Laplace(nn; likelihood=:classification)
 fit!(la, data)
+la_untuned = deepcopy(la)   # saving for plotting
+optimize_prior!(la; verbose=true, n_steps=500)
 ```
 
 The plot below shows the resulting posterior predictive surface for the plugin estimator (left) and the Laplace approximation (right).
@@ -66,9 +65,10 @@ The plot below shows the resulting posterior predictive surface for the plugin e
 ``` julia
 # Plot the posterior distribution with a contour plot.
 zoom=0
-p_plugin = plot(la, X, ys; title="Plugin", link_approx=:plugin, clim=(0,1), zoom=zoom)
-p_laplace = plot(la, X, ys; title="Laplace", clim=(0,1), zoom=zoom)
-plot(p_plugin, p_laplace, layout=(1,2), size=(1000,400))
+p_plugin = plot(la, X, ys; title="Plugin", link_approx=:plugin, clim=(0,1))
+p_untuned = plot(la_untuned, X, ys; title="LA - raw (λ=$(unique(diag(la_untuned.P₀))[1]))", clim=(0,1), zoom=zoom)
+p_laplace = plot(la, X, ys; title="LA - tuned (λ=$(round(unique(diag(la.P₀))[1],digits=2)))", clim=(0,1), zoom=zoom)
+plot(p_plugin, p_untuned, p_laplace, layout=(1,3), size=(1700,400))
 ```
 
 ![](mlp_files/figure-commonmark/cell-7-output-1.svg)
@@ -77,9 +77,10 @@ Zooming out we can note that the plugin estimator produces high-confidence estim
 
 ``` julia
 zoom=-50
-p_plugin = plot(la, X, ys; title="Plugin", link_approx=:plugin, clim=(0,1), zoom=zoom)
-p_laplace = plot(la, X, ys; title="Laplace", clim=(0,1), zoom=zoom)
-plot(p_plugin, p_laplace, layout=(1,2), size=(1000,400))
+p_plugin = plot(la, X, ys; title="Plugin", link_approx=:plugin, clim=(0,1))
+p_untuned = plot(la_untuned, X, ys; title="LA - raw (λ=$(unique(diag(la_untuned.P₀))[1]))", clim=(0,1), zoom=zoom)
+p_laplace = plot(la, X, ys; title="LA - tuned (λ=$(round(unique(diag(la.P₀))[1],digits=2)))", clim=(0,1), zoom=zoom)
+plot(p_plugin, p_untuned, p_laplace, layout=(1,3), size=(1700,400))
 ```
 
 ![](mlp_files/figure-commonmark/cell-8-output-1.svg)

@@ -36,14 +36,16 @@ struct EmpiricalFisher <: CurvatureInterface
     model::Any
     loss_fun::Function
     params::AbstractArray
+    factor::Union{Nothing,Real}
 end
 
 function EmpiricalFisher(model::Any, likelihood::Symbol, params::AbstractArray)
 
     # Define loss function:
     loss_fun = get_loss_fun(likelihood, model)
+    factor = likelihood == :regression ? 0.5 : 1.0
 
-    EmpiricalFisher(model, loss_fun, params)
+    EmpiricalFisher(model, loss_fun, params, factor)
 end
 
 """
@@ -53,11 +55,14 @@ Compute the full empirical Fisher.
 """
 function full(curvature::EmpiricalFisher, d::Tuple)
     x, y = d
+
+    loss = curvature.factor * curvature.loss_fun(x, y)
     𝐠 = gradients(curvature, x, y) 
     𝐠 = reduce(vcat,[vec(𝐠[θ]) for θ ∈ curvature.params])
 
     # Empirical Fisher:
     H = 𝐠 * 𝐠'
-    return H
+    
+    return loss, H
 
 end
