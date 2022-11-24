@@ -121,7 +121,7 @@ function log_marginal_likelihood(la::BaseLaplace; P₀::Union{Nothing,AbstractFl
 
     # update observation noise:
     if !isnothing(σ)
-        @assert la.likelihood==:regression "Can only change sigma_noise for regression."
+        @assert (la.likelihood==:regression || la.σ == σ) "Can only change observational noise σ for regression."
         la.σ = σ
     end
 

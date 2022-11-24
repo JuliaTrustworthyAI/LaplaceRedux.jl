@@ -54,6 +54,8 @@ Laplace approximation for the posterior predictive can be implemented as follows
 ``` julia
 la = Laplace(nn; likelihood=:classification, λ=λ, subset_of_weights=:last_layer)
 fit!(la, data)
+la_untuned = deepcopy(la)   # saving for plotting
+optimize_prior!(la; verbose=true, n_steps=500)
 ```
 
 The plot below shows the resulting posterior predictive surface for the plugin estimator (left) and the Laplace approximation (right).

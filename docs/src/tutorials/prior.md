@@ -4,7 +4,7 @@ CurrentModule = LaplaceRedux
 ```
 
 !!! note "In Progress"  
-    This documentation is still incomplete.
+    This documentation is still incomplete.
 
 ## A quick note on the prior
 

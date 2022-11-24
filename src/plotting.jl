@@ -4,7 +4,7 @@ function Plots.plot(
     la::Laplace,X::AbstractArray,y::AbstractArray;
     link_approx::Symbol=:probit,
     target::Union{Nothing,Real}=nothing,
-    colorbar=true,title=nothing,length_out=500,zoom=-1,xlims=nothing,ylims=nothing,linewidth=0.1,lw=4,
+    colorbar=true,title=nothing,length_out=100,zoom=-1,xlims=nothing,ylims=nothing,linewidth=0.1,lw=4,
     kwargs...
 )
     
@@ -71,7 +71,9 @@ function Plots.plot(
         Z = [predict_([x,y]) for x=x_range, y=y_range]
         Z = reduce(hcat, Z)
         if outdim(la) > 1
-            @info "No target label supplied, using first."
+            if isnothing(target)
+                @info "No target label supplied, using first."
+            end
             target = isnothing(target) ? 1 : target
             title = isnothing(title) ? "p̂(y=$(target))" : title
         else
