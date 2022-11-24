@@ -33,7 +33,7 @@ nn = Chain(
 loss(x, y) = Flux.Losses.logitbinarycrossentropy(nn(x), y) 
 ```
 
-The model is trained for 200 epochs before the training loss stagnates.
+The model is trained until training loss stagnates.
 
 ```{julia}
 using Flux.Optimise: update!, Adam
