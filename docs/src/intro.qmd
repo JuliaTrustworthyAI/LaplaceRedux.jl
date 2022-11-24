@@ -38,7 +38,7 @@ using LaplaceRedux.Data: toy_data_regression
 using Flux.Optimise: update!, Adam
 
 # Data:
-n = 100           # number of observations
+n = 120           # number of observations
 σtrue = 0.3       # true observational noise
 x, y = toy_data_regression(100;noise=σtrue)
 xs = [[x] for x in x]
@@ -134,7 +134,7 @@ Once again we jump straight to LA and refer to the [docs](https://www.paltmeyer.
 la = Laplace(nn; likelihood=:classification)
 fit!(la, data)
 la_untuned = deepcopy(la)   # saving for plotting
-optimize_prior!(la; verbose=true, n_steps=500)
+optimize_prior!(la; n_steps=500)
 
 # Plot the posterior predictive distribution:
 zoom=0
