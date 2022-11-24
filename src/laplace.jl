@@ -4,7 +4,7 @@ using Flux.Optimise: Adam, update!
 using Flux.Optimisers: destructure
 using LinearAlgebra
 
-mutable struct Laplace
+mutable struct Laplace <: BaseLaplace
     model::Flux.Chain
     likelihood::Symbol
     subset_of_weights::Symbol
@@ -76,8 +76,7 @@ function Laplace(model::Any; likelihood::Symbol, kwargs...)
 
 end
 
-# Traits:
-include("traits.jl")
+
 
 """
     hessian_approximation(la::Laplace, d)
@@ -123,11 +122,11 @@ function fit!(la::Laplace, data; override::Bool=true)
     end
 
     # Store output:
-    la.loss = loss      # Loss
-    la.H = H            # Hessian
-    la.P = H + la.P₀    # posterior precision
-    la.Σ = inv(la.P)    # posterior covariance
-    la.n_data = n_data  # number of observations
+    la.loss = loss                      # Loss
+    la.H = H                            # Hessian
+    la.P = posterior_precision(la)      # posterior precision
+    la.Σ = posterior_covariance(la)     # posterior covariance
+    la.n_data = n_data                  # number of observations
     
 end
 
@@ -151,7 +150,8 @@ Compute the linearized GLM predictive variance as `𝐉ₙΣ𝐉ₙ'` where `�
 """
 function predictive_variance(la::Laplace,𝐉)
     N = size(𝐉, 1)
-    fvar = map(n -> 𝐉[n,:]' * la.Σ * 𝐉[n,:], 1:N)
+    Σ = posterior_covariance(la)
+    fvar = map(n -> 𝐉[n,:]' * Σ * 𝐉[n,:], 1:N)
     return fvar
 end
 
@@ -227,7 +227,7 @@ Optimize the prior precision post-hoc through empirical Bayes (marginal log-like
 """
 function optimize_prior!(
     la::Laplace; 
-    n_steps::Int=100, lr::Real=1e-2,
+    n_steps::Int=100, lr::Real=1e-1,
     λinit::Union{Nothing,Real}=nothing,
     σinit::Union{Nothing,Real}=nothing,
     verbose::Bool=false
@@ -256,8 +256,5 @@ function optimize_prior!(
             end
         end
     end
-
-    la.P = la.H + la.P₀
-    la.Σ = inv(la.P)
     
 end
