@@ -150,7 +150,7 @@ Compute the linearized GLM predictive variance as `𝐉ₙΣ𝐉ₙ'` where `�
 """
 function functional_variance(la::Laplace,𝐉)
     Σ = posterior_covariance(la)
-    fvar = map(j -> j' * Σ * j, eachrow(𝐉))
+    fvar = map(j -> j' * Σ * j, eachcol(𝐉))
     return fvar
 end
 

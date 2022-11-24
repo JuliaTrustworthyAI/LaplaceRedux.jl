@@ -16,7 +16,7 @@ function jacobians(curvature::CurvatureInterface, X::AbstractArray)
     ŷ = nn(X)
     # Jacobian:
     𝐉 = jacobian(() -> nn(X),Flux.params(nn))
-    𝐉 = reduce(hcat,[𝐉[θ] for θ ∈ curvature.params])
+    𝐉 = permutedims(reduce(hcat,[𝐉[θ] for θ ∈ curvature.params]))
     return 𝐉, ŷ
 end
 
@@ -31,9 +31,51 @@ function gradients(curvature::CurvatureInterface, X::AbstractArray, y::Union{Num
     return 𝐠
 end
 
+"Constructor for Generalized Gauss Newton."
+struct GGN <: CurvatureInterface
+    model::Any
+    likelihood::Symbol
+    loss_fun::Function
+    params::AbstractArray
+    factor::Union{Nothing,Real}
+end
+
+function GGN(model::Any, likelihood::Symbol, params::AbstractArray)
+
+    # Define loss function:
+    loss_fun = get_loss_fun(likelihood, model)
+    factor = likelihood == :regression ? 0.5 : 1.0
+
+    GGN(model, likelihood, loss_fun, params, factor)
+end
+
+"""
+    full(curvature::GGN, d::Union{Tuple,NamedTuple})
+
+Compute the full GGN.
+"""
+function full(curvature::GGN, d::Tuple)
+    x, y = d
+
+    loss = curvature.factor * curvature.loss_fun(x, y)
+
+    𝐉, fμ = jacobians(curvature, x)
+
+    if curvature.likelihood == :regression
+        H = 𝐉 * 𝐉'
+    else
+        p = softmax(fμ)
+        H = map(j -> j * diagm(p) - p * p' * j', eachcol(𝐉))
+    end
+    
+    return loss, H
+
+end
+
 "Constructor for Empirical Fisher."
 struct EmpiricalFisher <: CurvatureInterface
     model::Any
+    likelihood::Symbol
     loss_fun::Function
     params::AbstractArray
     factor::Union{Nothing,Real}
@@ -45,7 +87,7 @@ function EmpiricalFisher(model::Any, likelihood::Symbol, params::AbstractArray)
     loss_fun = get_loss_fun(likelihood, model)
     factor = likelihood == :regression ? 0.5 : 1.0
 
-    EmpiricalFisher(model, loss_fun, params, factor)
+    EmpiricalFisher(model, likelihood, loss_fun, params, factor)
 end
 
 """
