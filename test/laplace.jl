@@ -179,6 +179,7 @@ end
 
             la = Laplace(nn; likelihood=likelihood, λ=λ, subset_of_weights=:last_layer)
             fit!(la, data)
+            optimize_prior!(la)
             plt = plot(la, X, y)
         end
     end
