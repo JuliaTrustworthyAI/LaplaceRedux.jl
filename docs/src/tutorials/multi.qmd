@@ -58,7 +58,7 @@ end
 ```{julia}
 la = Laplace(nn; likelihood=:classification)
 fit!(la, data)
-optimize_prior!(la; verbose=true, n_steps=1000)
+optimize_prior!(la; verbose=true, n_steps=500)
 ```
 
 ```{julia}

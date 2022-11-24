@@ -24,7 +24,7 @@ data = zip(xs,ys)
 For the classification task we build a neural network with weight decay composed of a single hidden layer.
 
 ```{julia}
-n_hidden = 32
+n_hidden = 15
 D = size(X,1)
 nn = Chain(
     Dense(D, n_hidden, σ),
