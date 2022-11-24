@@ -72,7 +72,7 @@ end
     nn = Chain(Dense([0 0]))
     la = Laplace(nn; likelihood=:classification)
 
-    hessian_exact(x,target) = (nn(x).-target).*(nn(x).*(1 .- nn(x)).*x*x') + la.P₀
+    hessian_exact(x,target) = (nn(x).-target).*(nn(x).*(1 .- nn(x)).*x*x') + la.P₀[1:2,1:2]
 
     @testset "Empirical Fisher - full" begin
         

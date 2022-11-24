@@ -49,7 +49,7 @@ function Laplace(model::Any; likelihood::Symbol, kwargs...)
     P₀ = isnothing(args.P₀) ? UniformScaling(args.λ) : args.P₀
     nn = model
     n_out = outdim(nn)
-    μ, _ = destructure(nn)
+    μ = reduce(vcat, [vec(θ) for θ ∈ Flux.params(nn)])
 
     # Instantiate LA:
     la = Laplace(
@@ -137,21 +137,20 @@ Computes the linearized GLM predictive.
 """
 function glm_predictive_distribution(la::Laplace, X::AbstractArray)
     𝐉, fμ = Curvature.jacobians(la.curvature,X)
-    fvar = predictive_variance(la,𝐉)
+    fvar = functional_variance(la,𝐉)
     fvar = reshape(fvar, size(fμ)...)
     return fμ, fvar
 end
 
 """
-    predictive_variance(la::Laplace,𝐉)
+    functional_variance(la::Laplace,𝐉)
 
 Compute the linearized GLM predictive variance as `𝐉ₙΣ𝐉ₙ'` where `𝐉=∇f(x;θ)|θ̂` is the Jacobian evaluated at the MAP estimate and `Σ = P⁻¹`.
 
 """
-function predictive_variance(la::Laplace,𝐉)
-    N = size(𝐉, 1)
+function functional_variance(la::Laplace,𝐉)
     Σ = posterior_covariance(la)
-    fvar = map(n -> 𝐉[n,:]' * Σ * 𝐉[n,:], 1:N)
+    fvar = map(j -> j' * Σ * j, eachrow(𝐉))
     return fvar
 end
 
