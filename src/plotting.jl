@@ -4,7 +4,7 @@ function Plots.plot(
     la::Laplace,X::AbstractArray,y::AbstractArray;
     link_approx::Symbol=:probit,
     target::Union{Nothing,Real}=nothing,
-    colorbar=true,title=nothing,length_out=100,zoom=-1,xlims=nothing,ylims=nothing,linewidth=0.1,lw=4,
+    colorbar=true,title=nothing,length_out=50,zoom=-1,xlims=nothing,ylims=nothing,linewidth=0.1,lw=4,
     kwargs...
 )
     
@@ -33,7 +33,7 @@ function Plots.plot(
         y_range = range(ylims[1],stop=ylims[2],length=length_out)
 
         # Plot:
-        scatter(vec(X), vec(y), label="ytrain", xlim=xlims, ylim=ylims, lw=lw; kwargs...)
+        scatter(vec(X), vec(y), label="ytrain", xlim=xlims, ylim=ylims, lw=lw, title=title; kwargs...)
         # plot!(xrange, fun.(xrange), label="ytrue")
         _x = permutedims([x for x in x_range])
         fμ, fvar = la(_x)

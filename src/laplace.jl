@@ -150,7 +150,7 @@ Compute the linearized GLM predictive variance as `𝐉ₙΣ𝐉ₙ'` where `�
 """
 function functional_variance(la::Laplace,𝐉)
     Σ = posterior_covariance(la)
-    fvar = map(j -> j' * Σ * j, eachcol(𝐉))
+    fvar = map(j -> (j' * Σ * j), eachcol(𝐉))
     return fvar
 end
 
@@ -259,10 +259,16 @@ function optimize_prior!(
         i += 1
         if verbose
             if i % show_every == 0
-                println("Iteration $(i): P₀=$(exp(logP₀[1])), σ=$(exp(logσ[1]))")
+                @info "Iteration $(i): P₀=$(exp(logP₀[1])), σ=$(exp(logσ[1]))"
                 @show loss(exp.(logP₀), exp.(logσ))
+                println("Log likelihood: $(log_likelihood(la))")
+                println("Log det ratio: $(log_det_ratio(la))")
+                println("Scatter: $(_weight_penalty(la))")
             end
         end
     end
+
+    # la.P = la.H + la.P₀
+    # la.Σ = inv(la.P)
 
 end
