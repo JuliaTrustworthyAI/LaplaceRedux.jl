@@ -4,7 +4,7 @@ x, y = Data.toy_data_multi()
 X = hcat(x...)
 y_train = Flux.onehotbatch(y, unique(y))
 y_train = Flux.unstack(y_train&#39;,1)</code></pre><pre><code class="language-julia hljs">data = zip(x,y_train)
-n_hidden = 32
+n_hidden = 3
 D = size(X,1)
 out_dim = length(unique(y))
 nn = Chain(
@@ -30,7 +30,7 @@ for epoch = 1:epochs
     end
 end</code></pre><h2 id="Laplace-Approximation"><a class="docs-heading-anchor" href="#Laplace-Approximation">Laplace Approximation</a><a id="Laplace-Approximation-1"></a><a class="docs-heading-anchor-permalink" href="#Laplace-Approximation" title="Permalink"></a></h2><pre><code class="language-julia hljs">la = Laplace(nn; likelihood=:classification)
 fit!(la, data)
-optimize_prior!(la; verbose=true, n_steps=500)</code></pre><pre><code class="language-julia hljs">_labels = sort(unique(y))
+optimize_prior!(la; verbose=true, n_steps=1000)</code></pre><pre><code class="language-julia hljs">_labels = sort(unique(y))
 plt_list = []
 for target in _labels
     plt = plot(la, X, y; target=target, clim=(0,1))
@@ -42,4 +42,4 @@ for target in _labels
     plt = plot(la, X, y; target=target, clim=(0,1), link_approx=:plugin)
     push!(plt_list, plt)
 end
-plot(plt_list...)</code></pre><p><img src="../multi_files/figure-commonmark/cell-8-output-1.svg" alt/></p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../mlp/">« MLP Binary Classifier</a><a class="docs-footer-nextpage" href="../regression/">MLP Regression »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 0.27.23 on <span class="colophon-date" title="Thursday 24 November 2022 16:20">Thursday 24 November 2022</span>. Using Julia version 1.8.3.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+plot(plt_list...)</code></pre><p><img src="../multi_files/figure-commonmark/cell-8-output-1.svg" alt/></p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../mlp/">« MLP Binary Classifier</a><a class="docs-footer-nextpage" href="../regression/">MLP Regression »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 0.27.23 on <span class="colophon-date" title="Friday 25 November 2022 15:45">Friday 25 November 2022</span>. Using Julia version 1.8.3.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
