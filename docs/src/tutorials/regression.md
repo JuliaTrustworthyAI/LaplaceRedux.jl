@@ -9,7 +9,7 @@ We first generate some synthetic data:
 
 ``` julia
 using LaplaceRedux.Data
-n = 150       # number of observations
+n = 300       # number of observations
 σtrue = 0.30  # true observational noise
 x, y = Data.toy_data_regression(n;noise=σtrue)
 xs = [[x] for x in x]
@@ -74,28 +74,46 @@ optimize_prior!(la; verbose=true)
 plot(la, X, y; zoom=-5, size=(400,400))
 ```
 
-    Iteration 10: P₀=0.3884183915097719, σ=0.37462791983413435
+    loss(exp.(logP₀), exp.(logσ)) = 117.66664854620934
+    Log likelihood: -85.92178189333164
+    Log det ratio: 35.71426712713756
+    Scatter: 27.77546617861784
+    loss(exp.(logP₀), exp.(logσ)) = 121.87231511858798
+    Log likelihood: -94.6377872523882
+    Log det ratio: 40.7731858243348
+    Scatter: 13.695869908064768
+    loss(exp.(logP₀), exp.(logσ)) = 105.74544738246172
+    Log likelihood: -79.26976568466756
+    Log det ratio: 43.950740004518195
+    Scatter: 9.000623391070134
+    loss(exp.(logP₀), exp.(logσ)) = 103.88142914896216
+    Log likelihood: -77.44149990175734
+    Log det ratio: 45.50530524149423
+    Scatter: 7.374553252915389
+    loss(exp.(logP₀), exp.(logσ)) = 104.09479293926637
+    Log likelihood: -77.63140243238486
+    Log det ratio: 45.99843510214248
+    Scatter: 6.928345911620529
 
-    loss(exp.(logP₀), exp.(logσ)) = 62.286501135197625
-    Iteration 20: P₀=0.19286897058427785, σ=0.22662547463745616
-    loss(exp.(logP₀), exp.(logσ)) = 60.95395063398549
-    Iteration 30: P₀=0.12850167531313283, σ=0.31089662895570863
-    loss(exp.(logP₀), exp.(logσ)) = 50.466530344502566
-    Iteration 40: P₀=0.10713367763315505, σ=0.3117173325625265
-    loss(exp.(logP₀), exp.(logσ)) = 50.52282762877773
-    Iteration 50: P₀=0.10242099028762099, σ=0.27382604745869443
-    loss(exp.(logP₀), exp.(logσ)) = 50.25213793017164
-    Iteration 60: P₀=0.10482842243715489, σ=0.29384717721411097
-    loss(exp.(logP₀), exp.(logσ)) = 49.78683248122465
-    Iteration 70: P₀=0.10972567294088902, σ=0.2922018292211539
-    loss(exp.(logP₀), exp.(logσ)) = 49.75103929588618
-    Iteration 80: P₀=0.11440323090214488, σ=0.2861879031236091
-    loss(exp.(logP₀), exp.(logσ)) = 49.75147574978594
-    Iteration 90: P₀=0.11750906238748272, σ=0.2917479215594753
-    loss(exp.(logP₀), exp.(logσ)) = 49.73732964241694
-    Iteration 100: P₀=0.1188587829052049, σ=0.28865384391024296
+    loss(exp.(logP₀), exp.(logσ)) = 103.3468498181464
+    Log likelihood: -76.88770063543016
+    Log det ratio: 45.92861066847996
+    Scatter: 6.989687696952491
+    loss(exp.(logP₀), exp.(logσ)) = 103.16246637027459
+    Log likelihood: -76.71757535070529
+    Log det ratio: 45.64189954216795
+    Scatter: 7.247882496970637
+    loss(exp.(logP₀), exp.(logσ)) = 103.16978958495622
+    Log likelihood: -76.7341717145966
+    Log det ratio: 45.34308830278303
+    Scatter: 7.528147437936199
+    loss(exp.(logP₀), exp.(logσ)) = 103.16445388078068
+    Log likelihood: -76.73183970804324
+    Log det ratio: 45.1273375561218
+    Scatter: 7.737890789353098
+    loss(exp.(logP₀), exp.(logσ)) = 103.15526534959244
+    Log likelihood: -76.72294852715255
+    Log det ratio: 45.01394675305761
+    Scatter: 7.850686891822177
 
-
-    loss(exp.(logP₀), exp.(logσ)) = 49.730466973202795
-
-![](regression_files/figure-commonmark/cell-7-output-4.svg)
+![](regression_files/figure-commonmark/cell-7-output-3.svg)

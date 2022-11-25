@@ -8,13 +8,25 @@ CurrentModule = LaplaceRedux
 
 ## A quick note on the prior
 
-Low prior uncertainty → posterior dominated by prior. High prior uncertainty → posterior approaches MLE.
+### General Effect
+
+High prior precision → only observation noise. Low prior precision → high posterior uncertainty.
 
 ``` julia
-# Number of points to generate:
-xs, y = LaplaceRedux.Data.toy_data_non_linear(200)
-X = hcat(xs...); # bring into tabular format
-data = zip(xs,y)
+using LaplaceRedux.Data
+n = 150       # number of observations
+σtrue = 0.30  # true observational noise
+x, y = Data.toy_data_regression(n;noise=σtrue)
+xs = [[x] for x in x]
+X = permutedims(x)
 ```
 
-![](prior_files/figure-commonmark/cell-4-output-1.svg)
+![](prior_files/figure-commonmark/cell-4-output-1.png)
+
+### Effect of Model Size on Optimal Choice
+
+For larger models, the optimal prior precision *λ* as evaluated through Empirical Bayes tends to be smaller.
+
+![](prior_files/figure-commonmark/cell-5-output-1.png)
+
+![](prior_files/figure-commonmark/cell-6-output-1.png)

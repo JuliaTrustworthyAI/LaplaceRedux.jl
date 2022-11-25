@@ -15,7 +15,7 @@ y_train = Flux.unstack(y_train',1)
 
 ``` julia
 data = zip(x,y_train)
-n_hidden = 32
+n_hidden = 3
 D = size(X,1)
 out_dim = length(unique(y))
 nn = Chain(
@@ -51,7 +51,7 @@ end
 ``` julia
 la = Laplace(nn; likelihood=:classification)
 fit!(la, data)
-optimize_prior!(la; verbose=true, n_steps=500)
+optimize_prior!(la; verbose=true, n_steps=1000)
 ```
 
 ``` julia

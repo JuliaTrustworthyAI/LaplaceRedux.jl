@@ -1,5 +1,6 @@
 using Flux
-using ..LaplaceRedux: get_loss_fun
+using ..LaplaceRedux: get_loss_fun, outdim
+using LinearAlgebra
 using Zygote
 
 "Basetype for any curvature interface."
@@ -42,6 +43,8 @@ end
 
 function GGN(model::Any, likelihood::Symbol, params::AbstractArray)
 
+    @error "GGN not yet implemented."
+
     # Define loss function:
     loss_fun = get_loss_fun(likelihood, model)
     factor = likelihood == :regression ? 0.5 : 1.0
@@ -64,8 +67,9 @@ function full(curvature::GGN, d::Tuple)
     if curvature.likelihood == :regression
         H = 𝐉 * 𝐉'
     else
-        p = softmax(fμ)
-        H = map(j -> j * diagm(p) - p * p' * j', eachcol(𝐉))
+        p = outdim(curvature.model) > 1 ? softmax(fμ) : sigmoid(fμ)
+        H = map(j -> j * (diagm(p) - p * p') * j', eachcol(𝐉))
+        println(H)
     end
     
     return loss, H

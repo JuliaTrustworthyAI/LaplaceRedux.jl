@@ -6,7 +6,7 @@ CurrentModule = LaplaceRedux
 #| echo: false
 using Pkg; Pkg.activate("docs")
 # Import libraries
-using Flux, Plots, Random, Statistics, LaplaceRedux
+using Flux, Plots, Random, Statistics, LaplaceRedux, LinearAlgebra
 ```
 
 | !!! note \"In Progress\"
@@ -164,7 +164,7 @@ for n_hidden ∈ n_hiddens
     title = "n_params=$(la.n_params),λ=$(round(λ,digits=2))"
 
     # plot 
-    plt = plot(la, X, ys; title=title, zoom=-1)
+    plt = plot(la, X, ys; title=title, zoom=-1, clim=(0,1))
     plts = vcat(plts..., plt)
     nns = vcat(nns..., nn)
 end

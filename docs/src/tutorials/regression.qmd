@@ -16,7 +16,7 @@ We first generate some synthetic data:
 
 ```{julia}
 using LaplaceRedux.Data
-n = 150       # number of observations
+n = 300       # number of observations
 σtrue = 0.30  # true observational noise
 x, y = Data.toy_data_regression(n;noise=σtrue)
 xs = [[x] for x in x]
@@ -83,11 +83,3 @@ optimize_prior!(la; verbose=true)
 plot(la, X, y; zoom=-5, size=(400,400))
 ```
 
-
-
-
-
-
-```{julia}
-
-```

@@ -92,3 +92,4 @@ p_laplace = plot(la, X, ys; title="LA - tuned (λ=$(round(unique(diag(la.P₀))[
 plot(p_plugin, p_untuned, p_laplace, layout=(1,3), size=(1700,400))
 ```
 
+

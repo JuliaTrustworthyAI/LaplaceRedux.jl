@@ -17,7 +17,7 @@ data = zip(xs,ys)
 For the classification task we build a neural network with weight decay composed of a single hidden layer.
 
 ``` julia
-n_hidden = 32
+n_hidden = 10
 D = size(X,1)
 nn = Chain(
     Dense(D, n_hidden, σ),
@@ -26,11 +26,11 @@ nn = Chain(
 loss(x, y) = Flux.Losses.logitbinarycrossentropy(nn(x), y) 
 ```
 
-The model is trained for 200 epochs before the training loss stagnates.
+The model is trained until training loss stagnates.
 
 ``` julia
 using Flux.Optimise: update!, Adam
-opt = Adam()
+opt = Adam(1e-3)
 epochs = 100
 avg_loss(data) = mean(map(d -> loss(d[1],d[2]), data))
 show_every = epochs/10
@@ -54,7 +54,7 @@ end
 Laplace approximation can be implemented as follows:
 
 ``` julia
-la = Laplace(nn; likelihood=:classification)
+la = Laplace(nn; likelihood=:classification, subset_of_weights=:all)
 fit!(la, data)
 la_untuned = deepcopy(la)   # saving for plotting
 optimize_prior!(la; verbose=true, n_steps=500)

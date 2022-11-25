@@ -32,6 +32,8 @@ function Plots.plot(
         x_range = range(xlims[1],stop=xlims[2],length=length_out)
         y_range = range(ylims[1],stop=ylims[2],length=length_out)
 
+        title = isnothing(title) ? "" : title
+
         # Plot:
         scatter(vec(X), vec(y), label="ytrain", xlim=xlims, ylim=ylims, lw=lw, title=title; kwargs...)
         # plot!(xrange, fun.(xrange), label="ytrue")
