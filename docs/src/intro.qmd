@@ -37,7 +37,7 @@ using LaplaceRedux.Data: toy_data_regression
 using Flux.Optimise: update!, Adam
 
 # Data:
-n = 120           # number of observations
+n = 150           # number of observations
 σtrue = 0.3       # true observational noise
 x, y = toy_data_regression(100;noise=σtrue)
 xs = [[x] for x in x]

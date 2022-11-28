@@ -45,7 +45,12 @@ function Laplace(model::Any; likelihood::Symbol, kwargs...)
 
     # Load hyperparameters:
     args = LaplaceParams(;kwargs...)
+
+    # Assertions:
     @assert !(args.σ != 1.0 && likelihood != :regression) "Observation noise σ ≠ 1 only available for regression."
+    @assert args.subset_of_weights ∈ [:all, :last_layer] "`subset_of_weights` of weights should be one of the following: `[:all, :last_layer]`"
+
+    # Setup:
     P₀ = isnothing(args.P₀) ? UniformScaling(args.λ) : args.P₀
     nn = model
     n_out = outdim(nn)

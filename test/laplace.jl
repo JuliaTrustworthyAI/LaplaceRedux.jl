@@ -10,6 +10,11 @@ using Statistics
 
     # One layer:
     nn = Chain(Dense(2,1))
+
+    # Expected error
+    @test_throws AssertionError Laplace(nn; likelihood=:classification, subset_of_weights=:last)
+
+    # Correct:
     la = Laplace(nn; likelihood=:classification)
     @test la.n_params == 3
 
@@ -179,8 +184,11 @@ end
 
             la = Laplace(nn; likelihood=likelihood, λ=λ, subset_of_weights=:last_layer)
             fit!(la, data)
-            optimize_prior!(la)
-            plt = plot(la, X, y)
+            optimize_prior!(la; verbose=true)
+            plot(la, X, y)                              # standard
+            plot(la, X, y; xlims=(-5,5), ylims=(-5,5))  # lims
+            plot(la, X, y; link_approx=:plugin)         # plugin approximation
+
         end
     end
 

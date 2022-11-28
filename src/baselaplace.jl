@@ -30,12 +30,10 @@ function get_params(la::BaseLaplace)
     params = Flux.params(nn)
     n_elements = length(params)
     if la.subset_of_weights == :all
-        params = [θ for θ ∈ params] # get all parameters and constants in logitbinarycrossentropy
+        params = [θ for θ ∈ params]                         # get all parameters and constants in logitbinarycrossentropy
     elseif la.subset_of_weights == :last_layer
-        params = [params[n_elements-1],params[n_elements]] # only get last parameters and constants
-    else
-        @error "`subset_of_weights` of weights should be one of the following: `[:all, :last_layer]`"
-    end 
+        params = [params[n_elements-1],params[n_elements]]  # only get last parameters and constants
+    end
     return params
 end
 
@@ -123,11 +121,9 @@ function log_marginal_likelihood(la::BaseLaplace; P₀::Union{Nothing,AbstractFl
     if !isnothing(σ)
         @assert (la.likelihood==:regression || la.σ == σ) "Can only change observational noise σ for regression."
         la.σ = σ
-    end
+    end 
 
-    mll = log_likelihood(la) - 0.5 * (log_det_ratio(la) + _weight_penalty(la))
-
-    return mll
+    return log_likelihood(la) - 0.5 * (log_det_ratio(la) + _weight_penalty(la))
 end
 
 """
