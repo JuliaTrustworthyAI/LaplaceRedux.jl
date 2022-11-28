@@ -1,0 +1,9 @@
+```@meta
+CurrentModule = LaplaceRedux
+```
+
+# LaplaceRedux
+
+Documentation for [LaplaceRedux.jl](https://github.com/pat-alt/LaplaceRedux.jl).
+
+{{< include intro.qmd >}}
