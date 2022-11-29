@@ -82,7 +82,6 @@ function Laplace(model::Any; likelihood::Symbol, kwargs...)
 end
 
 
-
 """
     hessian_approximation(la::Laplace, d)
 
