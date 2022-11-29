@@ -15,4 +15,7 @@ export Laplace, fit!, predict, optimize_prior!
 
 include("plotting.jl")
 
+# MLJ Interface
+include("MLJLaplaceRedux/MLJLaplaceRedux.jl")
+
 end

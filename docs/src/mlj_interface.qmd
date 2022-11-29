@@ -1,0 +1,26 @@
+```@meta
+CurrentModule = LaplaceRedux
+```
+
+```{julia}
+#| echo: false
+using Pkg; Pkg.activate("docs")
+# Import libraries
+using Flux, Plots, Random, Statistics, LaplaceRedux
+theme(:wong)
+```
+
+```{julia}
+using MLJ
+import RDatasets
+iris = RDatasets.dataset("datasets", "iris");
+y, X = unpack(iris, ==(:Species), colname -> true, rng=123);
+NeuralNetworkClassifier = @load NeuralNetworkClassifier pkg=MLJFlux
+clf = NeuralNetworkClassifier()
+```
+
+```{julia}
+la = Laplace(clf; likelihood=:classification)
+```
+
+
