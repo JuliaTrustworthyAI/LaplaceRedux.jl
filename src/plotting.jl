@@ -42,7 +42,7 @@ function Plots.plot(
         fμ = vec(fμ)
         fσ = vec(sqrt.(fvar))
         pred_std = sqrt.(fσ.^2 .+ la.σ^2)  
-        plot!(x_range, fμ, color=2, label="yhat", ribbon = (1.96*pred_std, 1.96*pred_std), lw=lw; kwargs...)
+        plot!(x_range, fμ, label="yhat", ribbon = (1.96*pred_std, 1.96*pred_std), lw=lw; kwargs...)
 
     else
 

@@ -38,3 +38,5 @@ function MMI.predict(la::BaseLaplace, fitresult, Xnew)
     return ŷ
 
 end
+
+end

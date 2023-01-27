@@ -84,6 +84,29 @@ optimize_prior!(la)
 plot(la, X, y; zoom=-5, size=(400,400))
 ```
 
+```{julia}
+#| echo: false
+
+using Plots.PlotMeasures
+theme(:wong)
+anim = Animation()
+N = 100
+_every = Int(round(N/10))
+zoom = -3
+for n in _every:_every:length(first(data,N))
+    la = Laplace(nn; likelihood=:regression)
+    fit!(la, Iterators.take(data,n))
+    optimize_prior!(la)
+    plt = plot(
+      la, X[:,1:n], y[1:n]; 
+      ylim=(minimum(y)+zoom,maximum(y)-zoom),
+      zoom=-2, size=(600,200), clegend=false, axis=nothing, legend=false, margin = -5mm, ms=4
+    )
+    frame(anim, plt)
+end
+gif(anim, "dev/www/intro.gif", fps=1)
+```
+
 ### Binary Classification
 
 ```{julia}
