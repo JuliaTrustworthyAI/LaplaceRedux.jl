@@ -92,7 +92,7 @@ function Plots.plot(
             kwargs...
         )
         # Samples:
-        scatter!(X[1,:],X[2,:],group=Int.(y); kwargs...)
+        scatter!(X[1,:],X[2,:],group=Int.(y), color=Int.(y); kwargs...)
 
     end
 

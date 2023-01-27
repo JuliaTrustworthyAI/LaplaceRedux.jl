@@ -145,17 +145,17 @@
 \date{}
 
 \begin{document}
-\ifdefined\Shaded\renewenvironment{Shaded}{\begin{tcolorbox}[breakable, frame hidden, interior hidden, sharp corners, boxrule=0pt, borderline west={3pt}{0pt}{shadecolor}, enhanced]}{\end{tcolorbox}}\fi
+\ifdefined\Shaded\renewenvironment{Shaded}{\begin{tcolorbox}[enhanced, boxrule=0pt, sharp corners, breakable, borderline west={3pt}{0pt}{shadecolor}, interior hidden, frame hidden]}{\end{tcolorbox}}\fi
 
 \hypertarget{sec-intro}{%
 \section{Background}\label{sec-intro}}
 
-Over the past decade Deep Learning (DL) has arguably been one of the
+Over the past decade, Deep Learning (DL) has arguably been one of the
 dominating subdisciplines of Artificial Intelligence. Despite the
 tremendous success of deep neural networks, practitioners and
 researchers have also pointed to a vast number of pitfalls that have so
 far inhibited the use of DL in safety-critical applications. Among other
-things these pitfalls include a lack adversarial robustness
+things these pitfalls include a lack of adversarial robustness
 \cite{goodfellow2014explaining} and an inherent opaqueness of deep
 neural networks, often described as the black-box problem.
 
@@ -173,7 +173,7 @@ A scenario like this very much calls for treating model predictions
 probabilistically \cite{wilson2020case}. It is therefore not surprising
 that interest in Bayesian deep learning has grown in recent years as
 researchers have tackled the problem from a wide range of angles
-including: MCMC (see
+including MCMC (see
 \href{https://turing.ml/dev/tutorials/03-bayesian-neural-network/}{\texttt{Turing}}),
 Mean Field Variational Inference \cite{blundell2015weight}, Monte Carlo
 Dropout \cite{gal2016dropout} and Deep Ensembles
@@ -196,37 +196,38 @@ p(y|x,\mathcal{D}) = \int p(y|x,\theta)p(\theta|\mathcal{D})d\theta
 
 To do so we first need to compute the weight posterior
 \(p(\theta|\mathcal{D})\). Laplace Approximation (LA) relies on the fact
-that the second-order Taylor expansion of this posteriour amounts to a
+that the second-order Taylor expansion of this posterior amounts to a
 multivariate Gaussian \(q(\theta)=\mathcal{N}(\hat\mu,\hat\Sigma)\)
-centered around the maximum a posteriori (MAP) estimate
+centred around the maximum a posteriori (MAP) estimate
 \(\hat\mu=\hat{\theta}=\arg\max_{\theta}p(\theta|\mathcal{D})\) with
-covariance equal to the inverse Hessian of our loss function evaluated
-at the mode \(\hat{\Sigma}=-(\hat{\mathcal{H}}|_{\hat{\theta}})^{-1}\).
+covariance equal to the negative inverse Hessian of our loss function
+evaluated at the mode
+\(\hat{\Sigma}=-(\hat{\mathcal{H}}|_{\hat{\theta}})^{-1}\).
 
 To apply Laplace in the context of deep learning, we can train our
-network in the standard way by minimizing the negative log likelihood
+network in the standard way by minimizing the negative log-likelihood
 \(\ell(\theta)=-\log p(y|x,\mathcal{D})\). To obtain Gaussian LA weight
 posterior we then only need to compute the Hessian evaluated at the
 obtained MAP estimate.
 
 Laplace Approximation itself dates back to the 18th century, but despite
-its simplicity it has not been widely used or studied by the deep
+its simplicity, it has not been widely used or studied by the deep
 learning community until recently. One reason for this may be that for
-large neural networks with many parameters the exact Hessian computation
-is prohibitive. One can rely on linearized approximations of the
-Hessian, but those still scale quadratically in the number of
+large neural networks with many parameters, the exact Hessian
+computation is prohibitive. One can rely on linearized approximations of
+the Hessian, but those still scale quadratically in the number of
 parameters. Fortunately, recent work has shown that block-diagonal
 factorizations can be successfully applied in this context
 \cite{martens2015optimizing}.
 
-Another reason for why LA may have been neglected in the past, is that
-early attempts at using it for deep learning actually failed: simply
-sampling from the Laplace posterior to compute the exact BNN posterior
-predictive distribution in Equation~\ref{eq-bma} does not work when
-using approximations for the Hessian \cite{lawrence2001variational}.
-Instead we can use a linear expansion of the predictive around the mode
-as demonstrated by Immer et al.~(2020) \cite{immer2020improving}.
-Formally, we locally linearize our network,
+Another reason why LA may have been neglected in the past is that early
+attempts at using it for deep learning failed: simply sampling from the
+Laplace posterior to compute the exact BNN posterior predictive
+distribution in Equation~\ref{eq-bma} does not work when using
+approximations for the Hessian \cite{lawrence2001variational}. Instead,
+we can use a linear expansion of the predictive around the mode as
+demonstrated by Immer et al.~(2020) \cite{immer2020improving}. Formally,
+we locally linearize our network,
 
 \begin{equation}\protect\hypertarget{eq-glm}{}{
 f^{\hat{\theta}}_{\mbox{lin}}(x;\theta)=f(x;\hat{\theta}) + \mathcal{J}_{\theta}(\theta-\hat{\theta})
@@ -240,15 +241,15 @@ corresponding GLM predictive,
 p(y|x,\mathcal{D}) = \mathbb{E} \left[ p(y|f^{\hat{\theta}}_{\mbox{lin}}(x;\theta_n)) \right], \ \ \ \theta_n \sim q(\theta)
 }\label{eq-glm-predictive}\end{equation}
 
-has a closed-form solution for regression problems and for
-classification problems can be approximated using (extended) probit
-approximation \cite{daxberger2021laplace}.
+has a closed-form solution for regression problems. For classification
+problems it can be approximated using (extended) probit approximation
+\cite{daxberger2021laplace}.
 
 Immer et al.~(2020) \cite{immer2020improving} provide a much more
 detailed exposition of the above with a focus on theoretical
 underpinnings and intuition. Daxberger et el. (2021)
 \cite{daxberger2021laplace} introduce Laplace Redux from more of an
-applied perspective and present a comprehensive Pyhon implementation:
+applied perspective and present a comprehensive Python implementation:
 \href{https://aleximmer.github.io/Laplace/}{laplace}.
 
 \hypertarget{laplaceredux.jl-a-julia-implementation}{%
@@ -257,74 +258,93 @@ implementation}{LaplaceRedux.jl --- a Julia implementation}}\label{laplaceredux.
 
 The \texttt{LaplaceRedux.jl} package is intended to make this new
 methodological framework available to the Julia community. It is
-interfaced to the popular deep learning library,
+interfaced with the popular deep learning library,
 \href{https://fluxml.ai/}{\texttt{Flux.jl}}.
 
-Using just a few lines of code the package enables users to compute
+Using just a few lines of code the package enables users to compute and
 apply Laplace Redux to their pre-trained neural networks. A basic usage
 example is shown in listing \ref{lst:laplace}: the \texttt{Laplace}
-function simply wraps the Flux neural network \texttt{nn}. Here we have
-also provided two of the optional key arguments that determine the prior
-precision \(\lambda\) and the subset of network layers to be used. The
-returned instance can then be trained on data using the generic
-\texttt{fit!} method. Calling the generic \texttt{predict} method on the
-fitted instance will generate GLM predictions according to
+function simply wraps the Flux neural network \texttt{nn}. The returned
+instance is then fitted to data using the generic \texttt{fit!} method.
+Finally, the prior precision \(\lambda\) is optimized through Empirical
+Bayes \cite{daxberger2021laplace}. Calling the generic \texttt{predict}
+method on the fitted instance will generate GLM predictions according to
 Equation~\ref{eq-glm-predictive}.
 
 \begin{lstlisting}[language=Julia, escapechar=@, numbers=left, label={lst:laplace}, caption={}]
-la = Laplace(
-  nn;
-  @$\lambda=\lambda$@, subset_of_weights=:last_layer
-)
+la = Laplace(nn; likelihood=:classification)
 fit!(la, data)
+optimize_prior!(la)
 \end{lstlisting}
 
-Figure~\ref{fig-pred-mlp} shows an example involving a synthetic data
-set consisting of two classes. Contours indicate the predicted
-probabilities using the plugin estimator (left) and Laplace
-approximation (right). Relying solely on the MAP estimate, the plugin
+Figure~\ref{fig-class} shows an example involving a synthetic data set
+consisting of two classes. Contours indicate the predicted probabilities
+using the plugin estimator (left), untuned Laplace Approximation
+(center) and finally optimized LA (right). For the latter two, the
+respective choices for the prior precision parameter \(\lambda\) are
+indicated in the title. Relying solely on the MAP estimate, the plugin
 estimator produces overly confident predictions. Conversely, the GLM
 predictions account for predictive uncertainty as captured by the
 Laplace posterior.
 
+Figure~\ref{fig-reg} presents a regression example with optimized LA.
+Wide regions of the confidence interval (shaded area) indicate high
+predictive uncertainty. Intuitively, the estimated predictive
+uncertainty increases significantly in regions characterized by high
+epistemic uncertainty: epistemic uncertainty arises in regions of the
+domain that have not been observed by the classifier, so regions that
+are free of training samples.
+
 \begin{figure}
 
-{\centering \includegraphics[width=3.33333in,height=1.41667in]{www/posterior_predictive_mlp.png}
+{\centering \includegraphics[width=3.33333in,height=1.11667in]{www/posterior_predictive_mlp.png}
 
 }
 
-\caption{\label{fig-pred-mlp}Posterior predictive distribution of a
-simple neural network in the 2D feature space using the plugin estimator
-(left) and Laplace approximation (right).}
+\caption{\label{fig-class}Posterior predictive distribution for binary
+classifier: plugin estimate (left), untuned LA (center) and optimized LA
+(right). The colour of the contour indicates the predicted class
+probabilities: the more yellow a region, the more confident the
+classifier that samples belong to the orange class.}
 
 \end{figure}
 
-The package is still in its infancy and its functionality limited at the
-time of writing. For example, it currently lacks support for regression
-and multi-class problems. It also still works with full Hessian
-approximations, as opposed to the less expensive (block-) diagonal
-variants. That being said, choices regarding the package architecture
-were made with these future development opportunities in mind. This
-should hopefully make the package attractive to other Julia developers
-interested in the topic.
+\begin{figure}
+
+{\centering \includegraphics[width=3.33333in,height=1.66667in]{www/regression.png}
+
+}
+
+\caption{\label{fig-reg}Posterior predictive distribution for regressor:
+wide regions of the confidence interval (shaded area) indicate high
+predictive uncertainty.}
+
+\end{figure}
 
 \hypertarget{sec-con}{%
-\section{Conclusions}\label{sec-con}}
+\section{Discussion and Outlook}\label{sec-con}}
 
-Laplace Redux is arguably one of the most exciting and promising recent
-developments in Bayesian deep learning. The goal of this project is to
-bring this framework to the attention of the Julia machine learning
-community. The package \texttt{LaplaceRedux.jl} offers a useful starting
-ground for a full-fledged implementation in pure Julia. Future
-developments are planned and contributions are very much welcome.
+At the time of writing, the package is still in its infancy and its
+functionality is limited. It currently lacks multi-class support and
+still works with full Hessian approximations, as opposed to the less
+expensive (block-) diagonal variants. That being said, choices regarding
+the package architecture were made with these future development
+opportunities in mind. This should hopefully make the package attractive
+to other Julia developers interested in the topic.
+
+Laplace Redux is an exciting and promising recent development in Bayesian deep learning. The goal of this project is to
+bring this framework to the attention of the Julia machine-learning
+community. The package \texttt{LaplaceRedux.jl} offers a starting ground
+for a full-fledged implementation in pure Julia. Future developments are
+planned and contributions are very much welcome.
 
 \hypertarget{sec-ack}{%
 \section{Acknowledgements}\label{sec-ack}}
 
 I am grateful to my PhD supervisors Cynthia C. S. Liem and Arie van
-Deursen for being so supportive of me working on open-source
-developments. I am also grateful to the Julia community for being so
-kind, welcoming and helpful.
+Deursen for being so supportive of my work on open-source developments.
+I am also grateful to the Julia community for being so kind, welcoming
+and helpful.
 
 
 
