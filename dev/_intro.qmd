@@ -39,7 +39,7 @@ using Flux.Optimise: update!, Adam
 # Data:
 n = 150           # number of observations
 σtrue = 0.3       # true observational noise
-x, y = toy_data_regression(100;noise=σtrue)
+x, y = toy_data_regression(n; noise=σtrue)
 xs = [[x] for x in x]
 X = permutedims(x)
 data = zip(xs,y)
