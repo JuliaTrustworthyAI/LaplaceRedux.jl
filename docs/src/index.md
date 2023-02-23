@@ -37,7 +37,7 @@ A complete worked example for a regression model can be found in the [docs](http
 la = Laplace(nn; likelihood=:regression)
 fit!(la, data)
 optimize_prior!(la)
-plot(la, X, y; zoom=-5, size=(400,400))
+plot(la, X, y; zoom=-5, size=(500,500))
 ```
 
 ![](index_files/figure-commonmark/cell-4-output-1.png)
