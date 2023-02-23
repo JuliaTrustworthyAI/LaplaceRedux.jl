@@ -6,11 +6,11 @@ DocMeta.setdocmeta!(LaplaceRedux, :DocTestSetup, :(using LaplaceRedux); recursiv
 makedocs(;
     modules=[LaplaceRedux],
     authors="Patrick Altmeyer",
-    repo="https://github.com/pat-alt/LaplaceRedux.jl/blob/{commit}{path}#{line}",
+    repo="https://github.com/JuliaTrustworthyAI/LaplaceRedux.jl/blob/{commit}{path}#{line}",
     sitename="LaplaceRedux.jl",
     format=Documenter.HTML(;
         prettyurls=get(ENV, "CI", "false") == "true",
-        canonical="https://pat-alt.github.io/LaplaceRedux.jl",
+        canonical="https://juliatrustworthyai.github.io/LaplaceRedux.jl",
         assets=String[],
     ),
     pages=[
@@ -28,6 +28,6 @@ makedocs(;
 )
 
 deploydocs(;
-    repo="github.com/pat-alt/LaplaceRedux.jl",
+    repo="github.com/JuliaTrustworthyAI/LaplaceRedux.jl",
     devbranch="main",
 )

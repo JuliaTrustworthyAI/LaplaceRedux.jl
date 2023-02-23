@@ -5,7 +5,7 @@ CurrentModule = LaplaceRedux
 
 # LaplaceRedux
 
-Documentation for [LaplaceRedux.jl](https://github.com/pat-alt/LaplaceRedux.jl).
+Documentation for [LaplaceRedux.jl](https://github.com/JuliaTrustworthyAI/LaplaceRedux.jl).
 
 `LaplaceRedux.jl` is a library written in pure Julia that can be used for effortless Bayesian Deep Learning trough Laplace Approximation (LA). In the development of this package I have drawn inspiration from this Python [library](https://aleximmer.github.io/Laplace/index.html#setup) and its companion [paper](https://arxiv.org/abs/2106.14806) (Daxberger et al. 2021).
 
@@ -22,7 +22,7 @@ The development version can be installed like so:
 
 ``` julia
 using Pkg
-Pkg.add("https://github.com/pat-alt/LaplaceRedux.jl")
+Pkg.add("https://github.com/JuliaTrustworthyAI/LaplaceRedux.jl")
 ```
 
 ## 🖥️ Basic Usage
@@ -70,7 +70,7 @@ This project was presented at JuliaCon 2022 in July 2022. See [here](https://pre
 
 ## 🛠️ Contribute
 
-Contributions are very much welcome! Please follow the [SciML ColPrac guide](https://github.com/SciML/ColPrac). You may want to start by having a look at any open [issues](https://github.com/pat-alt/LaplaceRedux.jl/issues).
+Contributions are very much welcome! Please follow the [SciML ColPrac guide](https://github.com/SciML/ColPrac). You may want to start by having a look at any open [issues](https://github.com/JuliaTrustworthyAI/LaplaceRedux.jl/issues).
 
 ## 🎓 References
 
