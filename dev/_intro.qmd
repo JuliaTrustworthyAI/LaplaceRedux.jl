@@ -81,7 +81,7 @@ A complete worked example for a regression model can be found in the [docs](http
 la = Laplace(nn; likelihood=:regression)
 fit!(la, data)
 optimize_prior!(la)
-plot(la, X, y; zoom=-5, size=(400,400))
+plot(la, X, y; zoom=-5, size=(500,500))
 ```
 
 ### Binary Classification
@@ -97,7 +97,7 @@ X = hcat(xs...)     # bring into tabular format
 data = zip(xs,ys)
 
 # Model:
-n_hidden = 5
+n_hidden = 10
 D = size(X,1)
 nn = Chain(
     Dense(D, n_hidden, σ),
