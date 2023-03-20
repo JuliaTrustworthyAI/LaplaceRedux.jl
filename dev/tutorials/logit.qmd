@@ -2,7 +2,7 @@
 CurrentModule = LaplaceRedux
 ```
 
-# Bayesian Logisitic Regression
+# Bayesian Logistic Regression
 
 ```{julia}
 #| echo: false
@@ -54,7 +54,7 @@ for epoch = 1:epochs
 end
 ```
 
-## Laplace appoximation
+## Laplace approximation
 
 Laplace approximation for the posterior predictive can be implemented as follows:
 
