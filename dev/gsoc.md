@@ -1,4 +1,4 @@
-# Laplace approximation for effortless Baysian deep learning
+# Laplace approximation for effortless Bayesian deep learning
 
 ### Key points
 
