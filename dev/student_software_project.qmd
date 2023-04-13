@@ -11,7 +11,7 @@ bibliography: ../bib.bib
 
 <a href="https://github.com/JuliaTrustworthyAI"> <img src="https://raw.githubusercontent.com/TrustworthyAIJulia/.github/main/profile/www/wide_logo.png" width="40%" align="right" style="margin-left: 25px; margin-bottom: 15px;"> </a>
 
-Are you interested in Trustworthy Artificial Intelligence? Are you curious about [Julia](https://julialang.org/) and Free Open Source Software (FOSS)? In this project, you get the chance to explore all of these things. You will contribute to [`LaplaceRedux.jl`](https://github.com/pat-alt/LaplaceRedux.jl), a [Taija](https://github.com/JuliaTrustworthyAI) package for Effortless Bayesian Deep Learning through Laplace Approximation in Julia.
+Are you interested in Trustworthy Artificial Intelligence? Are you curious about [Julia](https://julialang.org/) and Free Open Source Software (FOSS)? In this project, you get the chance to explore all of these things. You will contribute to [`LaplaceRedux.jl`](https://github.com/JuliaTrustworthyAI/LaplaceRedux.jl), a [Taija](https://github.com/JuliaTrustworthyAI) package for Effortless Bayesian Deep Learning through Laplace Approximation in Julia.
 
 #### 📚 Background
 
@@ -19,7 +19,7 @@ Laplace Redux (also referred to as Linearized Laplace) is a method for Bayesian 
 
 #### 📦 The Package
 
-<a href="https://github.com/pat-alt/CounterfactualExplanations.jl"> <img src="https://raw.githubusercontent.com/pat-alt/CounterfactualExplanations.jl/main/docs/src/assets/wide_logo.png" width="40%" align="right" style="margin-left: 25px; margin-bottom: 15px;"> </a>
+<a href="https://github.com/JuliaTrustworthyAI/LaplaceRedux.jl"> <img src="https://raw.githubusercontent.com/JuliaTrustworthyAI/LaplaceRedux.jl/main/docs/src/assets/wide_logo.png" width="40%" align="right" style="margin-left: 25px; margin-bottom: 15px;"> </a>
 
 `LaplaceRedux.jl` is a library written in pure Julia that can be used for effortless Bayesian Deep Learning trough Laplace Approximation (LA). In the development of this package, I have drawn inspiration from this Python [library](https://aleximmer.github.io/Laplace/index.html#setup) and its companion [paper](https://arxiv.org/abs/2106.14806) (Daxberger et al. 2021). The package is currently in a very early stage of development and I am looking for motivated students to help me get it to a stage where it can be used for research and teaching.
 
