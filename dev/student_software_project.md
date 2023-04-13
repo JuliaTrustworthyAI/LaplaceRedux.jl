@@ -1,0 +1,46 @@
+
+# Trustworthy Artificial Intelligence in Julia
+
+<a href="https://github.com/JuliaTrustworthyAI"> <img src="https://raw.githubusercontent.com/TrustworthyAIJulia/.github/main/profile/www/wide_logo.png" width="40%" align="right" style="margin-left: 25px; margin-bottom: 15px;"> </a>
+
+Are you interested in Trustworthy Artificial Intelligence? Are you curious about [Julia](https://julialang.org/) and Free Open Source Software (FOSS)? In this project, you get the chance to explore all of these things. You will contribute to [`LaplaceRedux.jl`](https://github.com/pat-alt/LaplaceRedux.jl), a [Taija](https://github.com/JuliaTrustworthyAI) package for Effortless Bayesian Deep Learning through Laplace Approximation in Julia.
+
+#### 📚 Background
+
+Laplace Redux (also referred to as Linearized Laplace) is a method for Bayesian Deep Learning that does not rely on computationally expensive methods like MCMC, Variational Inference or Ensembling. Instead, it uses the Laplace Approximation to approximate the posterior distribution of the model parameters. This [article](https://medium.com/towards-data-science/go-deep-but-also-go-bayesian-ab25efa6f7b) on Towards Data Science provides a gentle introduction to the topic. These [slides](https://juliatrustworthyai.github.io/LaplaceRedux.jl/dev/resources/juliacon22/presentation.html#/title-slide) from JuliaCon 2022 provide a more technical overview of the package.
+
+#### 📦 The Package
+
+<a href="https://github.com/pat-alt/CounterfactualExplanations.jl"> <img src="https://raw.githubusercontent.com/pat-alt/CounterfactualExplanations.jl/main/docs/src/assets/wide_logo.png" width="40%" align="right" style="margin-left: 25px; margin-bottom: 15px;"> </a>
+
+`LaplaceRedux.jl` is a library written in pure Julia that can be used for effortless Bayesian Deep Learning trough Laplace Approximation (LA). In the development of this package, I have drawn inspiration from this Python [library](https://aleximmer.github.io/Laplace/index.html#setup) and its companion [paper](https://arxiv.org/abs/2106.14806) (Daxberger et al. 2021). The package is currently in a very early stage of development and I am looking for motivated students to help me get it to a stage where it can be used for research and teaching.
+
+#### 🫵 This is Where You Come In …
+
+With the core package infrastructure already in place, you get to scale things up. The goal is to get the standard of this package closer to that of its Python [counterpart](https://github.com/AlexImmer/Laplace). How we get there is ultimately up to you, but to get you going we have started adding a [`students 🎯`](https://github.com/JuliaTrustworthyAI/CounterfactualExplanations.jl/issues?q=is%3Aissue+is%3Aopen+label%3A%22students+%3Adart%3A%22) tag to some of our outstanding [issues](https://github.com/JuliaTrustworthyAI/CounterfactualExplanations.jl/issues?q=is%3Aissue+is%3Aopen+label%3A%22students+%3Adart%3A%22) on GitHub. You should feel free to use the source code of the Python library as a reference.
+
+#### 🎯 Expected Outcomes
+
+We have put together a rough [game plan](https://github.com/orgs/JuliaTrustworthyAI/projects/5/views/1) for you that consists of three main blocks:
+
+1.  [🏃 Getting started](https://github.com/orgs/JuliaTrustworthyAI/projects/5/views/1?pane=issue&itemId=25548493): during this part of the project you will familiarize yourselves with the package and work on a couple of smaller issues.
+2.  [🚀 Lift off](https://github.com/orgs/JuliaTrustworthyAI/projects/5/views/1?pane=issue&itemId=25548873): the main part of the project is about lifting this package off the ground. You will implement more advanced Hessian approximations, refactor some of the core code and interface the package with other Julia packages.
+3.  [🌯 Wrapping up](https://github.com/orgs/JuliaTrustworthyAI/projects/5/views/1?pane=issue&itemId=25548517): to wrap up your project, we would like you summarize your work and share it with the community.
+
+During each of these steps, you can expect to work on Unit Testing, Documentation and Continuous Integration.
+
+Beyond these main objectives, you are of course invited to get involved more heavily in this project:
+
+- Complete any of the optional [`students ⭐`](https://github.com/JuliaTrustworthyAI/CounterfactualExplanations.jl/issues?q=is%3Aissue+is%3Aopen+label%3A%22students+%3Astar%3A%22)-tagged [issues](https://github.com/JuliaTrustworthyAI/CounterfactualExplanations.jl/issues?q=is%3Aissue+is%3Aopen+label%3A%22students+%3Astar%3A%22) issues in this project.
+- Continue working on any of the [Taija](https://github.com/JuliaTrustworthyAI) projects or even contribute your own projects.
+- Submit a proposal to JuliaCon 2024, detailing your work on the project.
+
+#### 🧑‍🎓 Learning Outcomes
+
+- Good familiarity with Julia.
+- Relevant experience with FOSS development.
+- Good understanding of one of the hottest research topics in Bayesian Deep Learning.
+
+#### ❓ Will I need to know Julia?
+
+No! We think it should be possible for you to pick up Julia on the fly, as long as you have some prior experience with other programming languages (Python, R, Matlab, C++, Java, Rust, …). Prior experience with PyTorch is a plus, but not a requirement.
