@@ -23,6 +23,7 @@ jobs:
         arch:
           - x64
     steps:
+      - uses: actions/checkout@v2
       - name: Install JuliaFormatter and format
         run: |
           julia  -e 'using Pkg; Pkg.add("JuliaFormatter")'
