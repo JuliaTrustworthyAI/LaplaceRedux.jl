@@ -42,7 +42,6 @@ jobs:
       - uses: codecov/codecov-action@v2
         with:
           files: lcov.info
-      - uses: actions/checkout@v1
       - name: Install JuliaFormatter and format
         run: |
           julia  -e 'using Pkg; Pkg.add(PackageSpec(name="JuliaFormatter"))'
