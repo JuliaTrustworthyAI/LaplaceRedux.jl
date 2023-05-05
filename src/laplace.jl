@@ -65,7 +65,7 @@ function Laplace(model::Any; likelihood::Symbol, kwargs...)
         n_out, args.loss
     )
 
-    @assert outdim(la)==1 "Support for multi-class output still lacking, sorry. Currently only regression and binary classification models are supported."
+    # @assert outdim(la)==1 "Support for multi-class output still lacking, sorry. Currently only regression and binary classification models are supported."
 
     params = get_params(la)
     la.curvature = getfield(Curvature,args.backend)(nn,likelihood,params)   # curvature interface
