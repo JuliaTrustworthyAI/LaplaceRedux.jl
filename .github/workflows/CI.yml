@@ -27,7 +27,7 @@ jobs:
       - name: Install JuliaFormatter and format
         run: |
           julia  -e 'using Pkg; Pkg.add("JuliaFormatter")'
-          julia  -e 'using JuliaFormatter; format(".", BlueStyle())'
+          julia  -e 'using JuliaFormatter; while !format(".", BlueStyle()) end'
       - name: Format check
         run: |
           julia -e '
@@ -36,7 +36,6 @@ jobs:
               exit(0)
           else
               @error "The following files are not formatted:\n $out"
-              write(stdout, out)
               exit(1)
           end'
   test:

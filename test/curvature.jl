@@ -10,5 +10,4 @@ using Flux
     la = Laplace(nn; likelihood=:classification)
 end
 
-@testset "Hessian" begin
-end
+@testset "Hessian" begin end
