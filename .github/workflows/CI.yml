@@ -35,7 +35,7 @@ jobs:
           if out == ""
               exit(0)
           else
-              @error "The following files are not formatted: $out"
+              @error "The following files are not formatted:\n $out"
               write(stdout, out)
               exit(1)
           end'

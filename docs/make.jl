@@ -23,11 +23,8 @@ makedocs(;
             "A note on the prior ..." => "tutorials/prior.md",
         ],
         "Reference" => "reference.md",
-        "Additional Resources" => "resources/resources.md"
+        "Additional Resources" => "resources/resources.md",
     ],
 )
 
-deploydocs(;
-    repo="github.com/JuliaTrustworthyAI/LaplaceRedux.jl",
-    devbranch="main",
-)
+deploydocs(; repo="github.com/JuliaTrustworthyAI/LaplaceRedux.jl", devbranch="main")
