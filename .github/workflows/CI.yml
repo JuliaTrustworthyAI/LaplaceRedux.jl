@@ -44,7 +44,7 @@ jobs:
           files: lcov.info
       - name: Install JuliaFormatter and format
         run: |
-          julia  -e 'using Pkg; Pkg.add(PackageSpec(name="JuliaFormatter"))'
+          julia  -e ']add JuliaFormatter'
           julia  -e 'using JuliaFormatter; format(".", BlueStyle())'
       - name: Format check
         run: |
