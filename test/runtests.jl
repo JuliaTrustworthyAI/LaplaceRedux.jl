@@ -2,7 +2,6 @@ using LaplaceRedux
 using Test
 
 @testset "LaplaceRedux.jl" begin
-
     @testset "Data" begin
         include("data.jl")
     end
