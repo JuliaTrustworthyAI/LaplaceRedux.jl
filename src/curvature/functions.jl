@@ -16,9 +16,9 @@ function jacobians(curvature::CurvatureInterface, X::AbstractArray)
     # Output:
     ŷ = nn(X)
     # Jacobian:
-    𝐉 = jacobian(() -> nn(X),Flux.params(nn))
-    𝐉 = permutedims(reduce(hcat,[𝐉[θ] for θ ∈ curvature.params]))
-    return 𝐉, ŷ
+    𝐉 = jacobian(() -> nn(X),Flux.params(nn))                                # differentiates f with regards to the model parameters
+    𝐉 = permutedims(reduce(hcat,[𝐉[θ] for θ ∈ curvature.params]))            # matrix is flattened and permuted into a matrix of size (K, D+P), where P is the number of model parameters
+    return 𝐉, ŷ                                                              # returns Jacobian matrix and predicted output
 end
 
 """
@@ -28,7 +28,7 @@ Compute the gradients with respect to the loss function: `∇ℓ(f(x;θ),y)` whe
 """
 function gradients(curvature::CurvatureInterface, X::AbstractArray, y::Union{Number, AbstractArray})
     model = curvature.model
-    𝐠 = gradient(() -> curvature.loss_fun(X,y),Flux.params(model)) 
+    𝐠 = gradient(() -> curvature.loss_fun(X,y),Flux.params(model))           # compute the gradients of the loss function with respect to the model parameters
     return 𝐠
 end
 
@@ -100,14 +100,14 @@ end
 Compute the full empirical Fisher.
 """
 function full(curvature::EmpiricalFisher, d::Tuple)
-    x, y = d
+    x, y = d                                                                 # where x contains the observation's features and y represents the target value
 
     loss = curvature.factor * curvature.loss_fun(x, y)
     𝐠 = gradients(curvature, x, y) 
-    𝐠 = reduce(vcat,[vec(𝐠[θ]) for θ ∈ curvature.params])
+    𝐠 = reduce(vcat,[vec(𝐠[θ]) for θ ∈ curvature.params])                    # concatenates the gradients into a vector
 
     # Empirical Fisher:
-    H = 𝐠 * 𝐠'
+    H = 𝐠 * 𝐠'                                                               # the matrix is equal to the product of the gradient vector with itself (g' is the transpose of g)
     
     return loss, H
 

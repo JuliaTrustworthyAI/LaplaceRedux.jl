@@ -6,7 +6,8 @@ abstract type BaseLaplace end
 """
     outdim(la::BaseLaplace)
 
-Helper function to determine the output dimension of a `Flux.Chain` with Laplace approximation.
+Helper function to determine the output dimension, corresponding to the number of neurons 
+on the last layer of the NN, of a `Flux.Chain` with Laplace approximation.
 """
 outdim(la::BaseLaplace) = la.n_out
 
@@ -19,8 +20,8 @@ Retrieves the desired (sub)set of model parameters and stores them in a list.
 
 ```julia-repl
 using Flux, LaplaceRedux
-nn = Chain(Dense(2,1))
-la = Laplace(nn)
+nn = Chain(Dense(2,1))                                      # defines a neural network with one hidden layer that takes a two-dimensional input 
+la = Laplace(nn)                                            # and produces a one-dimensional output
 LaplaceRedux.get_params(la)
 ```
 
@@ -30,11 +31,11 @@ function get_params(la::BaseLaplace)
     params = Flux.params(nn)
     n_elements = length(params)
     if la.subset_of_weights == :all
-        params = [θ for θ ∈ params]                         # get all parameters and constants in logitbinarycrossentropy
+        params = [θ for θ ∈ params]                                          # get all parameters and constants in logitbinarycrossentropy
     elseif la.subset_of_weights == :last_layer
-        params = [params[n_elements-1],params[n_elements]]  # only get last parameters and constants
-    end
-    return params
+        params = [params[n_elements-1],params[n_elements]]                   # only get last layer parameters and constants
+    end                                                                      # params[n_elements-1] is the weight matrix of the last layer
+    return params                                                            # params[n_elements] is the bias vector of the last layer
 end
 
 @doc raw"""
@@ -56,7 +57,7 @@ end
 @doc raw"""
     posterior_covariance(la::BaseLaplace, P=la.P)
 
-Computes the posterior covariance as the inverse of the posterior precision: ``\Sigma=P^{-1}``.
+Computes the posterior covariance ``∑`` as the inverse of the posterior precision: ``\Sigma=P^{-1}``.
 """
 function posterior_covariance(la::BaseLaplace, P=posterior_precision(la))
     @assert !isnothing(P) "Posterior precision not available. Either no value supplied or Laplace Approximation has not yet been estimated."
@@ -82,7 +83,7 @@ end
 """
     _H_factor(la::BaseLaplace)
 
-
+Returns the factor σ⁻², where σ is used in the centered Gaussian prior p(θ) = N(θ;0,σ²I)
 """
 _H_factor(la::BaseLaplace) = 1 / (la.σ^2)
 
@@ -96,14 +97,14 @@ _init_H(la::BaseLaplace) = zeros(la.n_params, la.n_params)
 """
     _weight_penalty(la::BaseLaplace)
 
-
+The weight penalty term is a regularization term used to prevent overfitting.
 """
 function _weight_penalty(la::BaseLaplace)
-    μ = la.μ    # MAP
-    μ₀ = la.μ₀  # prior
+    μ = la.μ                                                                 # MAP
+    μ₀ = la.μ₀                                                               # prior
     Δ = μ .- μ₀
-    return Δ'la.P₀*Δ
-end
+    return Δ'la.P₀*Δ                                                         # measure of how far the MAP estimate deviates from the prior mean
+end                                                                          # used to control the degree of regularization applied to the mode
 
 """
     log_marginal_likelihood(la::BaseLaplace; P₀::Union{Nothing,UniformScaling}=nothing, σ::Union{Nothing, Real}=nothing)

@@ -10,14 +10,14 @@ mutable struct Laplace <: BaseLaplace
     subset_of_weights::Symbol
     hessian_structure::Symbol
     curvature::Union{Curvature.CurvatureInterface,Nothing}
-    σ::Real
-    μ₀::Real
-    μ::AbstractVector
-    P₀::Union{AbstractMatrix,UniformScaling}
-    H::Union{AbstractArray,Nothing}
-    P::Union{AbstractArray,Nothing}
-    Σ::Union{AbstractArray,Nothing}
-    n_params::Union{Int,Nothing}
+    σ::Real                                                                  # prior noise/uncertainty          
+    μ₀::Real                                                                 # prior mean  
+    μ::AbstractVector                                                        # posterior mean
+    P₀::Union{AbstractMatrix,UniformScaling}                                 # prior precision (i.e. inverse covariance matrix)          
+    H::Union{AbstractArray,Nothing}                                          # Hessian matrix 
+    P::Union{AbstractArray,Nothing}                                          # posterior precision     
+    Σ::Union{AbstractArray,Nothing}                                          # posterior covariance matrix
+    n_params::Union{Int,Nothing}                                             
     n_data::Union{Int,Nothing}
     n_out::Union{Int,Nothing}
     loss::Real
@@ -31,7 +31,7 @@ using Parameters
     backend::Symbol=:EmpiricalFisher
     σ::Real=1.0
     μ₀::Real=0.0
-    λ::Real=1.0
+    λ::Real=1.0                                                              # regularization parameter
     P₀::Union{Nothing,AbstractMatrix,UniformScaling}=nothing
     loss::Real=0.0
 end
@@ -47,14 +47,14 @@ function Laplace(model::Any; likelihood::Symbol, kwargs...)
     args = LaplaceParams(;kwargs...)
 
     # Assertions:
-    @assert !(args.σ != 1.0 && likelihood != :regression) "Observation noise σ ≠ 1 only available for regression."
-    @assert args.subset_of_weights ∈ [:all, :last_layer] "`subset_of_weights` of weights should be one of the following: `[:all, :last_layer]`"
+    @assert !(args.σ != 1.0 && likelihood != :regression)       "Observation noise σ ≠ 1 only available for regression."
+    @assert args.subset_of_weights ∈ [:all, :last_layer]        "`subset_of_weights` of weights should be one of the following: `[:all, :last_layer]`"
 
     # Setup:
     P₀ = isnothing(args.P₀) ? UniformScaling(args.λ) : args.P₀
     nn = model
     n_out = outdim(nn)
-    μ = reduce(vcat, [vec(θ) for θ ∈ Flux.params(nn)])
+    μ = reduce(vcat, [vec(θ) for θ ∈ Flux.params(nn)])                       # μ contains the vertically concatenated parameters of the neural network
 
     # Instantiate LA:
     la = Laplace(
@@ -65,19 +65,19 @@ function Laplace(model::Any; likelihood::Symbol, kwargs...)
         n_out, args.loss
     )
 
-    @assert outdim(la)==1 "Support for multi-class output still lacking, sorry. Currently only regression and binary classification models are supported."
+    @assert outdim(la)==1       "Support for multi-class output still lacking, sorry. Currently only regression and binary classification models are supported."
 
     params = get_params(la)
-    la.curvature = getfield(Curvature,args.backend)(nn,likelihood,params)   # curvature interface
-    la.n_params = length(reduce(vcat, [vec(θ) for θ ∈ params]))             # number of params
-    la.μ = la.μ[(end-la.n_params+1):end]                                    # adjust weight vector
+    la.curvature = getfield(Curvature,args.backend)(nn,likelihood,params)    # curvature interface
+    la.n_params = length(reduce(vcat, [vec(θ) for θ ∈ params]))              # number of params
+    la.μ = la.μ[(end-la.n_params+1):end]                                     # adjust weight vector
     if typeof(la.P₀) <: UniformScaling
         la.P₀ = la.P₀(la.n_params)
     end
 
     # Sanity:
     if isa(la.P₀, AbstractMatrix)
-        @assert all(size(la.P₀) .== la.n_params) "Dimensions of prior Hessian $(size(la.P₀)) do not align with number of parameters ($(la.n_params))"
+        @assert all(size(la.P₀) .== la.n_params)        "Dimensions of prior Hessian $(size(la.P₀)) do not align with number of parameters ($(la.n_params))"
     end
 
     return la
@@ -130,11 +130,11 @@ function fit!(la::Laplace, data; override::Bool=true)
     end
 
     # Store output:
-    la.loss = loss                      # Loss
-    la.H = H                            # Hessian
-    la.P = posterior_precision(la)      # posterior precision
-    la.Σ = posterior_covariance(la)     # posterior covariance
-    la.n_data = n_data                  # number of observations
+    la.loss = loss                                                           # Loss
+    la.H = H                                                                 # Hessian
+    la.P = posterior_precision(la)                                           # posterior precision
+    la.Σ = posterior_covariance(la)                                          # posterior covariance
+    la.n_data = n_data                                                       # number of observations
     
 end
 
@@ -242,9 +242,9 @@ function optimize_prior!(
 )
 
     # Setup:
-    logP₀ = isnothing(λinit) ? log.(unique(diag(la.P₀))) : log.([λinit])   # prior precision (scalar)
-    logσ = isnothing(σinit) ? log.([la.σ]) : log.([σinit])                 # noise (scalar)
-    opt = Adam(lr)
+    logP₀ = isnothing(λinit) ? log.(unique(diag(la.P₀))) : log.([λinit])     # prior precision (scalar)
+    logσ = isnothing(σinit) ? log.([la.σ]) : log.([σinit])                   # noise (scalar)
+    opt = Adam(lr)                                                           # Adam is a stochastic gradient descent (SGD) optimization algorithm, using lr as learning rate
     show_every = round(n_steps/10)
     i = 0
     if tune_σ
@@ -263,9 +263,9 @@ function optimize_prior!(
         gs = gradient(ps) do 
             loss(exp.(logP₀), exp.(logσ))
         end
-        update!(opt, ps, gs)
-        i += 1
-        if verbose
+        update!(opt, ps, gs)                                                 # updates the values of the parameters using the calculated gradients and the Adam optimizer
+        i += 1  
+        if verbose                                                           # if set to 'true', information about the optimization progress is printed out
             if i % show_every == 0
                 @info "Iteration $(i): P₀=$(exp(logP₀[1])), σ=$(exp(logσ[1]))"
                 @show loss(exp.(logP₀), exp.(logσ))
