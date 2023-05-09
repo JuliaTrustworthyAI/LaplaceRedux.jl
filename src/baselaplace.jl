@@ -31,9 +31,9 @@ function get_params(la::BaseLaplace)
     params = Flux.params(nn)
     n_elements = length(params)
     if la.subset_of_weights == :all
-        params = [θ for θ ∈ params]                                          # get all parameters and constants in logitbinarycrossentropy
+        params = [θ for θ in params]                                          # get all parameters and constants in logitbinarycrossentropy
     elseif la.subset_of_weights == :last_layer
-        params = [params[n_elements-1],params[n_elements]]                   # only get last layer parameters and constants
+        params = [params[n_elements - 1], params[n_elements]]                   # only get last layer parameters and constants
     end                                                                      # params[n_elements-1] is the weight matrix of the last layer
     return params                                                            # params[n_elements] is the bias vector of the last layer
 end
@@ -64,14 +64,13 @@ function posterior_covariance(la::BaseLaplace, P=posterior_precision(la))
     return inv(P)
 end
 
-
 """
     log_likelihood(la::BaseLaplace)
 
 
 """
 function log_likelihood(la::BaseLaplace)
-    factor = - _H_factor(la)
+    factor = -_H_factor(la)
     if la.likelihood == :regression
         c = la.n_data * la.n_out * log(la.σ * sqrt(2 * pi))
     else
@@ -103,7 +102,7 @@ function _weight_penalty(la::BaseLaplace)
     μ = la.μ                                                                 # MAP
     μ₀ = la.μ₀                                                               # prior
     Δ = μ .- μ₀
-    return Δ'la.P₀*Δ                                                         # measure of how far the MAP estimate deviates from the prior mean
+    return Δ'la.P₀ * Δ                                                         # measure of how far the MAP estimate deviates from the prior mean
 end                                                                          # used to control the degree of regularization applied to the mode
 
 """
@@ -111,7 +110,11 @@ end                                                                          # u
 
 
 """
-function log_marginal_likelihood(la::BaseLaplace; P₀::Union{Nothing,AbstractFloat,AbstractMatrix}=nothing, σ::Union{Nothing, Real}=nothing)
+function log_marginal_likelihood(
+    la::BaseLaplace;
+    P₀::Union{Nothing,AbstractFloat,AbstractMatrix}=nothing,
+    σ::Union{Nothing,Real}=nothing,
+)
 
     # update prior precision:
     if !isnothing(P₀)
@@ -120,9 +123,9 @@ function log_marginal_likelihood(la::BaseLaplace; P₀::Union{Nothing,AbstractFl
 
     # update observation noise:
     if !isnothing(σ)
-        @assert (la.likelihood==:regression || la.σ == σ) "Can only change observational noise σ for regression."
+        @assert (la.likelihood == :regression || la.σ == σ) "Can only change observational noise σ for regression."
         la.σ = σ
-    end 
+    end
 
     return log_likelihood(la) - 0.5 * (log_det_ratio(la) + _weight_penalty(la))
 end
@@ -132,7 +135,9 @@ end
 
 
 """
-log_det_ratio(la::BaseLaplace) = log_det_posterior_precision(la) - log_det_prior_precision(la)
+function log_det_ratio(la::BaseLaplace)
+    return log_det_posterior_precision(la) - log_det_prior_precision(la)
+end
 
 """
     log_det_prior_precision(la::Laplace)
@@ -147,5 +152,3 @@ log_det_prior_precision(la::BaseLaplace) = sum(log.(diag(la.P₀)))
 
 """
 log_det_posterior_precision(la::BaseLaplace) = logdet(posterior_precision(la))
-
-
