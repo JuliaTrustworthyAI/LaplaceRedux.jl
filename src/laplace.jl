@@ -80,8 +80,8 @@ function Laplace(model::Any; likelihood::Symbol, kwargs...)
 
     params = get_params(la)
     la.curvature = getfield(Curvature, args.backend)(nn, likelihood, params)    # curvature interface
-    la.n_params = length(reduce(vcat, [vec(θ) for θ in params]))              # number of params
-    la.μ = la.μ[(end - la.n_params + 1):end]                                     # adjust weight vector
+    la.n_params = length(reduce(vcat, [vec(θ) for θ in params]))                # number of params
+    la.μ = la.μ[(end - la.n_params + 1):end]                                    # adjust weight vector
     if typeof(la.P₀) <: UniformScaling
         la.P₀ = la.P₀(la.n_params)
     end
@@ -141,7 +141,7 @@ function fit!(la::Laplace, data; override::Bool=true)
     la.H = H                                                                 # Hessian
     la.P = posterior_precision(la)                                           # posterior precision
     la.Σ = posterior_covariance(la)                                          # posterior covariance
-    return la.n_data = n_data                                                       # number of observations
+    return la.n_data = n_data                                                # number of observations
 end
 
 """
