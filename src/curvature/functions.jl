@@ -4,7 +4,7 @@ using LinearAlgebra
 using Zygote
 
 "Basetype for any curvature interface."
-abstract type CurvatureInterface end 
+abstract type CurvatureInterface end
 
 """
     transform_jacobians(curvature::CurvatureInterface, J::Zygote.Grads)
@@ -47,9 +47,11 @@ end
 
 Compute the gradients with respect to the loss function: `∇ℓ(f(x;θ),y)` where `f: ℝᴰ ↦ ℝᴷ`.
 """
-function gradients(curvature::CurvatureInterface, X::AbstractArray, y::Union{Number, AbstractArray})
+function gradients(
+    curvature::CurvatureInterface, X::AbstractArray, y::Union{Number,AbstractArray}
+)
     model = curvature.model
-    𝐠 = gradient(() -> curvature.loss_fun(X,y),Flux.params(model)) 
+    𝐠 = gradient(() -> curvature.loss_fun(X, y), Flux.params(model))
     return 𝐠
 end
 
@@ -92,7 +94,7 @@ end
 #         H = map(j -> j * (diagm(p) - p * p') * j', eachcol(𝐉))
 #         println(H)
 #     end
-    
+
 #     return loss, H
 
 # end
@@ -112,7 +114,7 @@ function EmpiricalFisher(model::Any, likelihood::Symbol, params::AbstractArray)
     loss_fun = get_loss_fun(likelihood, model)
     factor = likelihood == :regression ? 0.5 : 1.0
 
-    EmpiricalFisher(model, likelihood, loss_fun, params, factor)
+    return EmpiricalFisher(model, likelihood, loss_fun, params, factor)
 end
 
 """
@@ -124,12 +126,11 @@ function full(curvature::EmpiricalFisher, d::Tuple)
     x, y = d
 
     loss = curvature.factor * curvature.loss_fun(x, y)
-    𝐠 = gradients(curvature, x, y) 
-    𝐠 = reduce(vcat,[vec(𝐠[θ]) for θ ∈ curvature.params])
+    𝐠 = gradients(curvature, x, y)
+    𝐠 = reduce(vcat, [vec(𝐠[θ]) for θ in curvature.params])
 
     # Empirical Fisher:
     H = 𝐠 * 𝐠'
-    
-    return loss, H
 
+    return loss, H
 end

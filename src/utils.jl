@@ -6,13 +6,13 @@ using Flux
 Helper function to choose loss function based on specified model `likelihood`.
 """
 function get_loss_fun(likelihood::Symbol, model::Chain)
-    if likelihood==:regression
+    if likelihood == :regression
         loss_type = :mse
     else
         if outdim(model) == 1
             loss_type = :logitbinarycrossentropy
         else
-            loss_type = :logitcrossentropy 
+            loss_type = :logitcrossentropy
         end
     end
 

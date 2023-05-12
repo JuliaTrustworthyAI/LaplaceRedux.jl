@@ -25,15 +25,15 @@ end
 
 using Parameters
 
-@with_kw struct LaplaceParams 
-    subset_of_weights::Symbol=:all
-    hessian_structure::Symbol=:full
-    backend::Symbol=:EmpiricalFisher
-    σ::Real=1.0
-    μ₀::Real=0.0
-    λ::Real=1.0
-    P₀::Union{Nothing,AbstractMatrix,UniformScaling}=nothing
-    loss::Real=0.0
+@with_kw struct LaplaceParams
+    subset_of_weights::Symbol = :all
+    hessian_structure::Symbol = :full
+    backend::Symbol = :EmpiricalFisher
+    σ::Real = 1.0
+    μ₀::Real = 0.0
+    λ::Real = 1.0
+    P₀::Union{Nothing,AbstractMatrix,UniformScaling} = nothing
+    loss::Real = 0.0
 end
 
 """
@@ -41,10 +41,10 @@ end
 
 Wrapper function to prepare Laplace approximation.
 """
-function Laplace(model::Any; likelihood::Symbol, kwargs...) 
+function Laplace(model::Any; likelihood::Symbol, kwargs...)
 
     # Load hyperparameters:
-    args = LaplaceParams(;kwargs...)
+    args = LaplaceParams(; kwargs...)
 
     # Assertions:
     @assert !(args.σ != 1.0 && likelihood != :regression) "Observation noise σ ≠ 1 only available for regression."
@@ -54,23 +54,34 @@ function Laplace(model::Any; likelihood::Symbol, kwargs...)
     P₀ = isnothing(args.P₀) ? UniformScaling(args.λ) : args.P₀
     nn = model
     n_out = outdim(nn)
-    μ = reduce(vcat, [vec(θ) for θ ∈ Flux.params(nn)])
+    μ = reduce(vcat, [vec(θ) for θ in Flux.params(nn)])
 
     # Instantiate LA:
     la = Laplace(
-        model, likelihood, 
-        args.subset_of_weights, args.hessian_structure, nothing, 
-        args.σ, args.μ₀, μ, P₀, 
-        nothing, nothing, nothing, nothing, nothing,
-        n_out, args.loss
+        model,
+        likelihood,
+        args.subset_of_weights,
+        args.hessian_structure,
+        nothing,
+        args.σ,
+        args.μ₀,
+        μ,
+        P₀,
+        nothing,
+        nothing,
+        nothing,
+        nothing,
+        nothing,
+        n_out,
+        args.loss,
     )
 
     # @assert outdim(la)==1 "Support for multi-class output still lacking, sorry. Currently only regression and binary classification models are supported."
 
     params = get_params(la)
-    la.curvature = getfield(Curvature,args.backend)(nn,likelihood,params)   # curvature interface
-    la.n_params = length(reduce(vcat, [vec(θ) for θ ∈ params]))             # number of params
-    la.μ = la.μ[(end-la.n_params+1):end]                                    # adjust weight vector
+    la.curvature = getfield(Curvature, args.backend)(nn, likelihood, params)   # curvature interface
+    la.n_params = length(reduce(vcat, [vec(θ) for θ in params]))             # number of params
+    la.μ = la.μ[(end - la.n_params + 1):end]                                    # adjust weight vector
     if typeof(la.P₀) <: UniformScaling
         la.P₀ = la.P₀(la.n_params)
     end
@@ -81,10 +92,7 @@ function Laplace(model::Any; likelihood::Symbol, kwargs...)
     end
 
     return la
-
 end
-
-
 
 """
     hessian_approximation(la::Laplace, d)
@@ -92,7 +100,7 @@ end
 Computes the local Hessian approximation at a single data `d`.
 """
 function hessian_approximation(la::Laplace, d)
-    loss, H = getfield(Curvature, la.hessian_structure)(la.curvature,d)
+    loss, H = getfield(Curvature, la.hessian_structure)(la.curvature, d)
     return loss, H
 end
 
@@ -114,7 +122,6 @@ fit!(la, data)
 
 """
 function fit!(la::Laplace, data; override::Bool=true)
-
     if override
         H = _init_H(la)
         loss = 0.0
@@ -134,8 +141,7 @@ function fit!(la::Laplace, data; override::Bool=true)
     la.H = H                            # Hessian
     la.P = posterior_precision(la)      # posterior precision
     la.Σ = posterior_covariance(la)     # posterior covariance
-    la.n_data = n_data                  # number of observations
-    
+    return la.n_data = n_data                  # number of observations
 end
 
 """
@@ -144,8 +150,8 @@ end
 Computes the linearized GLM predictive.
 """
 function glm_predictive_distribution(la::Laplace, X::AbstractArray)
-    𝐉, fμ = Curvature.jacobians(la.curvature,X)
-    fvar = functional_variance(la,𝐉)
+    𝐉, fμ = Curvature.jacobians(la.curvature, X)
+    fvar = functional_variance(la, 𝐉)
     fvar = reshape(fvar, size(fμ)...)
     return fμ, fvar
 end
@@ -156,7 +162,7 @@ end
 Compute the linearized GLM predictive variance as `𝐉ₙΣ𝐉ₙ'` where `𝐉=∇f(x;θ)|θ̂` is the Jacobian evaluated at the MAP estimate and `Σ = P⁻¹`.
 
 """
-function functional_variance(la::Laplace,𝐉)
+function functional_variance(la::Laplace, 𝐉)
     Σ = posterior_covariance(la)
     fvar = map(j -> (j' * Σ * j), eachcol(𝐉))
     return fvar
@@ -191,14 +197,14 @@ function predict(la::Laplace, X::AbstractArray; link_approx=:probit)
 
     # Classification:
     if la.likelihood == :classification
-        
+
         # Probit approximation
-        if link_approx==:probit
-            κ = 1 ./ sqrt.(1 .+ π/8 .* fvar) 
+        if link_approx == :probit
+            κ = 1 ./ sqrt.(1 .+ π / 8 .* fvar)
             z = κ .* fμ
         end
 
-        if link_approx==:plugin
+        if link_approx == :plugin
             z = fμ
         end
 
@@ -206,7 +212,7 @@ function predict(la::Laplace, X::AbstractArray; link_approx=:probit)
         if outdim(la) == 1
             p = Flux.sigmoid(z)
         else
-            p = Flux.softmax(z, dims=1)
+            p = Flux.softmax(z; dims=1)
         end
 
         return p
@@ -233,34 +239,35 @@ end
 Optimize the prior precision post-hoc through Empirical Bayes (marginal log-likelihood maximization).
 """
 function optimize_prior!(
-    la::Laplace; 
-    n_steps::Int=100, lr::Real=1e-1,
+    la::Laplace;
+    n_steps::Int=100,
+    lr::Real=1e-1,
     λinit::Union{Nothing,Real}=nothing,
     σinit::Union{Nothing,Real}=nothing,
     verbose::Bool=false,
-    tune_σ::Bool=la.likelihood==:regression
+    tune_σ::Bool=la.likelihood == :regression,
 )
 
     # Setup:
     logP₀ = isnothing(λinit) ? log.(unique(diag(la.P₀))) : log.([λinit])   # prior precision (scalar)
     logσ = isnothing(σinit) ? log.([la.σ]) : log.([σinit])                 # noise (scalar)
     opt = Adam(lr)
-    show_every = round(n_steps/10)
+    show_every = round(n_steps / 10)
     i = 0
     if tune_σ
         @assert la.likelihood == :regression "Observational noise σ tuning only applicable to regression."
-        ps = Flux.params(logP₀,logσ)
+        ps = Flux.params(logP₀, logσ)
     else
         if la.likelihood == :regression
             @warn "You have specified not to tune observational noise σ, even though this is a regression model. Are you sure you do not want to tune σ?"
         end
         ps = Flux.params(logP₀)
     end
-    loss(P₀,σ) = - log_marginal_likelihood(la; P₀=P₀[1], σ=σ[1])
+    loss(P₀, σ) = -log_marginal_likelihood(la; P₀=P₀[1], σ=σ[1])
 
     # Optimization:
     while i < n_steps
-        gs = gradient(ps) do 
+        gs = gradient(ps) do
             loss(exp.(logP₀), exp.(logσ))
         end
         update!(opt, ps, gs)
