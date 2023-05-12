@@ -7,19 +7,40 @@ using Zygote
 abstract type CurvatureInterface end
 
 """
+    transform_jacobians(curvature::CurvatureInterface, J::Zygote.Grads)
+
+Computes Jacobians for the parameters of a given curvature model from a collection of gradients.
+"""
+
+function transform_jacobians(curvature::CurvatureInterface, J::Zygote.Grads)
+    Js = []
+    for θ in curvature.params
+        param_size = size(θ)
+        indices = collect(1:length(vec(θ')))
+        updated_indices = vec(reshape(indices, param_size)')
+        Jk = J[θ]'
+        push!(Js, Jk[updated_indices, :])
+    end
+    Js = hcat(Js'...)'
+    return Js
+end
+
+"""
     jacobians(curvature::CurvatureInterface, X::AbstractArray)
 
 Computes the Jacobian `∇f(x;θ)` where `f: ℝᴰ ↦ ℝᴷ`.
 The Jacobian function can be used to compute the Jacobian of any function that supports automatic differentiation. 
 Here, the nn function is wrapped in an anonymous function using the () -> syntax, which allows it to be differentiated using automatic differentiation.
 """
+
 function jacobians(curvature::CurvatureInterface, X::AbstractArray)
     nn = curvature.model
     # Output:
     ŷ = nn(X)
     # Jacobian:
     𝐉 = jacobian(() -> nn(X), Flux.params(nn))                               # differentiates f with regards to the model parameters
-    𝐉 = permutedims(reduce(hcat, [𝐉[θ] for θ in curvature.params]))           # matrix is flattened and permuted into a matrix of size (K, D+P), where P is the number of model parameters
+    # 𝐉 = permutedims(reduce(hcat,[𝐉[θ] for θ ∈ curvature.params]))           # matrix is flattened and permuted into a matrix of size (K, D+P), where P is the number of model parameters
+    𝐉 = transform_jacobians(curvature, 𝐉)
     return 𝐉, ŷ                                                              # returns Jacobian matrix and predicted output
 end
 

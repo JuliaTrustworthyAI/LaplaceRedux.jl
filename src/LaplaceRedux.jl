@@ -11,7 +11,7 @@ using .Curvature
 include("baselaplace.jl")       # abstract base type and methods
 include("laplace.jl")           # full Laplace
 
-export Laplace, fit!, predict, optimize_prior!
+export Laplace, fit!, predict, optimize_prior!, glm_predictive_distribution
 
 include("plotting.jl")
 
