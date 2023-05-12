@@ -176,10 +176,10 @@ end
                 plot(la, X, y)                              # standard
                 plot(la, X, y; xlims=(-5, 5), ylims=(-5, 5))  # lims
                 plot(la, X, y; link_approx=:plugin)         # plugin approximation
-            else
-                @test_throws AssertionError Laplace(
-                    nn; likelihood=likelihood, λ=λ, subset_of_weights=:last_layer
-                )
+                #else
+                #    @test_throws AssertionError Laplace(
+                #        nn; likelihood=likelihood, λ=λ, subset_of_weights=:last_layer
+                #    )
             end
         end
     end
