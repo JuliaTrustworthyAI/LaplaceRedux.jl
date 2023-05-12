@@ -67,7 +67,7 @@ function Plots.plot(
             ribbon=(1.96 * pred_std, 1.96 * pred_std),
             lw=lw,
             kwargs...,
-        )
+        )   # the specific values 1.96 are used here to create a 95% confidence interval
 
     else
 
