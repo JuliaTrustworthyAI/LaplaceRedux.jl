@@ -10,14 +10,16 @@ abstract type CurvatureInterface end
     jacobians(curvature::CurvatureInterface, X::AbstractArray)
 
 Computes the Jacobian `∇f(x;θ)` where `f: ℝᴰ ↦ ℝᴷ`.
+The Jacobian function can be used to compute the Jacobian of any function that supports automatic differentiation. 
+Here, the nn function is wrapped in an anonymous function using the () -> syntax, which allows it to be differentiated using automatic differentiation.
 """
 function jacobians(curvature::CurvatureInterface, X::AbstractArray)
     nn = curvature.model
     # Output:
     ŷ = nn(X)
     # Jacobian:
-    𝐉 = jacobian(() -> nn(X), Flux.params(nn))                                # differentiates f with regards to the model parameters
-    𝐉 = permutedims(reduce(hcat, [𝐉[θ] for θ in curvature.params]))            # matrix is flattened and permuted into a matrix of size (K, D+P), where P is the number of model parameters
+    𝐉 = jacobian(() -> nn(X), Flux.params(nn))                               # differentiates f with regards to the model parameters
+    𝐉 = permutedims(reduce(hcat, [𝐉[θ] for θ in curvature.params]))           # matrix is flattened and permuted into a matrix of size (K, D+P), where P is the number of model parameters
     return 𝐉, ŷ                                                              # returns Jacobian matrix and predicted output
 end
 
@@ -106,10 +108,10 @@ function full(curvature::EmpiricalFisher, d::Tuple)
 
     loss = curvature.factor * curvature.loss_fun(x, y)
     𝐠 = gradients(curvature, x, y)
-    𝐠 = reduce(vcat, [vec(𝐠[θ]) for θ in curvature.params])                    # concatenates the gradients into a vector
+    𝐠 = reduce(vcat, [vec(𝐠[i]) for i in curvature.params])                  # concatenates the gradients into a vector
 
     # Empirical Fisher:
-    H = 𝐠 * 𝐠'                                                               # the matrix is equal to the product of the gradient vector with itself (g' is the transpose of g)
+    H = 𝐠 * 𝐠'                                                               # the matrix is equal to the product of the gradient vector with itself (𝐠' is the transpose of 𝐠)
 
     return loss, H
 end

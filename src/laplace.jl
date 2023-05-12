@@ -10,7 +10,7 @@ mutable struct Laplace <: BaseLaplace
     subset_of_weights::Symbol
     hessian_structure::Symbol
     curvature::Union{Curvature.CurvatureInterface,Nothing}
-    σ::Real                                                                  # prior noise/uncertainty          
+    σ::Real                                                                  # standard deviation in the Gaussian prior         
     μ₀::Real                                                                 # prior mean  
     μ::AbstractVector                                                        # posterior mean
     P₀::Union{AbstractMatrix,UniformScaling}                                 # prior precision (i.e. inverse covariance matrix)          
@@ -108,6 +108,8 @@ end
     fit!(la::Laplace,data)
 
 Fits the Laplace approximation for a data set.
+The function returns the number of observations (n_data) that were used to update the Laplace object. 
+It does not return the updated Laplace object itself because the function modifies the input Laplace object in place (as denoted by the use of '!' in the function's name).
 
 # Examples
 
@@ -173,7 +175,6 @@ end
     predict(la::Laplace, X::AbstractArray; link_approx=:probit)
 
 Computes predictions from Bayesian neural network.
-
 # Examples
 
 ```julia-repl
@@ -251,7 +252,7 @@ function optimize_prior!(
     # Setup:
     logP₀ = isnothing(λinit) ? log.(unique(diag(la.P₀))) : log.([λinit])     # prior precision (scalar)
     logσ = isnothing(σinit) ? log.([la.σ]) : log.([σinit])                   # noise (scalar)
-    opt = Adam(lr)                                                           # Adam is a stochastic gradient descent (SGD) optimization algorithm, using lr as learning rate
+    opt = Adam(lr)                                                           # Adam is gradient descent (GD) optimization algorithm, using lr as learning rate
     show_every = round(n_steps / 10)
     i = 0
     if tune_σ
