@@ -7,9 +7,9 @@ using Zygote
 abstract type CurvatureInterface end 
 
 """
-    jacobians(curvature::CurvatureInterface, X::AbstractArray)
+    transform_jacobians(curvature::CurvatureInterface, J::Zygote.Grads)
 
-Computes the Jacobian `∇f(x;θ)` where `f: ℝᴰ ↦ ℝᴷ`.
+Computes Jacobians for the parameters of a given curvature model from a collection of gradients.
 """
 
 function transform_jacobians(curvature::CurvatureInterface, J::Zygote.Grads)
@@ -25,6 +25,11 @@ function transform_jacobians(curvature::CurvatureInterface, J::Zygote.Grads)
     return Js
 end
 
+"""
+    jacobians(curvature::CurvatureInterface, X::AbstractArray)
+
+Computes the Jacobian `∇f(x;θ)` where `f: ℝᴰ ↦ ℝᴷ`.
+"""
 
 function jacobians(curvature::CurvatureInterface, X::AbstractArray)
     nn = curvature.model
