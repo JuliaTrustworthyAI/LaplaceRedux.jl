@@ -14,7 +14,7 @@ Computes Jacobians for the parameters of a given curvature model from a collecti
 
 function transform_jacobians(curvature::CurvatureInterface, J::Zygote.Grads)
     Js = []
-    for θ ∈ curvature.params
+    for θ in curvature.params
         param_size = size(θ)
         indices = collect(1:length(vec(θ')))
         updated_indices = vec(reshape(indices, param_size)')
@@ -36,7 +36,7 @@ function jacobians(curvature::CurvatureInterface, X::AbstractArray)
     # Output:
     ŷ = nn(X)
     # Jacobian:
-    𝐉 = jacobian(() -> nn(X),Flux.params(nn))
+    𝐉 = jacobian(() -> nn(X), Flux.params(nn))
     # 𝐉 = permutedims(reduce(hcat,[𝐉[θ] for θ ∈ curvature.params]))
     𝐉 = transform_jacobians(curvature, 𝐉)
     return 𝐉, ŷ
