@@ -189,7 +189,7 @@ predict(la, hcat(x...))
 """
 function predict(la::Laplace, X::AbstractArray; link_approx=:probit)
     fμ, fvar = glm_predictive_distribution(la, X)
-    
+
     # Regression:
     if la.likelihood == :regression
         return fμ, fvar
