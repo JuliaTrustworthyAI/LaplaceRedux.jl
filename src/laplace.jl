@@ -10,13 +10,13 @@ mutable struct Laplace <: BaseLaplace
     subset_of_weights::Symbol
     hessian_structure::Symbol
     curvature::Union{Curvature.CurvatureInterface,Nothing}
-    σ::Real
-    μ₀::Real
-    μ::AbstractVector
-    P₀::Union{AbstractMatrix,UniformScaling}
-    H::Union{AbstractArray,Nothing}
-    P::Union{AbstractArray,Nothing}
-    Σ::Union{AbstractArray,Nothing}
+    σ::Real                                                                  # standard deviation in the Gaussian prior         
+    μ₀::Real                                                                 # prior mean  
+    μ::AbstractVector                                                        # posterior mean
+    P₀::Union{AbstractMatrix,UniformScaling}                                 # prior precision (i.e. inverse covariance matrix)          
+    H::Union{AbstractArray,Nothing}                                          # Hessian matrix 
+    P::Union{AbstractArray,Nothing}                                          # posterior precision     
+    Σ::Union{AbstractArray,Nothing}                                          # posterior covariance matrix
     n_params::Union{Int,Nothing}
     n_data::Union{Int,Nothing}
     n_out::Union{Int,Nothing}
@@ -31,7 +31,7 @@ using Parameters
     backend::Symbol = :EmpiricalFisher
     σ::Real = 1.0
     μ₀::Real = 0.0
-    λ::Real = 1.0
+    λ::Real = 1.0                                                              # regularization parameter
     P₀::Union{Nothing,AbstractMatrix,UniformScaling} = nothing
     loss::Real = 0.0
 end
@@ -54,7 +54,7 @@ function Laplace(model::Any; likelihood::Symbol, kwargs...)
     P₀ = isnothing(args.P₀) ? UniformScaling(args.λ) : args.P₀
     nn = model
     n_out = outdim(nn)
-    μ = reduce(vcat, [vec(θ) for θ in Flux.params(nn)])
+    μ = reduce(vcat, [vec(θ) for θ in Flux.params(nn)])                       # μ contains the vertically concatenated parameters of the neural network
 
     # Instantiate LA:
     la = Laplace(
@@ -76,11 +76,11 @@ function Laplace(model::Any; likelihood::Symbol, kwargs...)
         args.loss,
     )
 
-    @assert outdim(la) == 1 "Support for multi-class output still lacking, sorry. Currently only regression and binary classification models are supported."
+    # @assert outdim(la)==1 "Support for multi-class output still lacking, sorry. Currently only regression and binary classification models are supported."
 
     params = get_params(la)
-    la.curvature = getfield(Curvature, args.backend)(nn, likelihood, params)   # curvature interface
-    la.n_params = length(reduce(vcat, [vec(θ) for θ in params]))             # number of params
+    la.curvature = getfield(Curvature, args.backend)(nn, likelihood, params)    # curvature interface
+    la.n_params = length(reduce(vcat, [vec(θ) for θ in params]))                # number of params
     la.μ = la.μ[(end - la.n_params + 1):end]                                    # adjust weight vector
     if typeof(la.P₀) <: UniformScaling
         la.P₀ = la.P₀(la.n_params)
@@ -108,6 +108,8 @@ end
     fit!(la::Laplace,data)
 
 Fits the Laplace approximation for a data set.
+The function returns the number of observations (n_data) that were used to update the Laplace object. 
+It does not return the updated Laplace object itself because the function modifies the input Laplace object in place (as denoted by the use of '!' in the function's name).
 
 # Examples
 
@@ -137,11 +139,11 @@ function fit!(la::Laplace, data; override::Bool=true)
     end
 
     # Store output:
-    la.loss = loss                      # Loss
-    la.H = H                            # Hessian
-    la.P = posterior_precision(la)      # posterior precision
-    la.Σ = posterior_covariance(la)     # posterior covariance
-    return la.n_data = n_data                  # number of observations
+    la.loss = loss                                                           # Loss
+    la.H = H                                                                 # Hessian
+    la.P = posterior_precision(la)                                           # posterior precision
+    la.Σ = posterior_covariance(la)                                          # posterior covariance
+    return la.n_data = n_data                                                # number of observations
 end
 
 """
@@ -173,7 +175,6 @@ end
     predict(la::Laplace, X::AbstractArray; link_approx=:probit)
 
 Computes predictions from Bayesian neural network.
-
 # Examples
 
 ```julia-repl
@@ -249,9 +250,9 @@ function optimize_prior!(
 )
 
     # Setup:
-    logP₀ = isnothing(λinit) ? log.(unique(diag(la.P₀))) : log.([λinit])   # prior precision (scalar)
-    logσ = isnothing(σinit) ? log.([la.σ]) : log.([σinit])                 # noise (scalar)
-    opt = Adam(lr)
+    logP₀ = isnothing(λinit) ? log.(unique(diag(la.P₀))) : log.([λinit])     # prior precision (scalar)
+    logσ = isnothing(σinit) ? log.([la.σ]) : log.([σinit])                   # noise (scalar)
+    opt = Adam(lr)                                                           # Adam is gradient descent (GD) optimization algorithm, using lr as learning rate
     show_every = round(n_steps / 10)
     i = 0
     if tune_σ
@@ -270,9 +271,9 @@ function optimize_prior!(
         gs = gradient(ps) do
             loss(exp.(logP₀), exp.(logσ))
         end
-        update!(opt, ps, gs)
+        update!(opt, ps, gs)                                                 # updates the values of the parameters using the calculated gradients and the Adam optimizer
         i += 1
-        if verbose
+        if verbose                                                           # if set to 'true', information about the optimization progress is printed out
             if i % show_every == 0
                 @info "Iteration $(i): P₀=$(exp(logP₀[1])), σ=$(exp(logσ[1]))"
                 @show loss(exp.(logP₀), exp.(logσ))
