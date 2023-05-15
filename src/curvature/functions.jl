@@ -129,7 +129,7 @@ function full(curvature::EmpiricalFisher, d::Tuple)
 
     loss = curvature.factor * curvature.loss_fun(x, y)
     𝐠 = gradients(curvature, x, y)
-    𝐠 = reduce(vcat, [vec(𝐠[i]) for i in curvature.params])                  # concatenates the gradients into a vector
+    𝐠 = reduce(vcat, [vec(𝐠[i]') for i in curvature.params])                  # concatenates the gradients into a vector
 
     # Empirical Fisher:
     H = 𝐠 * 𝐠'                                                               # the matrix is equal to the product of the gradient vector with itself (𝐠' is the transpose of 𝐠)
