@@ -51,7 +51,7 @@ function Laplace(model::Any; likelihood::Symbol, kwargs...)
     # Assertions:
     @assert !(args.σ != 1.0 && likelihood != :regression) "Observation noise σ ≠ 1 only available for regression."
     @assert args.subset_of_weights ∈ [:all, :last_layer, :sub_network] "`subset_of_weights` of weights should be one of the following: `[:all, :last_layer, :sub_network]`"
-    if(args.subset_of_weights == :sub_network)
+    if (args.subset_of_weights == :sub_network)
         @assert !(args.sub_network_indices === nothing) "If `subset_of_weights` is `:sub_network`, then `sub_network_indices` should be a vector of integers."
     end
 
