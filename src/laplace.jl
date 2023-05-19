@@ -8,6 +8,7 @@ mutable struct Laplace <: BaseLaplace
     model::Flux.Chain
     likelihood::Symbol
     subset_of_weights::Symbol
+    sub_network_indices::Union{Nothing,Vector{Int}}
     hessian_structure::Symbol
     curvature::Union{Curvature.CurvatureInterface,Nothing}
     σ::Real                                                                  # standard deviation in the Gaussian prior         
@@ -27,6 +28,7 @@ using Parameters
 
 @with_kw struct LaplaceParams
     subset_of_weights::Symbol = :all
+    sub_network_indices::Union{Nothing,Vector{Int}} = nothing
     hessian_structure::Symbol = :full
     backend::Symbol = :EmpiricalFisher
     σ::Real = 1.0
@@ -48,7 +50,10 @@ function Laplace(model::Any; likelihood::Symbol, kwargs...)
 
     # Assertions:
     @assert !(args.σ != 1.0 && likelihood != :regression) "Observation noise σ ≠ 1 only available for regression."
-    @assert args.subset_of_weights ∈ [:all, :last_layer] "`subset_of_weights` of weights should be one of the following: `[:all, :last_layer]`"
+    @assert args.subset_of_weights ∈ [:all, :last_layer, :sub_network] "`subset_of_weights` of weights should be one of the following: `[:all, :last_layer, :sub_network]`"
+    if(args.subset_of_weights == :sub_network)
+        @assert !(args.sub_network_indices === nothing) "If `subset_of_weights` is `:sub_network`, then `sub_network_indices` should be a vector of integers."
+    end
 
     # Setup:
     P₀ = isnothing(args.P₀) ? UniformScaling(args.λ) : args.P₀
@@ -61,6 +66,7 @@ function Laplace(model::Any; likelihood::Symbol, kwargs...)
         model,
         likelihood,
         args.subset_of_weights,
+        args.sub_network_indices,
         args.hessian_structure,
         nothing,
         args.σ,
