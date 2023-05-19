@@ -3,6 +3,7 @@ using Flux
 using Flux.Optimise: Adam, update!
 using Flux.Optimisers: destructure
 using LinearAlgebra
+using MLUtils
 
 mutable struct Laplace <: BaseLaplace
     model::Flux.Chain
@@ -121,7 +122,9 @@ fit!(la, data)
 ```
 
 """
-function fit!(la::Laplace, data; override::Bool=true)
+function fit!(la::Laplace, data::Tuple; override::Bool=true, batchsize::Int=1)
+    dataloader = DataLoader(data; batchsize=batchsize)
+
     if override
         H = _init_H(la)
         loss = 0.0
@@ -129,7 +132,7 @@ function fit!(la::Laplace, data; override::Bool=true)
     end
 
     # Training:
-    for d in data
+    for d in dataloader
         loss_batch, H_batch = hessian_approximation(la, d)
         loss += loss_batch
         H += H_batch
