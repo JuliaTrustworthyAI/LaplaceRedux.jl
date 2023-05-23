@@ -98,7 +98,7 @@ end
 """
     hessian_approximation(la::Laplace, d)
 
-Computes the local Hessian approximation at a single data `d`.
+Computes the local Hessian approximation at a single datapoint `d`.
 """
 function hessian_approximation(la::Laplace, d)
     loss, H = getfield(Curvature, la.hessian_structure)(la.curvature, d)
@@ -122,8 +122,7 @@ fit!(la, data)
 ```
 
 """
-function fit!(la::Laplace, data::Tuple; override::Bool=true, batchsize::Int=1)
-    dataloader = DataLoader(data; batchsize=batchsize)
+function fit!(la::Laplace, data; override::Bool=true, batchsize=1)
 
     if override
         H = _init_H(la)
@@ -132,7 +131,7 @@ function fit!(la::Laplace, data::Tuple; override::Bool=true, batchsize::Int=1)
     end
 
     # Training:
-    for d in dataloader
+    for d in data
         loss_batch, H_batch = hessian_approximation(la, d)
         loss += loss_batch
         H += H_batch

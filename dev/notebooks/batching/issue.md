@@ -38,3 +38,15 @@ TODO: possible additional issue: improve the test suite. For instance
 - Add documentation for the analytical derivation
 
 TODO: ask about lambda and sigma in the constructor: are they not the reciprocals of each other?
+
+Alternative decision: instead of expecting a tuple argument, leave the argument to be an iterable of input-output pairs, where the input-output *may* be batched.
+This makes batching a responsibiliy of the user (who should be instructed to use MLUtils.Dataloader for this purpose).
+Since the user is already using Flux, they do not have to make an additional import for it, as Flux re-exports from MLUtils.
+
+---
+
+Testcases TODO:
+- Complete workflow testcases: Batching should give the same results as non-batched computation.
+- Regression tests
+
+By default, the aggregate function in loss is mean, not sum. This conflicts the above goal of batch-nonbatch result equivalence.
