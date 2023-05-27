@@ -102,7 +102,7 @@ end
 # end
 
 "Constructor for Empirical Fisher."
-struct EmpiricalFisher <: CurvatureInterface
+mutable struct EmpiricalFisher <: CurvatureInterface
     model::Any
     likelihood::Symbol
     loss_fun::Function
