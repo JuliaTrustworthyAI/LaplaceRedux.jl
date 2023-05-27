@@ -2,6 +2,7 @@ using Flux
 using ..LaplaceRedux: get_loss_fun, outdim
 using LinearAlgebra
 using Zygote
+using Tullio
 
 "Basetype for any curvature interface."
 abstract type CurvatureInterface end
@@ -113,3 +114,21 @@ function full(curvature::EmpiricalFisher, d::Tuple)
 
     return loss, H
 end
+
+
+function full_b(curvature::EmpiricalFisher, d::Tuple)
+    x, y = d
+
+    loss = curvature.factor * curvature.loss_fun(x, y)
+    grads::Zygote.Grads = jacobian(
+        () -> curvature.loss_fun(x, y; agg=identity), Flux.params(curvature.model)
+    )
+    𝐠 = transpose(reduce(hcat, [grads[θ] for θ in curvature.params]))
+
+    # Empirical Fisher:
+    # H = 𝐠 * 𝐠'
+    @tullio H[i, j] := 𝐠[i, b] * 𝐠[j, b]
+
+    return loss, H
+end
+

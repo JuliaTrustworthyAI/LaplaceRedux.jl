@@ -146,6 +146,38 @@ function fit!(la::Laplace, data; override::Bool=true, batchsize=1)
     return la.n_data = n_data                  # number of observations
 end
 
+# TODO: code reuse
+function fit!(la::Laplace, data::DataLoader; override::Bool=true)
+
+    # FIXME MASSIVE HACK
+    la.hessian_structure = :full_b
+
+    if override
+        H = _init_H(la)
+        loss = 0.0
+        n_data = 0
+    end
+
+    # Training:
+    for d in data
+        loss_batch, H_batch = hessian_approximation(la, d)
+        loss += loss_batch
+        # @show size(H_batch)
+        # @show size(H)
+        H += H_batch
+        n_data += data.batchsize
+    end
+
+    # Store output:
+    la.loss = loss                      # Loss
+    la.H = H                            # Hessian
+    la.P = posterior_precision(la)      # posterior precision
+    la.Σ = posterior_covariance(la)     # posterior covariance
+    return la.n_data = n_data                  # number of observations
+end
+
+
+
 """
     glm_predictive_distribution(la::Laplace, X::AbstractArray)
 
