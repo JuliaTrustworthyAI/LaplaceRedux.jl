@@ -115,7 +115,6 @@ function full(curvature::EmpiricalFisher, d::Tuple)
     return loss, H
 end
 
-
 function full_b(curvature::EmpiricalFisher, d::Tuple)
     x, y = d
 
@@ -131,4 +130,3 @@ function full_b(curvature::EmpiricalFisher, d::Tuple)
 
     return loss, H
 end
-

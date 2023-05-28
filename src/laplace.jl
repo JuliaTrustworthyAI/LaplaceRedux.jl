@@ -123,7 +123,6 @@ fit!(la, data)
 
 """
 function fit!(la::Laplace, data; override::Bool=true, batchsize=1)
-
     if override
         H = _init_H(la)
         loss = 0.0
@@ -175,8 +174,6 @@ function fit!(la::Laplace, data::DataLoader; override::Bool=true)
     la.Σ = posterior_covariance(la)     # posterior covariance
     return la.n_data = n_data                  # number of observations
 end
-
-
 
 """
     glm_predictive_distribution(la::Laplace, X::AbstractArray)

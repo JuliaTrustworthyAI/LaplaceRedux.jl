@@ -184,3 +184,419 @@ end
         end
     end
 end
+
+@testset "Complete Workflow Batchsize = 1" begin
+
+    # SETUP
+    n = 100
+    data_dict = Dict()
+    bsize = 1
+    # Classification binary:
+    xs, y = LaplaceRedux.Data.toy_data_non_linear(n)
+    X = hcat(xs...)
+    data = Flux.DataLoader((X, reduce(hcat, y)); batchsize=bsize)
+    data_dict[:classification_binary] = Dict(
+        :data => data,
+        :X => X,
+        :y => y,
+        :outdim => 1,
+        :loss_fun => :logitbinarycrossentropy,
+        :likelihood => :classification,
+    )
+
+    # Classification Multi:
+    xs, y = LaplaceRedux.Data.toy_data_multi(n)
+    X = hcat(xs...)
+    ytrain = Flux.onehotbatch(y, unique(y))
+    ytrain = Flux.unstack(ytrain'; dims=1)
+    data = Flux.DataLoader((X, reduce(hcat, ytrain)); batchsize=bsize)
+    data_dict[:classification_multi] = Dict(
+        :data => data,
+        :X => X,
+        :y => y,
+        :outdim => length(first(ytrain)),
+        :loss_fun => :logitcrossentropy,
+        :likelihood => :classification,
+    )
+
+    # Regression:
+    x, y = LaplaceRedux.Data.toy_data_regression(n)
+    xs = [[x] for x in x]
+    X = hcat(xs...)
+    data = Flux.DataLoader((X, reduce(hcat, y)); batchsize=bsize)
+    data_dict[:regression] = Dict(
+        :data => data,
+        :X => X,
+        :y => y,
+        :outdim => 1,
+        :loss_fun => :mse,
+        :likelihood => :regression,
+    )
+
+    # WORKFLOWS
+
+    for (likelihood, val) in data_dict
+        @testset "$(likelihood)" begin
+
+            # Unpack:
+            data = val[:data]
+            X = val[:X]
+            y = val[:y]
+            outdim = val[:outdim]
+            loss_fun = val[:loss_fun]
+            likelihood = val[:likelihood]
+
+            # Neural network:
+            n_hidden = 32
+            D = size(X, 1)
+            nn = Chain(Dense(D, n_hidden, σ), Dense(n_hidden, outdim))
+            λ = 0.01
+            sqnorm(x) = sum(abs2, x)
+            weight_regularization(λ=λ) = 1 / 2 * λ^2 * sum(sqnorm, Flux.params(nn))
+            loss(x, y) = getfield(Flux.Losses, loss_fun)(nn(x), y) + weight_regularization()
+
+            opt = Adam()
+            epochs = 200
+            avg_loss(data) = mean(map(d -> loss(d[1], d[2]), data))
+            show_every = epochs / 10
+
+            for epoch in 1:epochs
+                for d in data
+                    gs = gradient(Flux.params(nn)) do
+                        l = loss(d...)
+                    end
+                    update!(opt, Flux.params(nn), gs)
+                end
+                if epoch % show_every == 0
+                    println("Epoch " * string(epoch))
+                    @show avg_loss(data)
+                end
+            end
+
+            if outdim == 1
+                la = Laplace(nn; likelihood=likelihood, λ=λ, subset_of_weights=:last_layer)
+                fit!(la, data)
+                optimize_prior!(la; verbose=true)
+                plot(la, X, y)                              # standard
+                plot(la, X, y; xlims=(-5, 5), ylims=(-5, 5))  # lims
+                plot(la, X, y; link_approx=:plugin)         # plugin approximation
+            else
+                @test_throws AssertionError Laplace(
+                    nn; likelihood=likelihood, λ=λ, subset_of_weights=:last_layer
+                )
+            end
+        end
+    end
+end
+
+@testset "Complete Workflow Batchsize = 2" begin
+
+    # SETUP
+    n = 100
+    data_dict = Dict()
+    bsize = 2
+    # Classification binary:
+    xs, y = LaplaceRedux.Data.toy_data_non_linear(n)
+    X = hcat(xs...)
+    data = Flux.DataLoader((X, reduce(hcat, y)); batchsize=bsize)
+    data_dict[:classification_binary] = Dict(
+        :data => data,
+        :X => X,
+        :y => y,
+        :outdim => 1,
+        :loss_fun => :logitbinarycrossentropy,
+        :likelihood => :classification,
+    )
+
+    # Classification Multi:
+    xs, y = LaplaceRedux.Data.toy_data_multi(n)
+    X = hcat(xs...)
+    ytrain = Flux.onehotbatch(y, unique(y))
+    ytrain = Flux.unstack(ytrain'; dims=1)
+    data = Flux.DataLoader((X, reduce(hcat, ytrain)); batchsize=bsize)
+    data_dict[:classification_multi] = Dict(
+        :data => data,
+        :X => X,
+        :y => y,
+        :outdim => length(first(ytrain)),
+        :loss_fun => :logitcrossentropy,
+        :likelihood => :classification,
+    )
+
+    # Regression:
+    x, y = LaplaceRedux.Data.toy_data_regression(n)
+    xs = [[x] for x in x]
+    X = hcat(xs...)
+    data = Flux.DataLoader((X, reduce(hcat, y)); batchsize=bsize)
+    data_dict[:regression] = Dict(
+        :data => data,
+        :X => X,
+        :y => y,
+        :outdim => 1,
+        :loss_fun => :mse,
+        :likelihood => :regression,
+    )
+
+    # WORKFLOWS
+
+    for (likelihood, val) in data_dict
+        @testset "$(likelihood)" begin
+
+            # Unpack:
+            data = val[:data]
+            X = val[:X]
+            y = val[:y]
+            outdim = val[:outdim]
+            loss_fun = val[:loss_fun]
+            likelihood = val[:likelihood]
+
+            # Neural network:
+            n_hidden = 32
+            D = size(X, 1)
+            nn = Chain(Dense(D, n_hidden, σ), Dense(n_hidden, outdim))
+            λ = 0.01
+            sqnorm(x) = sum(abs2, x)
+            weight_regularization(λ=λ) = 1 / 2 * λ^2 * sum(sqnorm, Flux.params(nn))
+            loss(x, y) = getfield(Flux.Losses, loss_fun)(nn(x), y) + weight_regularization()
+
+            opt = Adam()
+            epochs = 200
+            avg_loss(data) = mean(map(d -> loss(d[1], d[2]), data))
+            show_every = epochs / 10
+
+            for epoch in 1:epochs
+                for d in data
+                    gs = gradient(Flux.params(nn)) do
+                        l = loss(d...)
+                    end
+                    update!(opt, Flux.params(nn), gs)
+                end
+                if epoch % show_every == 0
+                    println("Epoch " * string(epoch))
+                    @show avg_loss(data)
+                end
+            end
+
+            if outdim == 1
+                la = Laplace(nn; likelihood=likelihood, λ=λ, subset_of_weights=:last_layer)
+                fit!(la, data)
+                optimize_prior!(la; verbose=true)
+                plot(la, X, y)                              # standard
+                plot(la, X, y; xlims=(-5, 5), ylims=(-5, 5))  # lims
+                plot(la, X, y; link_approx=:plugin)         # plugin approximation
+            else
+                @test_throws AssertionError Laplace(
+                    nn; likelihood=likelihood, λ=λ, subset_of_weights=:last_layer
+                )
+            end
+        end
+    end
+end
+
+@testset "Complete Workflow Batchsize = 10" begin
+
+    # SETUP
+    n = 100
+    data_dict = Dict()
+    bsize = 10
+    # Classification binary:
+    xs, y = LaplaceRedux.Data.toy_data_non_linear(n)
+    X = hcat(xs...)
+    data = Flux.DataLoader((X, reduce(hcat, y)); batchsize=bsize)
+    data_dict[:classification_binary] = Dict(
+        :data => data,
+        :X => X,
+        :y => y,
+        :outdim => 1,
+        :loss_fun => :logitbinarycrossentropy,
+        :likelihood => :classification,
+    )
+
+    # Classification Multi:
+    xs, y = LaplaceRedux.Data.toy_data_multi(n)
+    X = hcat(xs...)
+    ytrain = Flux.onehotbatch(y, unique(y))
+    ytrain = Flux.unstack(ytrain'; dims=1)
+    data = Flux.DataLoader((X, reduce(hcat, ytrain)); batchsize=bsize)
+    data_dict[:classification_multi] = Dict(
+        :data => data,
+        :X => X,
+        :y => y,
+        :outdim => length(first(ytrain)),
+        :loss_fun => :logitcrossentropy,
+        :likelihood => :classification,
+    )
+
+    # Regression:
+    x, y = LaplaceRedux.Data.toy_data_regression(n)
+    xs = [[x] for x in x]
+    X = hcat(xs...)
+    data = Flux.DataLoader((X, reduce(hcat, y)); batchsize=bsize)
+    data_dict[:regression] = Dict(
+        :data => data,
+        :X => X,
+        :y => y,
+        :outdim => 1,
+        :loss_fun => :mse,
+        :likelihood => :regression,
+    )
+
+    # WORKFLOWS
+
+    for (likelihood, val) in data_dict
+        @testset "$(likelihood)" begin
+
+            # Unpack:
+            data = val[:data]
+            X = val[:X]
+            y = val[:y]
+            outdim = val[:outdim]
+            loss_fun = val[:loss_fun]
+            likelihood = val[:likelihood]
+
+            # Neural network:
+            n_hidden = 32
+            D = size(X, 1)
+            nn = Chain(Dense(D, n_hidden, σ), Dense(n_hidden, outdim))
+            λ = 0.01
+            sqnorm(x) = sum(abs2, x)
+            weight_regularization(λ=λ) = 1 / 2 * λ^2 * sum(sqnorm, Flux.params(nn))
+            loss(x, y) = getfield(Flux.Losses, loss_fun)(nn(x), y) + weight_regularization()
+
+            opt = Adam()
+            epochs = 200
+            avg_loss(data) = mean(map(d -> loss(d[1], d[2]), data))
+            show_every = epochs / 10
+
+            for epoch in 1:epochs
+                for d in data
+                    gs = gradient(Flux.params(nn)) do
+                        l = loss(d...)
+                    end
+                    update!(opt, Flux.params(nn), gs)
+                end
+                if epoch % show_every == 0
+                    println("Epoch " * string(epoch))
+                    @show avg_loss(data)
+                end
+            end
+
+            if outdim == 1
+                la = Laplace(nn; likelihood=likelihood, λ=λ, subset_of_weights=:last_layer)
+                fit!(la, data)
+                optimize_prior!(la; verbose=true)
+                plot(la, X, y)                              # standard
+                plot(la, X, y; xlims=(-5, 5), ylims=(-5, 5))  # lims
+                plot(la, X, y; link_approx=:plugin)         # plugin approximation
+            else
+                @test_throws AssertionError Laplace(
+                    nn; likelihood=likelihood, λ=λ, subset_of_weights=:last_layer
+                )
+            end
+        end
+    end
+end
+
+@testset "Complete Workflow Batchsize = 100" begin
+
+    # SETUP
+    n = 100
+    data_dict = Dict()
+    bsize = 100
+    # Classification binary:
+    xs, y = LaplaceRedux.Data.toy_data_non_linear(n)
+    X = hcat(xs...)
+    data = Flux.DataLoader((X, reduce(hcat, y)); batchsize=bsize)
+    data_dict[:classification_binary] = Dict(
+        :data => data,
+        :X => X,
+        :y => y,
+        :outdim => 1,
+        :loss_fun => :logitbinarycrossentropy,
+        :likelihood => :classification,
+    )
+
+    # Classification Multi:
+    xs, y = LaplaceRedux.Data.toy_data_multi(n)
+    X = hcat(xs...)
+    ytrain = Flux.onehotbatch(y, unique(y))
+    ytrain = Flux.unstack(ytrain'; dims=1)
+    data = Flux.DataLoader((X, reduce(hcat, ytrain)); batchsize=bsize)
+    data_dict[:classification_multi] = Dict(
+        :data => data,
+        :X => X,
+        :y => y,
+        :outdim => length(first(ytrain)),
+        :loss_fun => :logitcrossentropy,
+        :likelihood => :classification,
+    )
+
+    # Regression:
+    x, y = LaplaceRedux.Data.toy_data_regression(n)
+    xs = [[x] for x in x]
+    X = hcat(xs...)
+    data = Flux.DataLoader((X, reduce(hcat, y)); batchsize=bsize)
+    data_dict[:regression] = Dict(
+        :data => data,
+        :X => X,
+        :y => y,
+        :outdim => 1,
+        :loss_fun => :mse,
+        :likelihood => :regression,
+    )
+
+    # WORKFLOWS
+
+    for (likelihood, val) in data_dict
+        @testset "$(likelihood)" begin
+
+            # Unpack:
+            data = val[:data]
+            X = val[:X]
+            y = val[:y]
+            outdim = val[:outdim]
+            loss_fun = val[:loss_fun]
+            likelihood = val[:likelihood]
+
+            # Neural network:
+            n_hidden = 32
+            D = size(X, 1)
+            nn = Chain(Dense(D, n_hidden, σ), Dense(n_hidden, outdim))
+            λ = 0.01
+            sqnorm(x) = sum(abs2, x)
+            weight_regularization(λ=λ) = 1 / 2 * λ^2 * sum(sqnorm, Flux.params(nn))
+            loss(x, y) = getfield(Flux.Losses, loss_fun)(nn(x), y) + weight_regularization()
+
+            opt = Adam()
+            epochs = 200
+            avg_loss(data) = mean(map(d -> loss(d[1], d[2]), data))
+            show_every = epochs / 10
+
+            for epoch in 1:epochs
+                for d in data
+                    gs = gradient(Flux.params(nn)) do
+                        l = loss(d...)
+                    end
+                    update!(opt, Flux.params(nn), gs)
+                end
+                if epoch % show_every == 0
+                    println("Epoch " * string(epoch))
+                    @show avg_loss(data)
+                end
+            end
+
+            if outdim == 1
+                la = Laplace(nn; likelihood=likelihood, λ=λ, subset_of_weights=:last_layer)
+                fit!(la, data)
+                optimize_prior!(la; verbose=true)
+                plot(la, X, y)                              # standard
+                plot(la, X, y; xlims=(-5, 5), ylims=(-5, 5))  # lims
+                plot(la, X, y; link_approx=:plugin)         # plugin approximation
+            else
+                @test_throws AssertionError Laplace(
+                    nn; likelihood=likelihood, λ=λ, subset_of_weights=:last_layer
+                )
+            end
+        end
+    end
+end
