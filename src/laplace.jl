@@ -60,16 +60,21 @@ function Laplace(model::Any; likelihood::Symbol, kwargs...)
             @assert !(args.subnetwork_indices[i] in selected) "The $(i)th element in `subnetwork_indices` should be unique."
             @assert (args.subnetwork_indices[i][1] ∈ 1:length(params)) "The first index of $(i)th element in `subnetwork_indices` should be between 1 and $(length(params))."
             if (length(args.subnetwork_indices[i]) == 2)
-                @assert args.subnetwork_indices[i][1]%2 == 0 "The first index of element $(i) in `subnetwork_indices` should be pointing at a bias parameter."
-                @assert args.subnetwork_indices[i][2] ∈ 1:size(params[args.subnetwork_indices[i][1]], 1) "The second index of element $(i) in `subnetwork_indices` should be between 1 and $(size(params[args.subnetwork_indices[i][1]], 1))."
+                @assert args.subnetwork_indices[i][1] % 2 == 0 "The first index of element $(i) in `subnetwork_indices` should be pointing at a bias parameter."
+                @assert args.subnetwork_indices[i][2] ∈
+                    1:size(params[args.subnetwork_indices[i][1]], 1) "The second index of element $(i) in `subnetwork_indices` should be between 1 and $(size(params[args.subnetwork_indices[i][1]], 1))."
                 push!(selected, args.subnetwork_indices[i])
             elseif (length(args.subnetwork_indices[i]) == 3)
-                @assert args.subnetwork_indices[i][1]%2 == 1 "The first index of element $(i) in `subnetwork_indices` should be pointing at a weight parameter."
-                @assert args.subnetwork_indices[i][2] ∈ 1:size(params[args.subnetwork_indices[i][1]], 1) "The second index of element $(i) in `subnetwork_indices` should be between 1 and $(size(params[args.subnetwork_indices[i][1]], 1))."
-                @assert args.subnetwork_indices[i][3] ∈ 1:size(params[args.subnetwork_indices[i][1]], 2) "The third index of element $(i) in `subnetwork_indices` should be between 1 and $(size(params[args.subnetwork_indices[i][1]], 2))."
+                @assert args.subnetwork_indices[i][1] % 2 == 1 "The first index of element $(i) in `subnetwork_indices` should be pointing at a weight parameter."
+                @assert args.subnetwork_indices[i][2] ∈
+                    1:size(params[args.subnetwork_indices[i][1]], 1) "The second index of element $(i) in `subnetwork_indices` should be between 1 and $(size(params[args.subnetwork_indices[i][1]], 1))."
+                @assert args.subnetwork_indices[i][3] ∈
+                    1:size(params[args.subnetwork_indices[i][1]], 2) "The third index of element $(i) in `subnetwork_indices` should be between 1 and $(size(params[args.subnetwork_indices[i][1]], 2))."
                 push!(selected, args.subnetwork_indices[i])
             else
-                error("Element $(i) in `subnetwork_indices` should be a vector of length 2 or 3.")
+                error(
+                    "Element $(i) in `subnetwork_indices` should be a vector of length 2 or 3.",
+                )
             end
         end
     end
