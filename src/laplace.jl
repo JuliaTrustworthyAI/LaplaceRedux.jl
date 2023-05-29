@@ -100,8 +100,8 @@ end
 
 Computes the local Hessian approximation at a single datapoint `d`.
 """
-function hessian_approximation(la::Laplace, d)
-    loss, H = getfield(Curvature, la.hessian_structure)(la.curvature, d)
+function hessian_approximation(la::Laplace, d; batched::Bool=false)
+    loss, H = getfield(Curvature, la.hessian_structure)(la.curvature, d; batched=batched)
     return loss, H
 end
 
@@ -122,35 +122,16 @@ fit!(la, data)
 ```
 
 """
-function fit!(la::Laplace, data; override::Bool=true, batchsize=1)
-    if override
-        H = _init_H(la)
-        loss = 0.0
-        n_data = 0
-    end
 
-    # Training:
-    for d in data
-        loss_batch, H_batch = hessian_approximation(la, d)
-        loss += loss_batch
-        H += H_batch
-        n_data += 1
-    end
-
-    # Store output:
-    la.loss = loss                      # Loss
-    la.H = H                            # Hessian
-    la.P = posterior_precision(la)      # posterior precision
-    la.Σ = posterior_covariance(la)     # posterior covariance
-    return la.n_data = n_data                  # number of observations
+function fit!(la::Laplace, data; override::Bool=true)
+    return _fit!(la, data; batched=false, batchsize=1, override=override)
 end
 
-# TODO: code reuse
 function fit!(la::Laplace, data::DataLoader; override::Bool=true)
+    return _fit!(la, data; batched=true, batchsize=data.batchsize, override=override)
+end
 
-    # FIXME MASSIVE HACK
-    la.hessian_structure = :full_b
-
+function _fit!(la::Laplace, data; batched::Bool=false, batchsize::Int, override::Bool=true)
     if override
         H = _init_H(la)
         loss = 0.0
@@ -159,12 +140,10 @@ function fit!(la::Laplace, data::DataLoader; override::Bool=true)
 
     # Training:
     for d in data
-        loss_batch, H_batch = hessian_approximation(la, d)
+        loss_batch, H_batch = hessian_approximation(la, d; batched=batched)
         loss += loss_batch
-        # @show size(H_batch)
-        # @show size(H)
         H += H_batch
-        n_data += data.batchsize
+        n_data += batchsize
     end
 
     # Store output:
@@ -172,7 +151,7 @@ function fit!(la::Laplace, data::DataLoader; override::Bool=true)
     la.H = H                            # Hessian
     la.P = posterior_precision(la)      # posterior precision
     la.Σ = posterior_covariance(la)     # posterior covariance
-    return la.n_data = n_data                  # number of observations
+    return la.n_data = n_data           # number of observations
 end
 
 """

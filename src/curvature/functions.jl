@@ -102,7 +102,15 @@ end
 
 Compute the full empirical Fisher.
 """
-function full(curvature::EmpiricalFisher, d::Tuple)
+function full(curvature::EmpiricalFisher, d::Tuple; batched::Bool=true)
+    if batched
+        full_unbatched(curvature, d)
+    else
+        full_batched(curvature, d)
+    end
+end
+
+function full_unbatched(curvature::EmpiricalFisher, d::Tuple)
     x, y = d
 
     loss = curvature.factor * curvature.loss_fun(x, y)
@@ -115,7 +123,7 @@ function full(curvature::EmpiricalFisher, d::Tuple)
     return loss, H
 end
 
-function full_b(curvature::EmpiricalFisher, d::Tuple)
+function full_batched(curvature::EmpiricalFisher, d::Tuple)
     x, y = d
 
     loss = curvature.factor * curvature.loss_fun(x, y)
