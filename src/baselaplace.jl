@@ -31,56 +31,12 @@ function get_params(la::BaseLaplace)
     nn = la.model
     params = Flux.params(nn)
     n_elements = length(params)
-    if la.subset_of_weights == :all
+    if la.subset_of_weights == :all || la.subset_of_weights == :subnetwork
         params = [θ for θ in params]                                         # get all parameters and constants in logitbinarycrossentropy
-    elseif la.subset_of_weights == :last_layer
-        params = [params[n_elements - 1], params[n_elements]]                # only get last layer parameters and constants
-    elseif la.subset_of_weights == :sub_network                              # params[n_elements-1] is the weight matrix of the last layer
-        indices = la.sub_network_indices                                     # params[n_elements] is the bias vector of the last layer
-        check_subnet_indices(indices, params)                                # check that the format of user-given indices is correct
-        params = create_sub_network(indices, params)                         # only get parameters and constants of the sub-network
-    end                                                                      
-    return params                                                            
-end
-
-"""
-    create_sub_network(indices::Vector{Vector{Int}}, params::Flux.Params) 
-
-Creates and returns the new set of params, according to user-given input for indices of a subnetwork.
-
-"""
-function create_sub_network(indices::Vector{Vector{Int}}, params::Flux.Params)
-
-    n_elements = length(indices)
-    subnetwork_params = Array{Float32}[]
-
-    sub_weights = vcat([params[1][i, :] for i in indices[1]]...)                # select desired weights of first weight matrix, considering the chosen subnetwork
-    push!(subnetwork_params, sub_weights)                                       # add new weight matrix to the new set of params
-    sub_bias = params[2][indices[1]]                                            # create new bias vector for first layer
-    push!(subnetwork_params, sub_bias)                                          # add new bias vector to the new set of params
-
-    for layer in 2:n_elements
-        sub_weights = params[2 * layer - 1][indices[layer], indices[layer - 1]] # select desired weights of each weight matrix, considering the chosen subnetwork
-        push!(subnetwork_params, sub_weights)                                   # add new weight matrix to the new set of params
-        sub_bias = params[2 * layer][indices[layer]]                            # create new bias vector for each layer
-        push!(subnetwork_params, sub_bias)                                      # add new bias vector to the new set of params
+    elseif la.subset_of_weights == :last_layer                               # only get last layer parameters and constants
+        params = [params[n_elements - 1], params[n_elements]]                # params[n_elements-1] is the weight matrix of the last layer  
     end
-
-    return subnetwork_params                                                    # return new set of params
-end
-
-"""
-    check_subnet_indices(indices::Vector{Vector{Int}}, params::Flux.Params) 
-
-Function for error handling in regards to user-given subnetwork indices.
-Throws specific errors if the format is not the desired one.
-
-"""
-function check_subnet_indices(indices::Vector{Vector{Int}}, params::Flux.Params)
-    n_elements = length(params)
-    if 2*length(indices) != n_elements
-        @error "Length of subnetwork indices must correspond to the number of Dense Layers in your neural network."
-    end
+    return params                                                            # params[n_elements] is the bias vector of the last layer
 end
 
 @doc raw"""
