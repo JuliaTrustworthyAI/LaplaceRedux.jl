@@ -142,7 +142,7 @@ function full(curvature::EmpiricalFisher, d::Tuple)
 
     loss = curvature.factor * curvature.loss_fun(x, y)
     𝐠 = gradients(curvature, x, y)
-    𝐠 = reduce(vcat, [vec(𝐠[i]) for i in curvature.params])                  # concatenates the gradients into a vector
+    𝐠 = reduce(vcat, [vec(𝐠[i]') for i in curvature.params])                  # concatenates the gradients into a vector
 
     if curvature.subset_of_weights == :subnetwork
         𝐠 = [𝐠[p] for p in curvature.subnetwork_indices]
