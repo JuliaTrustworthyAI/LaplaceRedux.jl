@@ -8,7 +8,7 @@ mutable struct Laplace <: BaseLaplace
     model::Flux.Chain
     likelihood::Symbol
     subset_of_weights::Symbol
-    sub_network_indices::Union{Nothing,Vector{Vector{Int}}}
+    subnetwork_indices::Union{Nothing,Vector{Vector{Int}}}
     hessian_structure::Symbol
     curvature::Union{Curvature.CurvatureInterface,Nothing}
     σ::Real                                                                  # standard deviation in the Gaussian prior         
@@ -28,7 +28,7 @@ using Parameters
 
 @with_kw struct LaplaceParams
     subset_of_weights::Symbol = :all
-    sub_network_indices::Union{Nothing,Vector{Vector{Int}}} = nothing
+    subnetwork_indices::Union{Nothing,Vector{Vector{Int}}} = nothing
     hessian_structure::Symbol = :full
     backend::Symbol = :EmpiricalFisher
     σ::Real = 1.0
@@ -50,9 +50,9 @@ function Laplace(model::Any; likelihood::Symbol, kwargs...)
 
     # Assertions:
     @assert !(args.σ != 1.0 && likelihood != :regression) "Observation noise σ ≠ 1 only available for regression."
-    @assert args.subset_of_weights ∈ [:all, :last_layer, :sub_network] "`subset_of_weights` of weights should be one of the following: `[:all, :last_layer, :sub_network]`"
-    if (args.subset_of_weights == :sub_network)
-        @assert !(args.sub_network_indices === nothing) "If `subset_of_weights` is `:sub_network`, then `sub_network_indices` should be a vector of vectors of integers."
+    @assert args.subset_of_weights ∈ [:all, :last_layer, :subnetwork] "`subset_of_weights` of weights should be one of the following: `[:all, :last_layer, :subnetwork]`"
+    if (args.subset_of_weights == :subnetwork)
+        @assert !(args.subnetwork_indices === nothing) "If `subset_of_weights` is `:subnetwork`, then `subnetwork_indices` should be a vector of vectors of integers."
     end
 
     # Setup:
@@ -66,7 +66,7 @@ function Laplace(model::Any; likelihood::Symbol, kwargs...)
         model,
         likelihood,
         args.subset_of_weights,
-        args.sub_network_indices,
+        args.subnetwork_indices,
         args.hessian_structure,
         nothing,
         args.σ,
@@ -85,8 +85,25 @@ function Laplace(model::Any; likelihood::Symbol, kwargs...)
     # @assert outdim(la)==1 "Support for multi-class output still lacking, sorry. Currently only regression and binary classification models are supported."
 
     params = get_params(la)
-    la.curvature = getfield(Curvature, args.backend)(nn, likelihood, params)    # curvature interface
-    la.n_params = length(reduce(vcat, [vec(θ) for θ in params]))                # number of params
+    if la.subset_of_weights == :subnetwork
+        la.curvature = getfield(Curvature, args.backend)(
+            nn,
+            likelihood,
+            params,
+            la.subset_of_weights,
+            convert_subnetwork_indices(la.subnetwork_indices, params),
+        )
+    else
+        la.curvature = getfield(Curvature, args.backend)(
+            nn, likelihood, params, la.subset_of_weights, la.subnetwork_indices
+        )
+    end
+    # curvature interface
+    if la.subset_of_weights == :subnetwork
+        la.n_params = length(la.subnetwork_indices)
+    else
+        la.n_params = length(reduce(vcat, [vec(θ) for θ in params]))                # number of params
+    end
     la.μ = la.μ[(end - la.n_params + 1):end]                                    # adjust weight vector
     if typeof(la.P₀) <: UniformScaling
         la.P₀ = la.P₀(la.n_params)
@@ -98,6 +115,27 @@ function Laplace(model::Any; likelihood::Symbol, kwargs...)
     end
 
     return la
+end
+
+"""
+    convert_subnetwork_indices(subnetwork_indices::AbstractArray)
+
+Converts the subnetwork indices from the user given format [theta, row, column] to an Int i that corresponds to the index
+of that weight in the flattened array of weights.
+"""
+function convert_subnetwork_indices(
+    subnetwork_indices::Vector{Vector{Int}}, params::AbstractArray
+)
+    converted_indices = Vector{Int}()
+    for i in subnetwork_indices
+        Ca = reduce((acc, p) -> acc + length(p), params[1:(i[1] - 1)]; init=0)
+        if length(i) == 2
+            push!(converted_indices, Ca + i[2])
+        elseif length(i) == 3
+            push!(converted_indices, Ca + (i[2] - 1) * size(params[i[1]], 2) + i[3])
+        end
+    end
+    return converted_indices
 end
 
 """
