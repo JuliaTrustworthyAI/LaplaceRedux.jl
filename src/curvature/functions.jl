@@ -71,7 +71,7 @@ function GGN(model::Any, likelihood::Symbol, params::AbstractArray)
     loss_fun = get_loss_fun(likelihood, model)
     factor = likelihood == :regression ? 0.5 : 1.0
 
-    GGN(model, likelihood, loss_fun, params, factor)
+    return GGN(model, likelihood, loss_fun, params, factor)
 end
 
 """
@@ -95,7 +95,6 @@ function full(curvature::GGN, d::Tuple)
     end
 
     return loss, H
-
 end
 
 "Constructor for Empirical Fisher."
