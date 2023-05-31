@@ -125,11 +125,11 @@ end
 
 Compute the full empirical Fisher.
 """
-function full(curvature::EmpiricalFisher, d::Tuple; batched::Bool=true)
+function full(curvature::EmpiricalFisher, d::Tuple; batched::Bool=false)
     if batched
-        full_unbatched(curvature, d)
-    else
         full_batched(curvature, d)
+    else
+        full_unbatched(curvature, d)
     end
 end
 
