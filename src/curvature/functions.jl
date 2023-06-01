@@ -26,6 +26,19 @@ function jacobians(curvature::CurvatureInterface, X::AbstractArray)
     𝐉 = reduce(hcat, [𝐉[θ] for θ ∈ curvature.params])
     return 𝐉, ŷ
 end
+
+function jacobians_batched(curvature::CurvatureInterface, X::AbstractArray)
+    nn = curvature.model
+    # Output:
+    ŷ = nn(X)
+    batch_size = size(X)[end]
+    out_size = outdim(nn)
+    # Jacobian:
+    grads = jacobian(() -> nn(X), Flux.params(nn))
+    grads_joint = reduce(hcat, grads)
+    views = [@view grads_joint[batch_start : (batch_start + out_size - 1), :] for batch_start in 1 : out_size : batch_size * out_size]
+    𝐉 = stack(views)
+    return 𝐉, ŷ
 end
 
 """
@@ -63,7 +76,20 @@ end
 
 Compute the full GGN.
 """
-function full(curvature::GGN, d::Tuple)
+function full(curvature::GGN, d::Tuple; batched::Bool=false)
+    if batched
+        full_batched(curvature, d)
+    else
+        full_unbatched(curvature, d)
+    end
+end
+
+"""
+    full(curvature::GGN, d::Union{Tuple,NamedTuple})
+
+Compute the full GGN for a singular input-ouput datapoint. 
+"""
+function full_unbatched(curvature::GGN, d::Tuple)
     x, y = d
 
     loss = curvature.factor * curvature.loss_fun(x, y)
@@ -81,6 +107,27 @@ function full(curvature::GGN, d::Tuple)
     return loss, H
 end
 
+"""
+    full(curvature::GGN, d::Union{Tuple,NamedTuple})
+
+Compute the full GGN for batch of inputs-outputs, with the batch dimension at the end.
+"""
+function full_batched(curvature::GGN, d::Tuple)
+    x, y = d
+
+    loss = curvature.factor * curvature.loss_fun(x, y)
+
+    𝐉, fμ = jacobians_batched(curvature, x)
+
+    if curvature.likelihood == :regression
+        @tullio H[i, j] := 𝐉[k, i, b] * 𝐉[k, j, b]
+    else
+        p = outdim(curvature.model) > 1 ? softmax(fμ) : sigmoid(fμ)
+        # H_lik = diagm(p) - p * p'
+        @tullio H_lik[i, j, b] := - p[i, b] * p[j, b]
+        @tullio H_lik[i, i, b] += p[i, b]
+        # H = 𝐉 * H_lik * 𝐉'
+        @tullio H[i, j] := 𝐉[c, i, b] * H_lik[c, k, b] * 𝐉[k, j, b]
     end
 
     return loss, H
@@ -107,7 +154,7 @@ end
 """
     full(curvature::EmpiricalFisher, d::Union{Tuple,NamedTuple})
 
-Compute the full empirical Fisher.
+Compute the full empirical Fisher for a singular input-ouput datapoint. 
 """
 function full(curvature::EmpiricalFisher, d::Tuple; batched::Bool=false)
     if batched
@@ -117,6 +164,11 @@ function full(curvature::EmpiricalFisher, d::Tuple; batched::Bool=false)
     end
 end
 
+"""
+    full(curvature::EmpiricalFisher, d::Union{Tuple,NamedTuple})
+
+Compute the full empirical Fisher for batch of inputs-outputs, with the batch dimension at the end.
+"""
 function full_unbatched(curvature::EmpiricalFisher, d::Tuple)
     x, y = d
 
