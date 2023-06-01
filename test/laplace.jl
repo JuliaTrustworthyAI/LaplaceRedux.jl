@@ -5,6 +5,7 @@ using Flux
 using Flux.Optimise: update!, Adam
 using Plots
 using Statistics
+using LinearAlgebra
 
 @testset "Construction" begin
 
@@ -41,10 +42,11 @@ end
 
 @testset "Hessian" begin
     nn = Chain(Dense([0 0]))
-    la = Laplace(nn; likelihood=:classification)
 
     # (always ignoring constant)
     @testset "Empirical Fisher - full" begin
+        la = Laplace(nn; likelihood=:classification, backend=:EmpiricalFisher)
+
         target = 1
         x = [1, 1]
         grad = [-0.5, -0.5] # analytical solution for gradient
@@ -60,6 +62,35 @@ end
         grad = [0, 0] # analytical solution for gradient
         _, H = LaplaceRedux.hessian_approximation(la, (x, target))
         @test H[1:2, 1:2] == grad * grad'
+
+        # Regression
+        la = Laplace(nn; likelihood=:regression, backend=:EmpiricalFisher)
+        target = 3
+        x = [1, 2]
+        grad = [-6.0, -12.0, -6.0]
+        _, H = LaplaceRedux.hessian_approximation(la, (x, target))
+        @test H == grad * grad'
+    end
+
+    @testset "Generalized Gauss–Newton (GGN) - full" begin
+        # Regression
+        la = Laplace(nn; likelihood=:regression)
+        target = 3
+        x = [1, 2]
+        J = [1; 2; 1;;] # pre-calculated jacobians
+        _, H = LaplaceRedux.hessian_approximation(la, (x, target))
+        @test H == J * J'
+
+        # Binary Classification
+        la = Laplace(nn; likelihood=:classification)
+        target = 1
+        x = [1, 1]
+        J = [1; 1; 1;;] # pre-calculated jacobians
+        f_mu = [0]
+        p = sigmoid(f_mu)
+        H_lik = diagm(p) - p * p'
+        _, H = LaplaceRedux.hessian_approximation(la, (x, target))
+        @test H == J * H_lik * J'
     end
 end
 
