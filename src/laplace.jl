@@ -52,24 +52,7 @@ function Laplace(model::Any; likelihood::Symbol, kwargs...)
     @assert !(args.σ != 1.0 && likelihood != :regression) "Observation noise σ ≠ 1 only available for regression."
     @assert args.subset_of_weights ∈ [:all, :last_layer, :subnetwork] "`subset_of_weights` of weights should be one of the following: `[:all, :last_layer, :subnetwork]`"
     if (args.subset_of_weights == :subnetwork)
-        @assert (args.subnetwork_indices !== nothing) "If `subset_of_weights` is `:subnetwork`, then `subnetwork_indices` should be a vector of vectors of integers."
-        params = Flux.params(model)
-        # Initialise a set of vectors 
-        selected = Set{Vector{Int}}()
-        for i in 1:length(args.subnetwork_indices)
-            @assert !(args.subnetwork_indices[i] in selected) "Element $(i) in `subnetwork_indices` should be unique."
-            @assert (args.subnetwork_indices[i][1] in 1:length(params)) "The first index of element $(i) in `subnetwork_indices` should be between 1 and $(length(params))."
-            # Calculate numnber of dimensions of a parameter 
-            n_dims = length(size(params[args.subnetwork_indices[i][1]]))
-            @assert length(args.subnetwork_indices[i]) - 1 == n_dims "Element $(i) in `subnetwork_indices` should have $(n_dims) indices."
-            for j in 2:length(args.subnetwork_indices[i])
-                @assert (
-                    args.subnetwork_indices[i][j] in
-                    1:size(params[args.subnetwork_indices[i][1]], j - 1)
-                ) "The index $(j) of element $(i) in `subnetwork_indices` should be between 1 and $(length(params[args.subnetwork_indices[i][1]][j-1]))."
-            end
-            push!(selected, args.subnetwork_indices[i])
-        end
+        validate_subnetwork_indices(args.subnetwork_indices, Flux.params(model))
     end
 
     # Setup:
@@ -102,19 +85,17 @@ function Laplace(model::Any; likelihood::Symbol, kwargs...)
     params = get_params(la)
 
     # Instantiating curvature interface
-    if la.subset_of_weights == :subnetwork
-        la.curvature = getfield(Curvature, args.backend)(
-            nn,
-            likelihood,
-            params,
-            la.subset_of_weights,
-            convert_subnetwork_indices(la.subnetwork_indices, params),
-        )
-    else
-        la.curvature = getfield(Curvature, args.backend)(
-            nn, likelihood, params, la.subset_of_weights, la.subnetwork_indices
-        )
-    end
+    la.curvature = getfield(Curvature, args.backend)(
+        nn,
+        likelihood,
+        params,
+        la.subset_of_weights,
+        if la.subset_of_weights == :subnetwork
+            convert_subnetwork_indices(la.subnetwork_indices, params)
+        else
+            nothing
+        end,
+    )
 
     if la.subset_of_weights == :subnetwork
         la.n_params = length(la.subnetwork_indices)
@@ -135,6 +116,33 @@ function Laplace(model::Any; likelihood::Symbol, kwargs...)
 end
 
 """
+validate_subnetwork_indices(
+subnetwork_indices::Union{Nothing,Vector{Vector{Int}}}, params
+)
+
+Determines whether subnetwork_indices is a valid input for specified parameters.
+"""
+function validate_subnetwork_indices(
+    subnetwork_indices::Union{Nothing,Vector{Vector{Int}}}, params
+)
+    @assert (subnetwork_indices !== nothing) "If `subset_of_weights` is `:subnetwork`, then `subnetwork_indices` should be a vector of vectors of integers."
+    # Initialise a set of vectors 
+    selected = Set{Vector{Int}}()
+    for (i, index) in enumerate(subnetwork_indices)
+        @assert !(index in selected) "Element $(i) in `subnetwork_indices` should be unique."
+        theta_index = index[1]
+        @assert (theta_index in 1:length(params)) "The first index of element $(i) in `subnetwork_indices` should be between 1 and $(length(params))."
+        # Calculate number of dimensions of a parameter 
+        theta_dims = size(params[theta_index])
+        @assert length(index) - 1 == length(theta_dims) "Element $(i) in `subnetwork_indices` should have $(theta_dims) indices."
+        for j in eachindex(index)[2:end]
+            @assert (index[j] in 1:theta_dims[j - 1]) "The index $(j) of element $(i) in `subnetwork_indices` should be between 1 and $(theta_dims[j - 1])."
+        end
+        push!(selected, index)
+    end
+end
+
+"""
 convert_subnetwork_indices(subnetwork_indices::AbstractArray)
 
 Converts the subnetwork indices from the user given format [theta, row, column] to an Int i that corresponds to the index
@@ -145,12 +153,11 @@ function convert_subnetwork_indices(
 )
     converted_indices = Vector{Int}()
     for i in subnetwork_indices
-        Ca = reduce((acc, p) -> acc + length(p), params[1:(i[1] - 1)]; init=0)
-        if length(i) == 2
-            push!(converted_indices, Ca + i[2])
-        elseif length(i) == 3
-            push!(converted_indices, Ca + (i[2] - 1) * size(params[i[1]], 2) + i[3])
-        end
+        flat_theta_index = reduce((acc, p) -> acc + length(p), params[1:(i[1] - 1)]; init=0)
+		for j in eachindex(i)[2:end-1]
+			flat_theta_index += (i[j] - 1) * size(params[i[1]], j - 1)
+		end
+		push!(converted_indices, flat_theta_index + i[end])
     end
     return converted_indices
 end
