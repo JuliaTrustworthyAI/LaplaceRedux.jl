@@ -8,25 +8,6 @@ using Tullio
 abstract type CurvatureInterface end
 
 """
-    transform_jacobians(curvature::CurvatureInterface, J::Zygote.Grads)
-
-Computes Jacobians for the parameters of a given curvature model from a collection of gradients.
-"""
-
-function transform_jacobians(curvature::CurvatureInterface, J::Zygote.Grads)
-    Js = []
-    for θ in curvature.params
-        param_size = size(θ)
-        indices = collect(1:length(vec(θ')))
-        updated_indices = vec(reshape(indices, param_size)')
-        Jk = J[θ]'
-        push!(Js, Jk[updated_indices, :])
-    end
-    Js = hcat(Js'...)'
-    return Js
-end
-
-"""
     jacobians(curvature::CurvatureInterface, X::AbstractArray)
 
 Computes the Jacobian `∇f(x;θ)` where `f: ℝᴰ ↦ ℝᴷ`.
@@ -39,10 +20,12 @@ function jacobians(curvature::CurvatureInterface, X::AbstractArray)
     # Output:
     ŷ = nn(X)
     # Jacobian:
-    𝐉 = jacobian(() -> nn(X), Flux.params(nn))                               # differentiates f with regards to the model parameters
-    # 𝐉 = permutedims(reduce(hcat,[𝐉[θ] for θ ∈ curvature.params]))           # matrix is flattened and permuted into a matrix of size (K, D+P), where P is the number of model parameters
-    𝐉 = transform_jacobians(curvature, 𝐉)
-    return 𝐉, ŷ                                                              # returns Jacobian matrix and predicted output
+    # Differentiate f with regards to the model parameters
+    𝐉 = jacobian(() -> nn(X), Flux.params(nn))
+    # Concatenate Jacobians for the selected parameters, to produce a matrix (K, P), where P is the total number of parameter scalars.                      
+    𝐉 = reduce(hcat, [𝐉[θ] for θ ∈ curvature.params])
+    return 𝐉, ŷ
+end
 end
 
 """
@@ -134,10 +117,12 @@ function full_unbatched(curvature::EmpiricalFisher, d::Tuple)
 
     loss = curvature.factor * curvature.loss_fun(x, y)
     𝐠 = gradients(curvature, x, y)
-    𝐠 = reduce(vcat, [vec(𝐠[i]') for i in curvature.params])                  # concatenates the gradients into a vector
+    # Concatenate the selected gradients into a vector, column-wise
+    𝐠 = reduce(vcat, [vec(𝐠[θ]) for θ in curvature.params])
 
     # Empirical Fisher:
-    H = 𝐠 * 𝐠'                                                               # the matrix is equal to the product of the gradient vector with itself (𝐠' is the transpose of 𝐠)
+    # - the product of the gradient vector with itself transposed
+    H = 𝐠 * 𝐠'
 
     return loss, H
 end
