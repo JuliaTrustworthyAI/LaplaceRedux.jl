@@ -39,7 +39,7 @@ using Parameters
 end
 
 """
-	Laplace(model::Any; loss_fun::Union{Symbol, Function}, kwargs...)    
+Laplace(model::Any; loss_fun::Union{Symbol, Function}, kwargs...)    
 
 Wrapper function to prepare Laplace approximation.
 """
@@ -135,7 +135,7 @@ function Laplace(model::Any; likelihood::Symbol, kwargs...)
 end
 
 """
-	convert_subnetwork_indices(subnetwork_indices::AbstractArray)
+convert_subnetwork_indices(subnetwork_indices::AbstractArray)
 
 Converts the subnetwork indices from the user given format [theta, row, column] to an Int i that corresponds to the index
 of that weight in the flattened array of weights.
@@ -156,7 +156,7 @@ function convert_subnetwork_indices(
 end
 
 """
-	hessian_approximation(la::Laplace, d)
+hessian_approximation(la::Laplace, d)
 
 Computes the local Hessian approximation at a single data `d`.
 """
@@ -166,7 +166,7 @@ function hessian_approximation(la::Laplace, d)
 end
 
 """
-	fit!(la::Laplace,data)
+fit!(la::Laplace,data)
 
 Fits the Laplace approximation for a data set.
 The function returns the number of observations (n_data) that were used to update the Laplace object. 
@@ -209,7 +209,7 @@ function fit!(la::Laplace, data; override::Bool=true)
 end
 
 """
-	glm_predictive_distribution(la::Laplace, X::AbstractArray)
+glm_predictive_distribution(la::Laplace, X::AbstractArray)
 
 Computes the linearized GLM predictive.
 """
@@ -221,7 +221,7 @@ function glm_predictive_distribution(la::Laplace, X::AbstractArray)
 end
 
 """
-	functional_variance(la::Laplace,𝐉)
+functional_variance(la::Laplace,𝐉)
 
 Compute the linearized GLM predictive variance as `𝐉ₙΣ𝐉ₙ'` where `𝐉=∇f(x;θ)|θ̂` is the Jacobian evaluated at the MAP estimate and `Σ = P⁻¹`.
 
@@ -234,7 +234,7 @@ end
 
 # Posterior predictions:
 """
-	predict(la::Laplace, X::AbstractArray; link_approx=:probit)
+predict(la::Laplace, X::AbstractArray; link_approx=:probit)
 
 Computes predictions from Bayesian neural network.
 # Examples
@@ -283,7 +283,7 @@ function predict(la::Laplace, X::AbstractArray; link_approx=:probit)
 end
 
 """
-	(la::Laplace)(X::AbstractArray; kwrgs...)
+(la::Laplace)(X::AbstractArray; kwrgs...)
 
 Calling a model with Laplace Approximation on an array of inputs is equivalent to explicitly calling the `predict` function.
 """
@@ -292,13 +292,13 @@ function (la::Laplace)(X::AbstractArray; kwrgs...)
 end
 
 """
-	optimize_prior!(
-		la::Laplace; 
-		n_steps::Int=100, lr::Real=1e-1,
-		λinit::Union{Nothing,Real}=nothing,
-		σinit::Union{Nothing,Real}=nothing
-	)
-	
+optimize_prior!(
+la::Laplace; 
+n_steps::Int=100, lr::Real=1e-1,
+λinit::Union{Nothing,Real}=nothing,
+σinit::Union{Nothing,Real}=nothing
+)
+
 Optimize the prior precision post-hoc through Empirical Bayes (marginal log-likelihood maximization).
 """
 function optimize_prior!(

@@ -209,6 +209,18 @@ end
                 #    @test_throws AssertionError Laplace(
                 #        nn; likelihood=likelihood, λ=λ, subset_of_weights=:last_layer
                 #    )
+                la = Laplace(
+                    nn;
+                    likelihood=likelihood,
+                    λ=λ,
+                    subset_of_weights=:subnetwork,
+                    subnetwork_indices=[[1, 1, 1], [2, 1], [2, 2], [3, 1, 16], [4, 1]],
+                )
+                fit!(la, data)
+                optimize_prior!(la; verbose=true)
+                plot(la, X, y)                              # standard
+                plot(la, X, y; xlims=(-5, 5), ylims=(-5, 5))  # lims
+                plot(la, X, y; link_approx=:plugin)         # plugin approximation
             end
         end
     end
