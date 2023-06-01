@@ -71,11 +71,16 @@ function full(curvature::GGN, d::Tuple)
     𝐉, fμ = jacobians(curvature, x)
 
     if curvature.likelihood == :regression
-        H = 𝐉 * 𝐉'
+        H = 𝐉' * 𝐉
     else
         p = outdim(curvature.model) > 1 ? softmax(fμ) : sigmoid(fμ)
         H_lik = diagm(p) - p * p'
-        H = 𝐉 * H_lik * 𝐉'
+        H = 𝐉' * H_lik * 𝐉
+    end
+
+    return loss, H
+end
+
     end
 
     return loss, H
