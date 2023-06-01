@@ -134,7 +134,7 @@ function validate_subnetwork_indices(
         @assert (theta_index in 1:length(params)) "The first index of element $(i) in `subnetwork_indices` should be between 1 and $(length(params))."
         # Calculate number of dimensions of a parameter 
         theta_dims = size(params[theta_index])
-        @assert length(index) - 1 == length(theta_dims) "Element $(i) in `subnetwork_indices` should have $(theta_dims) indices."
+        @assert length(index) - 1 == length(theta_dims) "Element $(i) in `subnetwork_indices` should have $(theta_dims) coordinates."
         for j in eachindex(index)[2:end]
             @assert (index[j] in 1:theta_dims[j - 1]) "The index $(j) of element $(i) in `subnetwork_indices` should be between 1 and $(theta_dims[j - 1])."
         end
@@ -154,10 +154,10 @@ function convert_subnetwork_indices(
     converted_indices = Vector{Int}()
     for i in subnetwork_indices
         flat_theta_index = reduce((acc, p) -> acc + length(p), params[1:(i[1] - 1)]; init=0)
-		for j in eachindex(i)[2:end-1]
-			flat_theta_index += (i[j] - 1) * size(params[i[1]], j - 1)
-		end
-		push!(converted_indices, flat_theta_index + i[end])
+        for j in eachindex(i)[2:(end - 1)]
+            flat_theta_index += (i[j] - 1) * size(params[i[1]], j - 1)
+        end
+        push!(converted_indices, flat_theta_index + i[end])
     end
     return converted_indices
 end
