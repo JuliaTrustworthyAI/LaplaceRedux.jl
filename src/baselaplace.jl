@@ -31,11 +31,11 @@ function get_params(la::BaseLaplace)
     nn = la.model
     params = Flux.params(nn)
     n_elements = length(params)
-    if la.subset_of_weights == :all
+    if la.subset_of_weights == :all || la.subset_of_weights == :subnetwork
         params = [θ for θ in params]                                         # get all parameters and constants in logitbinarycrossentropy
-    elseif la.subset_of_weights == :last_layer
-        params = [params[n_elements - 1], params[n_elements]]                # only get last layer parameters and constants
-    end                                                                      # params[n_elements-1] is the weight matrix of the last layer
+    elseif la.subset_of_weights == :last_layer                               # only get last layer parameters and constants
+        params = [params[n_elements - 1], params[n_elements]]                # params[n_elements-1] is the weight matrix of the last layer  
+    end
     return params                                                            # params[n_elements] is the bias vector of the last layer
 end
 

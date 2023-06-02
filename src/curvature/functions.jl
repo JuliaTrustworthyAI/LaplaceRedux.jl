@@ -39,8 +39,11 @@ function jacobians(curvature::CurvatureInterface, X::AbstractArray)
     ŷ = nn(X)
     # Jacobian:
     𝐉 = jacobian(() -> nn(X), Flux.params(nn))                               # differentiates f with regards to the model parameters
-    # 𝐉 = permutedims(reduce(hcat,[𝐉[θ] for θ ∈ curvature.params]))           # matrix is flattened and permuted into a matrix of size (K, D+P), where P is the number of model parameters
+    # 𝐉 = permutedims(reduce(hcat,[𝐉[θ] for θ ∈ curvature.params]))          # matrix is flattened and permuted into a matrix of size (K, D+P), where P is the number of model parameters
     𝐉 = transform_jacobians(curvature, 𝐉)
+    if curvature.subset_of_weights == :subnetwork                          # 
+        𝐉 = 𝐉[curvature.subnetwork_indices, :]
+    end
     return 𝐉, ŷ                                                              # returns Jacobian matrix and predicted output
 end
 
@@ -98,21 +101,31 @@ function full(curvature::GGN, d::Tuple)
 end
 
 "Constructor for Empirical Fisher."
-struct EmpiricalFisher <: CurvatureInterface
+mutable struct EmpiricalFisher <: CurvatureInterface
     model::Any
     likelihood::Symbol
     loss_fun::Function
     params::AbstractArray
     factor::Union{Nothing,Real}
+    subset_of_weights::Symbol
+    subnetwork_indices::Union{Nothing,Vector{Int}}
 end
 
-function EmpiricalFisher(model::Any, likelihood::Symbol, params::AbstractArray)
+function EmpiricalFisher(
+    model::Any,
+    likelihood::Symbol,
+    params::AbstractArray,
+    subset_of_weights::Symbol,
+    subnetwork_indices::Union{Nothing,Vector{Int}},
+)
 
     # Define loss function:
     loss_fun = get_loss_fun(likelihood, model)
     factor = likelihood == :regression ? 0.5 : 1.0
 
-    return EmpiricalFisher(model, likelihood, loss_fun, params, factor)
+    return EmpiricalFisher(
+        model, likelihood, loss_fun, params, factor, subset_of_weights, subnetwork_indices
+    )
 end
 
 """
@@ -126,6 +139,10 @@ function full(curvature::EmpiricalFisher, d::Tuple)
     loss = curvature.factor * curvature.loss_fun(x, y)
     𝐠 = gradients(curvature, x, y)
     𝐠 = reduce(vcat, [vec(𝐠[i]') for i in curvature.params])                  # concatenates the gradients into a vector
+
+    if curvature.subset_of_weights == :subnetwork
+        𝐠 = [𝐠[p] for p in curvature.subnetwork_indices]
+    end
 
     # Empirical Fisher:
     H = 𝐠 * 𝐠'                                                               # the matrix is equal to the product of the gradient vector with itself (𝐠' is the transpose of 𝐠)
