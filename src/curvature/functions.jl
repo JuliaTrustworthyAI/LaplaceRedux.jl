@@ -3,6 +3,7 @@ using ..LaplaceRedux: get_loss_fun, outdim
 using LinearAlgebra
 using Zygote
 using Tullio
+using Compat
 
 "Basetype for any curvature interface."
 abstract type CurvatureInterface end
