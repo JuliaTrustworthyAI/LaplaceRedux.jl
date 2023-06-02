@@ -35,7 +35,7 @@ function jacobians_batched(curvature::CurvatureInterface, X::AbstractArray)
     out_size = outdim(nn)
     # Jacobian:
     grads = jacobian(() -> nn(X), Flux.params(nn))
-    grads_joint = reduce(hcat, grads)
+    grads_joint = reduce(hcat, [grads[θ] for θ ∈ curvature.params])
     views = [@view grads_joint[batch_start : (batch_start + out_size - 1), :] for batch_start in 1 : out_size : batch_size * out_size]
     𝐉 = stack(views)
     return 𝐉, ŷ
