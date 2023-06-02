@@ -9,6 +9,7 @@ mutable struct Laplace <: BaseLaplace
     model::Flux.Chain
     likelihood::Symbol
     subset_of_weights::Symbol
+    subnetwork_indices::Union{Nothing,Vector{Vector{Int}}}                   # indices of the subnetwork
     hessian_structure::Symbol
     curvature::Union{Curvature.CurvatureInterface,Nothing}
     σ::Real                                                                  # standard deviation in the Gaussian prior         
@@ -28,6 +29,7 @@ using Parameters
 
 @with_kw struct LaplaceParams
     subset_of_weights::Symbol = :all
+    subnetwork_indices::Union{Nothing,Vector{Vector{Int}}} = nothing
     hessian_structure::Symbol = :full
     backend::Symbol = :GGN
     σ::Real = 1.0
@@ -38,7 +40,7 @@ using Parameters
 end
 
 """
-    Laplace(model::Any; loss_fun::Union{Symbol, Function}, kwargs...)    
+Laplace(model::Any; loss_fun::Union{Symbol, Function}, kwargs...)    
 
 Wrapper function to prepare Laplace approximation.
 """
@@ -49,7 +51,10 @@ function Laplace(model::Any; likelihood::Symbol, kwargs...)
 
     # Assertions:
     @assert !(args.σ != 1.0 && likelihood != :regression) "Observation noise σ ≠ 1 only available for regression."
-    @assert args.subset_of_weights ∈ [:all, :last_layer] "`subset_of_weights` of weights should be one of the following: `[:all, :last_layer]`"
+    @assert args.subset_of_weights ∈ [:all, :last_layer, :subnetwork] "`subset_of_weights` of weights should be one of the following: `[:all, :last_layer, :subnetwork]`"
+    if (args.subset_of_weights == :subnetwork)
+        validate_subnetwork_indices(args.subnetwork_indices, Flux.params(model))
+    end
 
     # Setup:
     P₀ = isnothing(args.P₀) ? UniformScaling(args.λ) : args.P₀
@@ -62,6 +67,7 @@ function Laplace(model::Any; likelihood::Symbol, kwargs...)
         model,
         likelihood,
         args.subset_of_weights,
+        args.subnetwork_indices,
         args.hessian_structure,
         nothing,
         args.σ,
@@ -77,11 +83,23 @@ function Laplace(model::Any; likelihood::Symbol, kwargs...)
         args.loss,
     )
 
-    # @assert outdim(la)==1 "Support for multi-class output still lacking, sorry. Currently only regression and binary classification models are supported."
-
     params = get_params(la)
-    la.curvature = getfield(Curvature, args.backend)(nn, likelihood, params)    # curvature interface
-    la.n_params = length(reduce(vcat, [vec(θ) for θ in params]))                # number of params
+
+    # Instantiating curvature interface
+    subnetwork_indices = if la.subset_of_weights == :subnetwork
+        convert_subnetwork_indices(la.subnetwork_indices, params)
+    else
+        nothing
+    end
+    la.curvature = getfield(Curvature, args.backend)(
+        nn, likelihood, params, la.subset_of_weights, subnetwork_indices
+    )
+
+    if la.subset_of_weights == :subnetwork
+        la.n_params = length(la.subnetwork_indices)
+    else
+        la.n_params = length(reduce(vcat, [vec(θ) for θ in params]))                # number of params
+    end
     la.μ = la.μ[(end - la.n_params + 1):end]                                    # adjust weight vector
     if typeof(la.P₀) <: UniformScaling
         la.P₀ = la.P₀(la.n_params)
@@ -96,7 +114,58 @@ function Laplace(model::Any; likelihood::Symbol, kwargs...)
 end
 
 """
-    hessian_approximation(la::Laplace, d)
+validate_subnetwork_indices(
+subnetwork_indices::Union{Nothing,Vector{Vector{Int}}}, params
+)
+
+Determines whether subnetwork_indices is a valid input for specified parameters.
+"""
+function validate_subnetwork_indices(
+    subnetwork_indices::Union{Nothing,Vector{Vector{Int}}}, params
+)
+    @assert (subnetwork_indices !== nothing) "If `subset_of_weights` is `:subnetwork`, then `subnetwork_indices` should be a vector of vectors of integers."
+    # Initialise a set of vectors 
+    selected = Set{Vector{Int}}()
+    for (i, index) in enumerate(subnetwork_indices)
+        @assert !(index in selected) "Element $(i) in `subnetwork_indices` should be unique."
+        theta_index = index[1]
+        @assert (theta_index in 1:length(params)) "The first index of element $(i) in `subnetwork_indices` should be between 1 and $(length(params))."
+        # Calculate number of dimensions of a parameter 
+        theta_dims = size(params[theta_index])
+        @assert length(index) - 1 == length(theta_dims) "Element $(i) in `subnetwork_indices` should have $(theta_dims) coordinates."
+        for j in eachindex(index)[2:end]
+            @assert (index[j] in 1:theta_dims[j - 1]) "The index $(j) of element $(i) in `subnetwork_indices` should be between 1 and $(theta_dims[j - 1])."
+        end
+        push!(selected, index)
+    end
+end
+
+"""
+convert_subnetwork_indices(subnetwork_indices::AbstractArray)
+
+Converts the subnetwork indices from the user given format [theta, row, column] to an Int i that corresponds to the index
+of that weight in the flattened array of weights.
+"""
+function convert_subnetwork_indices(
+    subnetwork_indices::Vector{Vector{Int}}, params::AbstractArray
+)
+    converted_indices = Vector{Int}()
+    for i in subnetwork_indices
+        flat_theta_index = reduce((acc, p) -> acc + length(p), params[1:(i[1] - 1)]; init=0)
+        if length(i) == 2
+            push!(converted_indices, flat_theta_index + i[2])
+        elseif length(i) == 3
+            push!(
+                converted_indices,
+                flat_theta_index + (i[2] - 1) * size(params[i[1]], 2) + i[3],
+            )
+        end
+    end
+    return converted_indices
+end
+
+"""
+hessian_approximation(la::Laplace, d)
 
 Computes the local Hessian approximation at a single datapoint `d`.
 """
@@ -106,7 +175,7 @@ function hessian_approximation(la::Laplace, d; batched::Bool=false)
 end
 
 """
-    fit!(la::Laplace,data)
+fit!(la::Laplace,data)
 
 Fits the Laplace approximation for a data set.
 The function returns the number of observations (n_data) that were used to update the Laplace object. 
@@ -153,11 +222,12 @@ function _fit!(la::Laplace, data; batched::Bool=false, batchsize::Int, override:
     la.H = H                                                                 # Hessian
     la.P = posterior_precision(la)                                           # posterior precision
     la.Σ = posterior_covariance(la)                                          # posterior covariance
+    la.curvature.params = get_params(la)
     return la.n_data = n_data                                                # number of observations
 end
 
 """
-    glm_predictive_distribution(la::Laplace, X::AbstractArray)
+glm_predictive_distribution(la::Laplace, X::AbstractArray)
 
 Computes the linearized GLM predictive.
 """
@@ -169,7 +239,7 @@ function glm_predictive_distribution(la::Laplace, X::AbstractArray)
 end
 
 """
-    functional_variance(la::Laplace,𝐉)
+functional_variance(la::Laplace,𝐉)
 
 Compute the linearized GLM predictive variance as `𝐉ₙΣ𝐉ₙ'` where `𝐉=∇f(x;θ)|θ̂` is the Jacobian evaluated at the MAP estimate and `Σ = P⁻¹`.
 
@@ -182,7 +252,7 @@ end
 
 # Posterior predictions:
 """
-    predict(la::Laplace, X::AbstractArray; link_approx=:probit)
+predict(la::Laplace, X::AbstractArray; link_approx=:probit)
 
 Computes predictions from Bayesian neural network.
 # Examples
@@ -231,7 +301,7 @@ function predict(la::Laplace, X::AbstractArray; link_approx=:probit)
 end
 
 """
-    (la::Laplace)(X::AbstractArray; kwrgs...)
+(la::Laplace)(X::AbstractArray; kwrgs...)
 
 Calling a model with Laplace Approximation on an array of inputs is equivalent to explicitly calling the `predict` function.
 """
@@ -240,13 +310,13 @@ function (la::Laplace)(X::AbstractArray; kwrgs...)
 end
 
 """
-    optimize_prior!(
-        la::Laplace; 
-        n_steps::Int=100, lr::Real=1e-1,
-        λinit::Union{Nothing,Real}=nothing,
-        σinit::Union{Nothing,Real}=nothing
-    )
-    
+optimize_prior!(
+la::Laplace; 
+n_steps::Int=100, lr::Real=1e-1,
+λinit::Union{Nothing,Real}=nothing,
+σinit::Union{Nothing,Real}=nothing
+)
+
 Optimize the prior precision post-hoc through Empirical Bayes (marginal log-likelihood maximization).
 """
 function optimize_prior!(

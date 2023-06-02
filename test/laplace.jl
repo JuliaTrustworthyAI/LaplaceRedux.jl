@@ -6,6 +6,7 @@ using Flux.Optimise: update!, Adam
 using Plots
 using Statistics
 using MLUtils
+using LinearAlgebra
 
 @testset "Construction" begin
 
@@ -27,6 +28,130 @@ using MLUtils
     @test la.n_params == 3
     la = Laplace(nn; likelihood=:classification, subset_of_weights=:all)
     @test la.n_params == 9
+    @test_throws AssertionError Laplace(
+        nn; likelihood=:classification, subset_of_weights=:subnetwork
+    )
+    @test_throws AssertionError Laplace(
+        nn;
+        likelihood=:classification,
+        subset_of_weights=:subnetwork,
+        subnetwork_indices=[[1, 1, 1], [3, 1, 1], [5, 1]],
+    )
+    @test_throws AssertionError Laplace(
+        nn;
+        likelihood=:classification,
+        subset_of_weights=:subnetwork,
+        subnetwork_indices=[[1, 1, 1], [6, 1, 1], [4, 1]],
+    )
+    @test_throws AssertionError Laplace(
+        nn;
+        likelihood=:classification,
+        subset_of_weights=:subnetwork,
+        subnetwork_indices=[[1, 1, 1, 1], [6, 1, 1], [4, 1]],
+    )
+    la = Laplace(
+        nn;
+        likelihood=:classification,
+        subset_of_weights=:subnetwork,
+        subnetwork_indices=[[1, 1, 1], [3, 1, 1], [4, 1]],
+    )
+    @test la.n_params == 3
+    @test la.curvature.subnetwork_indices == [1, 7, 9]
+
+    # Testing index conversion for all weights:
+    nn = Chain(Dense(2, 10, σ), Dense(10, 1))
+    la = Laplace(
+        nn;
+        likelihood=:classification,
+        subset_of_weights=:subnetwork,
+        subnetwork_indices=[
+            [1, 1, 1],
+            [1, 1, 2],
+            [1, 2, 1],
+            [1, 2, 2],
+            [1, 3, 1],
+            [1, 3, 2],
+            [1, 4, 1],
+            [1, 4, 2],
+            [1, 5, 1],
+            [1, 5, 2],
+            [1, 6, 1],
+            [1, 6, 2],
+            [1, 7, 1],
+            [1, 7, 2],
+            [1, 8, 1],
+            [1, 8, 2],
+            [1, 9, 1],
+            [1, 9, 2],
+            [1, 10, 1],
+            [1, 10, 2],
+            [2, 1],
+            [2, 2],
+            [2, 3],
+            [2, 4],
+            [2, 5],
+            [2, 6],
+            [2, 7],
+            [2, 8],
+            [2, 9],
+            [2, 10],
+            [3, 1, 1],
+            [3, 1, 2],
+            [3, 1, 3],
+            [3, 1, 4],
+            [3, 1, 5],
+            [3, 1, 6],
+            [3, 1, 7],
+            [3, 1, 8],
+            [3, 1, 9],
+            [3, 1, 10],
+            [4, 1],
+        ],
+    )
+    @test la.n_params == 41
+    @test la.curvature.subnetwork_indices == [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        39,
+        40,
+        41,
+    ]
 end
 
 @testset "Parameters" begin
@@ -42,10 +167,11 @@ end
 
 @testset "Hessian" begin
     nn = Chain(Dense([0 0]))
-    la = Laplace(nn; likelihood=:classification)
 
     # (always ignoring constant)
     @testset "Empirical Fisher - full" begin
+        la = Laplace(nn; likelihood=:classification, backend=:EmpiricalFisher)
+
         target = 1
         x = [1, 1]
         grad = [-0.5, -0.5] # analytical solution for gradient
@@ -61,6 +187,35 @@ end
         grad = [0, 0] # analytical solution for gradient
         _, H = LaplaceRedux.hessian_approximation(la, (x, target))
         @test H[1:2, 1:2] == grad * grad'
+
+        # Regression
+        la = Laplace(nn; likelihood=:regression, backend=:EmpiricalFisher)
+        target = 3
+        x = [1, 2]
+        grad = [-6.0, -12.0, -6.0]
+        _, H = LaplaceRedux.hessian_approximation(la, (x, target))
+        @test H == grad * grad'
+    end
+
+    @testset "Generalized Gauss–Newton (GGN) - full" begin
+        # Regression
+        la = Laplace(nn; likelihood=:regression)
+        target = 3
+        x = [1, 2]
+        J = [1; 2; 1;;] # pre-calculated jacobians
+        _, H = LaplaceRedux.hessian_approximation(la, (x, target))
+        @test H == J * J'
+
+        # Binary Classification
+        la = Laplace(nn; likelihood=:classification)
+        target = 1
+        x = [1, 1]
+        J = [1; 1; 1;;] # pre-calculated jacobians
+        f_mu = [0]
+        p = sigmoid(f_mu)
+        H_lik = diagm(p) - p * p'
+        _, H = LaplaceRedux.hessian_approximation(la, (x, target))
+        @test H == J * H_lik * J'
     end
 end
 
@@ -147,8 +302,17 @@ function run_workflow(
     nn = val[:nn]
     λ = 0.01
 
+    # NOTE: this hardcoded parameter value only matters in case `subset_of_weights==:subnet`
+    # I will work for all D => 32 => K networks.
+    subnetwork_indices = [[1, 1, 1], [2, 1], [2, 2], [3, 1, 16], [4, 1]]
+
     la = Laplace(
-        nn; likelihood=likelihood, λ=λ, subset_of_weights=subset_of_weights, backend=backend
+        nn;
+        likelihood=likelihood,
+        λ=λ,
+        subset_of_weights=subset_of_weights,
+        backend=backend,
+        subnetwork_indices=subnetwork_indices,
     )
     fit!(la, data)
     optimize_prior!(la; verbose=verbose)
@@ -233,8 +397,7 @@ end
     # NOTE: batchsize=0 is meant to represent unbatched
     batchsizes = [0, 1, 32]
     backends = [:GGN, :EmpiricalFisher]
-    subsets_of_weights = [:all, :last_layer]
-    # TODO add subnet
+    subsets_of_weights = [:all, :last_layer, :subnetwork]
 
     # Store Hessians to compare them for different batchsizes
     hessians = Dict()

@@ -25,7 +25,10 @@ function jacobians(curvature::CurvatureInterface, X::AbstractArray)
     𝐉 = jacobian(() -> nn(X), Flux.params(nn))
     # Concatenate Jacobians for the selected parameters, to produce a matrix (K, P), where P is the total number of parameter scalars.                      
     𝐉 = reduce(hcat, [𝐉[θ] for θ in curvature.params])
-    return 𝐉, ŷ
+    if curvature.subset_of_weights == :subnetwork
+        𝐉 = 𝐉[:, curvature.subnetwork_indices]
+    end
+    return 𝐉, ŷ   
 end
 
 function jacobians_batched(curvature::CurvatureInterface, X::AbstractArray)
@@ -42,6 +45,10 @@ function jacobians_batched(curvature::CurvatureInterface, X::AbstractArray)
         batch_start in 1:out_size:(batch_size * out_size)
     ]
     𝐉 = stack(views)
+    if curvature.subset_of_weights == :subnetwork
+        𝐉 = 𝐉[:, curvature.subnetwork_indices, :]
+    end
+    # NOTE: it is also possible to select indices at the view stage TODO benchmark and compare
     return 𝐉, ŷ
 end
 
@@ -58,21 +65,31 @@ function gradients(
     return 𝐠
 end
 
-"Constructor for Generalized Gauss Newton."
-struct GGN <: CurvatureInterface
+"Constructor for Empirical Fisher."
+mutable struct GGN <: CurvatureInterface
     model::Any
     likelihood::Symbol
     loss_fun::Function
     params::AbstractArray
     factor::Union{Nothing,Real}
+    subset_of_weights::Symbol
+    subnetwork_indices::Union{Nothing,Vector{Int}}
 end
 
-function GGN(model::Any, likelihood::Symbol, params::AbstractArray)
+function GGN(
+    model::Any,
+    likelihood::Symbol,
+    params::AbstractArray,
+    subset_of_weights::Symbol,
+    subnetwork_indices::Union{Nothing,Vector{Int}},
+)
     # Define loss function:
     loss_fun = get_loss_fun(likelihood, model)
     factor = likelihood == :regression ? 0.5 : 1.0
 
-    return GGN(model, likelihood, loss_fun, params, factor)
+    return GGN(
+        model, likelihood, loss_fun, params, factor, subset_of_weights, subnetwork_indices
+    )
 end
 
 """
@@ -138,21 +155,30 @@ function full_batched(curvature::GGN, d::Tuple)
 end
 
 "Constructor for Empirical Fisher."
-struct EmpiricalFisher <: CurvatureInterface
+mutable struct EmpiricalFisher <: CurvatureInterface
     model::Any
     likelihood::Symbol
     loss_fun::Function
     params::AbstractArray
     factor::Union{Nothing,Real}
+    subset_of_weights::Symbol
+    subnetwork_indices::Union{Nothing,Vector{Int}}
 end
 
-function EmpiricalFisher(model::Any, likelihood::Symbol, params::AbstractArray)
-
+function EmpiricalFisher(
+    model::Any,
+    likelihood::Symbol,
+    params::AbstractArray,
+    subset_of_weights::Symbol,
+    subnetwork_indices::Union{Nothing,Vector{Int}},
+)
     # Define loss function:
     loss_fun = get_loss_fun(likelihood, model)
     factor = likelihood == :regression ? 0.5 : 1.0
 
-    return EmpiricalFisher(model, likelihood, loss_fun, params, factor)
+    return EmpiricalFisher(
+        model, likelihood, loss_fun, params, factor, subset_of_weights, subnetwork_indices
+    )
 end
 
 """
@@ -181,6 +207,10 @@ function full_unbatched(curvature::EmpiricalFisher, d::Tuple)
     # Concatenate the selected gradients into a vector, column-wise
     𝐠 = reduce(vcat, [vec(𝐠[θ]) for θ in curvature.params])
 
+    if curvature.subset_of_weights == :subnetwork
+        𝐠 = [𝐠[p] for p in curvature.subnetwork_indices]
+    end
+
     # Empirical Fisher:
     # - the product of the gradient vector with itself transposed
     H = 𝐠 * 𝐠'
@@ -196,6 +226,9 @@ function full_batched(curvature::EmpiricalFisher, d::Tuple)
         () -> curvature.loss_fun(x, y; agg=identity), Flux.params(curvature.model)
     )
     𝐠 = transpose(reduce(hcat, [grads[θ] for θ in curvature.params]))
+    if curvature.subset_of_weights == :subnetwork
+        𝐠 = 𝐠[curvature.subnetwork_indices, :]
+    end
 
     # Empirical Fisher:
     # H = 𝐠 * 𝐠'
