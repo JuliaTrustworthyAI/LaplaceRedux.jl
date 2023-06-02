@@ -154,10 +154,11 @@ function convert_subnetwork_indices(
     converted_indices = Vector{Int}()
     for i in subnetwork_indices
         flat_theta_index = reduce((acc, p) -> acc + length(p), params[1:(i[1] - 1)]; init=0)
-        for j in eachindex(i)[2:(end - 1)]
-            flat_theta_index += (i[j] - 1) * size(params[i[1]], j - 1)
+        if length(i) == 2
+            push!(converted_indices, flat_theta_index + i[2])
+        elseif length(i) == 3
+            push!(converted_indices, flat_theta_index + (i[2] - 1) * size(params[i[1]], 2) + i[3])
         end
-        push!(converted_indices, flat_theta_index + i[end])
     end
     return converted_indices
 end
