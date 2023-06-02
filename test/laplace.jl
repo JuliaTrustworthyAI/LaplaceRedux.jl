@@ -82,7 +82,7 @@ end
     end
 end
 
-function run_workflow(val::Dict, batchsize::Int, backend::Symbol, subset_of_weights::Symbol)
+function run_workflow(val::Dict, batchsize::Int, backend::Symbol, subset_of_weights::Symbol; verbose::Bool=false)
     # Unpack:
     X = val[:X]
     Y = val[:Y]
@@ -118,7 +118,7 @@ function run_workflow(val::Dict, batchsize::Int, backend::Symbol, subset_of_weig
             end
             update!(opt, Flux.params(nn), gs)
         end
-        if epoch % show_every == 0
+        if verbose && epoch % show_every == 0
             println("Epoch " * string(epoch))
             @show avg_loss(data)
         end
@@ -126,7 +126,7 @@ function run_workflow(val::Dict, batchsize::Int, backend::Symbol, subset_of_weig
 
     la = Laplace(nn; likelihood=likelihood, λ=λ, subset_of_weights=subset_of_weights, backend=backend)
     fit!(la, data)
-    optimize_prior!(la; verbose=true)
+    optimize_prior!(la; verbose=verbose)
     if outdim == 1
         plot(la, X, y)                              # standard
         plot(la, X, y; xlims=(-5, 5), ylims=(-5, 5))  # lims
