@@ -28,7 +28,7 @@ function jacobians(curvature::CurvatureInterface, X::AbstractArray)
     if curvature.subset_of_weights == :subnetwork
         𝐉 = 𝐉[:, curvature.subnetwork_indices]
     end
-    return 𝐉, ŷ   
+    return 𝐉, ŷ
 end
 
 function jacobians_batched(curvature::CurvatureInterface, X::AbstractArray)
