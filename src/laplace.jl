@@ -28,7 +28,7 @@ using Parameters
 @with_kw struct LaplaceParams
     subset_of_weights::Symbol = :all
     hessian_structure::Symbol = :full
-    backend::Symbol = :EmpiricalFisher
+    backend::Symbol = :GGN
     σ::Real = 1.0
     μ₀::Real = 0.0
     λ::Real = 1.0                                                              # regularization parameter

@@ -57,49 +57,45 @@ function gradients(
     return 𝐠
 end
 
-# "Constructor for Generalized Gauss Newton."
-# struct GGN <: CurvatureInterface
-#     model::Any
-#     likelihood::Symbol
-#     loss_fun::Function
-#     params::AbstractArray
-#     factor::Union{Nothing,Real}
-# end
+"Constructor for Generalized Gauss Newton."
+struct GGN <: CurvatureInterface
+    model::Any
+    likelihood::Symbol
+    loss_fun::Function
+    params::AbstractArray
+    factor::Union{Nothing,Real}
+end
 
-# function GGN(model::Any, likelihood::Symbol, params::AbstractArray)
+function GGN(model::Any, likelihood::Symbol, params::AbstractArray)
+    # Define loss function:
+    loss_fun = get_loss_fun(likelihood, model)
+    factor = likelihood == :regression ? 0.5 : 1.0
 
-#     @error "GGN not yet implemented."
+    return GGN(model, likelihood, loss_fun, params, factor)
+end
 
-#     # Define loss function:
-#     loss_fun = get_loss_fun(likelihood, model)
-#     factor = likelihood == :regression ? 0.5 : 1.0
+"""
+    full(curvature::GGN, d::Union{Tuple,NamedTuple})
 
-#     GGN(model, likelihood, loss_fun, params, factor)
-# end
+Compute the full GGN.
+"""
+function full(curvature::GGN, d::Tuple)
+    x, y = d
 
-# """
-#     full(curvature::GGN, d::Union{Tuple,NamedTuple})
+    loss = curvature.factor * curvature.loss_fun(x, y)
 
-# Compute the full GGN.
-# """
-# function full(curvature::GGN, d::Tuple)
-#     x, y = d
+    𝐉, fμ = jacobians(curvature, x)
 
-#     loss = curvature.factor * curvature.loss_fun(x, y)
+    if curvature.likelihood == :regression
+        H = 𝐉 * 𝐉'
+    else
+        p = outdim(curvature.model) > 1 ? softmax(fμ) : sigmoid(fμ)
+        H_lik = diagm(p) - p * p'
+        H = 𝐉 * H_lik * 𝐉'
+    end
 
-#     𝐉, fμ = jacobians(curvature, x)
-
-#     if curvature.likelihood == :regression
-#         H = 𝐉 * 𝐉'
-#     else
-#         p = outdim(curvature.model) > 1 ? softmax(fμ) : sigmoid(fμ)
-#         H = map(j -> j * (diagm(p) - p * p') * j', eachcol(𝐉))
-#         println(H)
-#     end
-
-#     return loss, H
-
-# end
+    return loss, H
+end
 
 "Constructor for Empirical Fisher."
 struct EmpiricalFisher <: CurvatureInterface
