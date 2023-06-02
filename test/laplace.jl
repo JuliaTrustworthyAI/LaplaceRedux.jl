@@ -82,23 +82,13 @@ end
     end
 end
 
-function run_workflow(
-    val::Dict,
-    batchsize::Int,
-    backend::Symbol,
-    subset_of_weights::Symbol;
-    verbose::Bool=false,
-)
+function train_nn(val::Dict; verbose=false)
     # Unpack:
     X = val[:X]
     Y = val[:Y]
     # NOTE: for classification multi, Y is one-hot, y is labels as itegers (1-N)
     y = val[:y]
-    if batchsize == 0
-        data = val[:data]
-    else
-        data = DataLoader((X, Y); batchsize=batchsize)
-    end
+    data = val[:data]
     outdim = val[:outdim]
     loss_fun = val[:loss_fun]
     likelihood = val[:likelihood]
@@ -130,6 +120,33 @@ function run_workflow(
         end
     end
 
+    return nn
+end
+
+function run_workflow(
+    val::Dict,
+    batchsize::Int,
+    backend::Symbol,
+    subset_of_weights::Symbol;
+    verbose::Bool=false,
+)
+    # Unpack:
+    X = val[:X]
+    Y = val[:Y]
+    # NOTE: for classification multi, Y is one-hot, y is labels as itegers (1-N)
+    y = val[:y]
+    if batchsize == 0
+        data = val[:data]
+    else
+        data = DataLoader((X, Y); batchsize=batchsize)
+    end
+    outdim = val[:outdim]
+    loss_fun = val[:loss_fun]
+    likelihood = val[:likelihood]
+
+    nn = val[:nn]
+    λ = 0.01
+
     la = Laplace(
         nn; likelihood=likelihood, λ=λ, subset_of_weights=subset_of_weights, backend=backend
     )
@@ -153,6 +170,8 @@ function run_workflow(
             plot(plt_list...)
         end
     end
+
+    return la.H
 end
 
 @testset "Complete Workflow" begin
@@ -214,14 +233,39 @@ end
     # NOTE: batchsize=0 is meant to represent unbatched
     batchsizes = [0, 1, 32]
     backends = [:GGN, :EmpiricalFisher]
-    weight_subsets = [:all, :last_layer]
+    subsets_of_weights = [:all, :last_layer]
     # TODO add subnet
 
-    for ((likelihood, val), backend, batchsize, weight_subset) in
-        Iterators.product(data_dict, backends, batchsizes, weight_subsets)
-        batchsize_text = batchsize == 0 ? "unbatched" : "batchsize=$(batchsize)"
-        @testset "$(likelihood), $(batchsize_text), backend=$(backend), subset_of_weights=$(weight_subset)" begin
-            run_workflow(val, batchsize, backend, weight_subset)
+    # Store Hessians to compare them for different batchsizes
+    hessians = Dict()
+
+    println("Running workflows.")
+    for (likelihood, val) in data_dict
+        val[:nn] = train_nn(val)
+        for (backend, batchsize, subset_of_weights) in
+            Iterators.product(backends, batchsizes, subsets_of_weights)
+            batchsize_text = batchsize == 0 ? "unbatched" : "batchsize=$(batchsize)"
+            @testset "$(likelihood), $(batchsize_text), backend=$(backend), subset_of_weights=$(subset_of_weights)" begin
+                println((likelihood, batchsize, backend, subset_of_weights))
+                hessians[likelihood, batchsize, backend, subset_of_weights] = run_workflow(
+                    val, batchsize, backend, subset_of_weights
+                )
+            end
+        end
+    end
+
+    # Compare collected Hessians
+    println("Comparing Hessians for varying batchsizes.")
+    for ((likelihood, val), backend, subset_of_weights) in
+        Iterators.product(data_dict, backends, subsets_of_weights)
+        println((likelihood, backend, subset_of_weights))
+        hessians_by_batch = [
+            hessians[likelihood, batchsize, backend, subset_of_weights] for
+            batchsize in batchsizes
+        ]
+        # Compare consecutive Hessians
+        for (H_i, H_j) in zip(hessians_by_batch, hessians_by_batch[2:end])
+            @test H_i ≈ H_j atol = 0.05
         end
     end
 end
