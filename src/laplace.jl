@@ -157,7 +157,10 @@ function convert_subnetwork_indices(
         if length(i) == 2
             push!(converted_indices, flat_theta_index + i[2])
         elseif length(i) == 3
-            push!(converted_indices, flat_theta_index + (i[2] - 1) * size(params[i[1]], 2) + i[3])
+            push!(
+                converted_indices,
+                flat_theta_index + (i[2] - 1) * size(params[i[1]], 2) + i[3],
+            )
         end
     end
     return converted_indices
