@@ -130,7 +130,7 @@ function fit!(la::Laplace, data; override::Bool=true)
 end
 
 function fit!(la::Laplace, data::DataLoader; override::Bool=true)
-    _fit!(la, data; batched=true, batchsize=data.batchsize, override=override)
+    return _fit!(la, data; batched=true, batchsize=data.batchsize, override=override)
 end
 
 function _fit!(la::Laplace, data; batched::Bool=false, batchsize::Int, override::Bool=true)

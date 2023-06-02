@@ -23,7 +23,7 @@ function jacobians(curvature::CurvatureInterface, X::AbstractArray)
     # Differentiate f with regards to the model parameters
     𝐉 = jacobian(() -> nn(X), Flux.params(nn))
     # Concatenate Jacobians for the selected parameters, to produce a matrix (K, P), where P is the total number of parameter scalars.                      
-    𝐉 = reduce(hcat, [𝐉[θ] for θ ∈ curvature.params])
+    𝐉 = reduce(hcat, [𝐉[θ] for θ in curvature.params])
     return 𝐉, ŷ
 end
 
@@ -35,8 +35,11 @@ function jacobians_batched(curvature::CurvatureInterface, X::AbstractArray)
     out_size = outdim(nn)
     # Jacobian:
     grads = jacobian(() -> nn(X), Flux.params(nn))
-    grads_joint = reduce(hcat, [grads[θ] for θ ∈ curvature.params])
-    views = [@view grads_joint[batch_start : (batch_start + out_size - 1), :] for batch_start in 1 : out_size : batch_size * out_size]
+    grads_joint = reduce(hcat, [grads[θ] for θ in curvature.params])
+    views = [
+        @view grads_joint[batch_start:(batch_start + out_size - 1), :] for
+        batch_start in 1:out_size:(batch_size * out_size)
+    ]
     𝐉 = stack(views)
     return 𝐉, ŷ
 end
@@ -124,7 +127,7 @@ function full_batched(curvature::GGN, d::Tuple)
     else
         p = outdim(curvature.model) > 1 ? softmax(fμ) : sigmoid(fμ)
         # H_lik = diagm(p) - p * p'
-        @tullio H_lik[i, j, b] := - p[i, b] * p[j, b]
+        @tullio H_lik[i, j, b] := -p[i, b] * p[j, b]
         @tullio H_lik[i, i, b] += p[i, b]
         # H = 𝐉 * H_lik * 𝐉'
         @tullio H[i, j] := 𝐉[c, i, b] * H_lik[c, k, b] * 𝐉[k, j, b]

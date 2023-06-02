@@ -82,7 +82,13 @@ end
     end
 end
 
-function run_workflow(val::Dict, batchsize::Int, backend::Symbol, subset_of_weights::Symbol; verbose::Bool=false)
+function run_workflow(
+    val::Dict,
+    batchsize::Int,
+    backend::Symbol,
+    subset_of_weights::Symbol;
+    verbose::Bool=false,
+)
     # Unpack:
     X = val[:X]
     Y = val[:Y]
@@ -91,7 +97,7 @@ function run_workflow(val::Dict, batchsize::Int, backend::Symbol, subset_of_weig
     if batchsize == 0
         data = val[:data]
     else
-        data = DataLoader((X, Y), batchsize=batchsize)
+        data = DataLoader((X, Y); batchsize=batchsize)
     end
     outdim = val[:outdim]
     loss_fun = val[:loss_fun]
@@ -124,7 +130,9 @@ function run_workflow(val::Dict, batchsize::Int, backend::Symbol, subset_of_weig
         end
     end
 
-    la = Laplace(nn; likelihood=likelihood, λ=λ, subset_of_weights=subset_of_weights, backend=backend)
+    la = Laplace(
+        nn; likelihood=likelihood, λ=λ, subset_of_weights=subset_of_weights, backend=backend
+    )
     fit!(la, data)
     optimize_prior!(la; verbose=verbose)
     if outdim == 1
@@ -139,7 +147,7 @@ function run_workflow(val::Dict, batchsize::Int, backend::Symbol, subset_of_weig
             _labels = sort(unique(y))
             plt_list = []
             for target in _labels
-                plt = plot(la, X, y; target=target, clim=(0,1), link_approx=link_approx)
+                plt = plot(la, X, y; target=target, clim=(0, 1), link_approx=link_approx)
                 push!(plt_list, plt)
             end
             plot(plt_list...)
@@ -209,7 +217,8 @@ end
     weight_subsets = [:all, :last_layer]
     # TODO add subnet
 
-    for ((likelihood, val), backend, batchsize, weight_subset) in Iterators.product(data_dict, backends, batchsizes, weight_subsets)
+    for ((likelihood, val), backend, batchsize, weight_subset) in
+        Iterators.product(data_dict, backends, batchsizes, weight_subsets)
         batchsize_text = batchsize == 0 ? "unbatched" : "batchsize=$(batchsize)"
         @testset "$(likelihood), $(batchsize_text), backend=$(backend), subset_of_weights=$(weight_subset)" begin
             run_workflow(val, batchsize, backend, weight_subset)
