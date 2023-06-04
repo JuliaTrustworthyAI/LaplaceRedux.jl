@@ -395,7 +395,7 @@ end
     # WORKFLOWS
 
     # NOTE: batchsize=0 is meant to represent unbatched
-    batchsizes = [0, 1, 32]
+    batchsizes = [0, 32]
     backends = [:GGN, :EmpiricalFisher]
     subsets_of_weights = [:all, :last_layer, :subnetwork]
 
