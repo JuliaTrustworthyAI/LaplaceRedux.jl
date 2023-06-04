@@ -3,6 +3,7 @@ using Flux
 using Flux.Optimise: Adam, update!
 using Flux.Optimisers: destructure
 using LinearAlgebra
+using MLUtils
 
 mutable struct Laplace <: BaseLaplace
     model::Flux.Chain
@@ -85,16 +86,13 @@ function Laplace(model::Any; likelihood::Symbol, kwargs...)
     params = get_params(la)
 
     # Instantiating curvature interface
+    subnetwork_indices = if la.subset_of_weights == :subnetwork
+        convert_subnetwork_indices(la.subnetwork_indices, params)
+    else
+        nothing
+    end
     la.curvature = getfield(Curvature, args.backend)(
-        nn,
-        likelihood,
-        params,
-        la.subset_of_weights,
-        if la.subset_of_weights == :subnetwork
-            convert_subnetwork_indices(la.subnetwork_indices, params)
-        else
-            nothing
-        end,
+        nn, likelihood, params, la.subset_of_weights, subnetwork_indices
     )
 
     if la.subset_of_weights == :subnetwork
@@ -169,10 +167,10 @@ end
 """
 hessian_approximation(la::Laplace, d)
 
-Computes the local Hessian approximation at a single data `d`.
+Computes the local Hessian approximation at a single datapoint `d`.
 """
-function hessian_approximation(la::Laplace, d)
-    loss, H = getfield(Curvature, la.hessian_structure)(la.curvature, d)
+function hessian_approximation(la::Laplace, d; batched::Bool=false)
+    loss, H = getfield(Curvature, la.hessian_structure)(la.curvature, d; batched=batched)
     return loss, H
 end
 
@@ -195,7 +193,16 @@ fit!(la, data)
 ```
 
 """
+
 function fit!(la::Laplace, data; override::Bool=true)
+    return _fit!(la, data; batched=false, batchsize=1, override=override)
+end
+
+function fit!(la::Laplace, data::DataLoader; override::Bool=true)
+    return _fit!(la, data; batched=true, batchsize=data.batchsize, override=override)
+end
+
+function _fit!(la::Laplace, data; batched::Bool=false, batchsize::Int, override::Bool=true)
     if override
         H = _init_H(la)
         loss = 0.0
@@ -204,10 +211,10 @@ function fit!(la::Laplace, data; override::Bool=true)
 
     # Training:
     for d in data
-        loss_batch, H_batch = hessian_approximation(la, d)
+        loss_batch, H_batch = hessian_approximation(la, d; batched=batched)
         loss += loss_batch
         H += H_batch
-        n_data += 1
+        n_data += batchsize
     end
 
     # Store output:
@@ -239,7 +246,7 @@ Compute the linearized GLM predictive variance as `𝐉ₙΣ𝐉ₙ'` where `�
 """
 function functional_variance(la::Laplace, 𝐉)
     Σ = posterior_covariance(la)
-    fvar = map(j -> (j' * Σ * j), eachcol(𝐉))
+    fvar = map(j -> (j' * Σ * j), eachrow(𝐉))
     return fvar
 end
 
