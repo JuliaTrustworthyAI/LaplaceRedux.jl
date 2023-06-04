@@ -16,7 +16,8 @@ function get_loss_fun(likelihood::Symbol, model::Chain)
         end                                                             # and yᵢ is the true probability of the i-th class, z is the vector of logits
     end
 
-    loss(x, ytrue) = getfield(Flux.Losses, loss_type)(model(x), ytrue)
+    # agg=sum for summative batching    
+    loss(x, ytrue; agg=sum) = getfield(Flux.Losses, loss_type)(model(x), ytrue; agg=agg)
 
     return loss
 end

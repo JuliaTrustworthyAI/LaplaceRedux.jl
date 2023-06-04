@@ -23,7 +23,9 @@ docs/site/
 # environment.
 Manifest.toml
 
+# Development tool artifacts
 .vscode
 dev/artifacts/data/
 dev/resources/build
 /.quarto/
+.ipynb_checkpoints
