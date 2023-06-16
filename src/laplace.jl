@@ -1,3 +1,4 @@
+# using BlockDiagonals
 using .Curvature
 using Flux
 using Flux.Optimise: Adam, update!
@@ -16,7 +17,7 @@ mutable struct Laplace <: BaseLaplace
     μ₀::Real                                                                 # prior mean  
     μ::AbstractVector                                                        # posterior mean
     P₀::Union{AbstractMatrix,UniformScaling}                                 # prior precision (i.e. inverse covariance matrix)          
-    H::Union{AbstractArray,Nothing}                                          # Hessian matrix 
+    H::Union{AbstractArray,Curvature.Kron,Nothing}                           # Hessian matrix 
     P::Union{AbstractArray,Nothing}                                          # posterior precision     
     Σ::Union{AbstractArray,Nothing}                                          # posterior covariance matrix
     n_params::Union{Int,Nothing}
@@ -31,7 +32,7 @@ using Parameters
     subset_of_weights::Symbol = :all
     subnetwork_indices::Union{Nothing,Vector{Vector{Int}}} = nothing
     hessian_structure::Symbol = :full
-    backend::Symbol = :GGN
+    backend::Symbol = :EmpiricalFisher
     σ::Real = 1.0
     μ₀::Real = 0.0
     λ::Real = 1.0                                                              # regularization parameter
@@ -208,6 +209,22 @@ function _fit!(la::Laplace, data; batched::Bool=false, batchsize::Int, override:
         loss = 0.0
         n_data = 0
     end
+    
+    if la.hessian_structure == :full
+        for d in data
+            loss_batch, H_batch = hessian_approximation(la, d; batched=batched)
+            loss += loss_batch
+            H += H_batch
+            n_data += batchsize
+        end
+    elseif la.hessian_structure == :kron && !batched
+        loss, H = hessian_approximation(la, [d[1] for d in data]; batched=batched)
+        # krons = [kron(A, G) for (A, G) in H.kfacs]
+        # H = BlockDiagonal(krons)
+        n_data = size(data)[1]
+    else
+        error("Batched Kron is not supported")
+    end
 
     # Training:
     for d in data
@@ -216,6 +233,11 @@ function _fit!(la::Laplace, data; batched::Bool=false, batchsize::Int, override:
         H += H_batch
         n_data += batchsize
     end
+    """
+    loss, H = hessian_approximation(la, [t[1] for t in data]; batched=batched)
+    n_data = size(data)[1]
+    println(H)
+    """
 
     # Store output:
     la.loss = loss                                                           # Loss

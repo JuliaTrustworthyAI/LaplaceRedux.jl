@@ -236,3 +236,92 @@ function full_batched(curvature::EmpiricalFisher, d::Tuple)
 
     return loss, H
 end
+
+macro zb(expr)
+    if expr.head == :ref
+        a, i = expr.args
+        return Expr(:ref, esc(a), Expr(:call, :+, esc(i), 1))
+    else
+        error("Expected expr of form a[i], got: ($(expr)) with head $(expr.head)")
+    end
+end
+
+mutable struct Kron
+    kfacs :: Vector{Tuple{AbstractArray, AbstractArray}}
+end
+
+function interleave(iters...)
+    return (elem for pack in zip(iters...) for elem in pack)
+end
+
+function kron(curvature::Union{GGN, EmpiricalFisher}, xs; batched::Bool=false)
+    @assert !isempty(xs)
+    # `d` is a zero-indexed array with layers sizes
+    # `_zb` marks zero-based arrays: these should be accessed via the @zb macro
+    
+    nn = curvature.model
+    lossf = Flux.Losses.logitcrossentropy
+    loss = 0.0
+
+    d_zb = [[size(xs[1])]; map(a -> size(a), collect(Flux.activations(nn, xs[1])))]
+    @show d_zb
+    n_layers = length(nn.layers)
+    @show n_layers
+    n_params = sum(length, Flux.params(nn))
+    
+    N = size(xs, 1)
+
+    double(sz) = (sz[1], sz[1])
+    
+    G_exp = [zeros(double(@zb d_zb[i])) for i in 1:n_layers]
+    # A separate matrix for bias-based gradients.
+    G_exp_b = [zeros(double(@zb d_zb[i])) for i in 1:n_layers]
+    @show map(size, G_exp)
+    A_exp_zb = [zeros(double(@zb d_zb[i])) for i in 0:(n_layers-1)]
+    @show map(size, A_exp_zb)
+    
+    for n in 1:N
+        x_n = xs[n]
+        a_zb = [[x_n]; collect(Flux.activations(nn, x_n))]
+        p = softmax(nn(x_n))
+        
+        # Approximate the expected value of the activation outer product A = aa'
+        # across all samples x_n,
+        # from the input to the pen-ultimate layer activation.
+        A_exp_zb += [(@zb a_zb[i]) * transpose(@zb a_zb[i]) for i in 0:(n_layers-1)]
+        
+        # Approx. the exp. value of the gradient (wrt layer non-activated output) outer product G = gg'
+        # via the model's predictive distribution.
+        for (j, yhat) in enumerate(eachcol(I(length(p))))
+            lossm = m -> lossf(m(x_n), yhat)
+            loss += lossm
+            grad, = gradient(lossm, nn)
+            
+            # See Martens & Grosse 2015 page 5
+            # DW[i] <- g[i] * a[i-1]'
+            # In our case grads is DW
+            g = [grad.layers[i].weight * pinv(transpose(@zb a_zb[i - 1])) for i in 1:n_layers]
+            
+            G = p[j] .* [g[i] * transpose(g[i]) for i in 1:n_layers]
+            G_exp += G
+            G_exp_b += G
+        end
+     
+    end
+    
+    # Downscale the sums for A and G by the number of samples.
+    # The division is distributed across the two factors by a sqrt.
+    #G_exp /= sqrt(N)
+    #A_exp_zb /= sqrt(N)
+    
+    A_exp_zb /= N
+    
+    # The activation for the bias is simply one.
+    # TODO: make Kron.kfacs a union type and include only the G
+    A_exp_b_zb = [[1] for _ in 1:n_layers]
+    # Q: why is the G not scaled in pytorch? bug?
+    # G_exp_b /= N
+    
+    # return Kron(collect(zip(A_exp_zb, G_exp)))
+    return loss, Kron(collect(interleave(zip(A_exp_zb, G_exp), zip(A_exp_b_zb, G_exp_b))))
+end
