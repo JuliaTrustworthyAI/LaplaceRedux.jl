@@ -261,7 +261,6 @@ function kron(curvature::Union{GGN, EmpiricalFisher}, xs; batched::Bool=false)
     
     nn = curvature.model
     lossf = Flux.Losses.logitcrossentropy
-    loss = 0.0
 
     d_zb = [[size(xs[1])]; map(a -> size(a), collect(Flux.activations(nn, xs[1])))]
     @show d_zb
@@ -294,7 +293,6 @@ function kron(curvature::Union{GGN, EmpiricalFisher}, xs; batched::Bool=false)
         # via the model's predictive distribution.
         for (j, yhat) in enumerate(eachcol(I(length(p))))
             lossm = m -> lossf(m(x_n), yhat)
-            loss += lossm
             grad, = gradient(lossm, nn)
             
             # See Martens & Grosse 2015 page 5
@@ -323,5 +321,5 @@ function kron(curvature::Union{GGN, EmpiricalFisher}, xs; batched::Bool=false)
     # G_exp_b /= N
     
     # return Kron(collect(zip(A_exp_zb, G_exp)))
-    return loss, Kron(collect(interleave(zip(A_exp_zb, G_exp), zip(A_exp_b_zb, G_exp_b))))
+    return 0, Kron(collect(interleave(zip(A_exp_zb, G_exp), zip(A_exp_b_zb, G_exp_b))))
 end

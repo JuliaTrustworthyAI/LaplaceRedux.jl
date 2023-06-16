@@ -1,4 +1,4 @@
-# using BlockDiagonals
+using BlockDiagonals
 using .Curvature
 using Flux
 using Flux.Optimise: Adam, update!
@@ -219,25 +219,12 @@ function _fit!(la::Laplace, data; batched::Bool=false, batchsize::Int, override:
         end
     elseif la.hessian_structure == :kron && !batched
         loss, H = hessian_approximation(la, [d[1] for d in data]; batched=batched)
-        # krons = [kron(A, G) for (A, G) in H.kfacs]
-        # H = BlockDiagonal(krons)
+        krons = [kron(A, G) for (A, G) in H.kfacs]
+        H = Base.Matrix(BlockDiagonal(krons))
         n_data = size(data)[1]
     else
         error("Batched Kron is not supported")
     end
-
-    # Training:
-    for d in data
-        loss_batch, H_batch = hessian_approximation(la, d; batched=batched)
-        loss += loss_batch
-        H += H_batch
-        n_data += batchsize
-    end
-    """
-    loss, H = hessian_approximation(la, [t[1] for t in data]; batched=batched)
-    n_data = size(data)[1]
-    println(H)
-    """
 
     # Store output:
     la.loss = loss                                                           # Loss
