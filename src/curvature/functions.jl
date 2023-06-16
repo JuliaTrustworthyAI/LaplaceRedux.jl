@@ -237,6 +237,10 @@ function full_batched(curvature::EmpiricalFisher, d::Tuple)
     return loss, H
 end
 
+
+"""
+Macro for zero-based indexing. Example usage: (@zb A[0]) = ...
+"""
 macro zb(expr)
     if expr.head == :ref
         a, i = expr.args
@@ -250,10 +254,16 @@ mutable struct Kron
     kfacs :: Vector{Tuple{AbstractArray, AbstractArray}}
 end
 
+"""
+Interleave elements of multiple iterables in order provided.
+"""
 function interleave(iters...)
     return (elem for pack in zip(iters...) for elem in pack)
 end
 
+"""
+Compute KFAC for the Fisher.
+"""
 function kron(curvature::Union{GGN, EmpiricalFisher}, xs; batched::Bool=false)
     @assert !isempty(xs)
     # `d` is a zero-indexed array with layers sizes
@@ -308,18 +318,78 @@ function kron(curvature::Union{GGN, EmpiricalFisher}, xs; batched::Bool=false)
     end
     
     # Downscale the sums for A and G by the number of samples.
-    # The division is distributed across the two factors by a sqrt.
-    #G_exp /= sqrt(N)
-    #A_exp_zb /= sqrt(N)
-    
+    # Only one of the factors is downscaled by N (like in laplace-torch)
     A_exp_zb /= N
     
     # The activation for the bias is simply one.
     # TODO: make Kron.kfacs a union type and include only the G
-    A_exp_b_zb = [[1] for _ in 1:n_layers]
-    # Q: why is the G not scaled in pytorch? bug?
+    A_exp_b_zb = [[1;;] for _ in 1:n_layers]
+    # Q: why are the factors not scaled in pytorch? bug?
     # G_exp_b /= N
     
-    # return Kron(collect(zip(A_exp_zb, G_exp)))
-    return 0, Kron(collect(interleave(zip(A_exp_zb, G_exp), zip(A_exp_b_zb, G_exp_b))))
+    # NOTE: order is G, A, as in laplace-torch
+    return loss, Kron(collect(interleave(zip(G_exp, A_exp_zb), zip(G_exp_b, A_exp_b_zb))))
+end
+
+mutable struct KronDecomposed
+    # TODO union types
+    # kfacs :: Union{Vector{Tuple{AbstractArray, AbstractArray}},Vector{Matrix},Nothing}
+    # kfacs :: Vector{Tuple{AbstractArray, AbstractArray}}
+    kfacs::Vector{Tuple{Eigen, Eigen}}
+    delta::Number
+end
+
+function clamp(eig::Eigen)
+    Eigen(max.(0, eig.values), eig.vectors)
+end
+
+"""
+    decompose(K::Kron)
+
+Eigendecompose Kronecker factors and turn into `KronDecomposed`.
+"""   
+function decompose(K::Kron)
+    # TODO filter out negative eigenvals
+    return KronDecomposed(map(b -> map(clamp ∘ eigen, b), K.kfacs), 0)
+end
+
+function logdetblock(block::Tuple{Eigen, Eigen}, delta::Number)
+    L1, L2 = block.values
+    return sum(log(L1 * transpose(L2) + delta))
+end
+
+function logdet(K::KronDecomposed)
+    return sum(b -> logdetblock(b, K.delta), K.kfacs)
+end
+
+"""
+Matrix-multuply for the KronDecomposed Hessian approximation K and a 2-d matrix W,
+applying an exponent to K and transposing W before multiplication.
+Return `(K^x)W^T`, where `x` is the exponent.
+"""
+function mm(K::KronDecomposed, W::Matrix, exponent::Number=-1)
+    cur_idx = 1
+    @assert length(size(W)) == 2
+    k, p = size(W)
+    M = []
+    for block in K.kfacs
+        Q1, Q2 = block[1].vectors, block[2].vectors
+        L1, L2 = block[1].values, block[2].values
+        # NOTE: should this not be the other way?
+        p_in = length(L1)
+        p_out = length(L2)
+        sz = p_in * p_out
+
+        # NOTE: order of factors is reversed in laplace-torch
+        ldelta_exp = (L1 * transpose(L2) .+ K.delta) .^ exponent
+       
+        W_p = reshape(W[:, cur_idx : cur_idx + sz - 1], k, p_in, p_out)
+        W_p = permutedims(stack([Q1 * ((transpose(Q1) * W_p[i, :, :] * Q2) .* ldelta_exp) * transpose(Q2) for i in range(1, size(W_p, 1))]), (3, 1, 2))
+        W_p = reshape(W_p, k, sz)
+        push!(M, W_p)
+        
+        cur_idx += sz
+    end
+    M = reduce(hcat, M)
+    return M
 end
