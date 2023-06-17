@@ -5,7 +5,6 @@ using LaplaceRedux.Curvature
 using LaplaceRedux.Data
 using Flux
 using Flux.Optimise: update!, Adam
-using Plots
 using Statistics
 using MLUtils
 using Zygote
@@ -57,7 +56,7 @@ loss(x, y) = getfield(Flux.Losses, loss_fun)(nn(x), y) + weight_regularization()
 
 
 opt = Adam()
-epochs = 200
+epochs = 20#0
 avg_loss(data) = mean(map(d -> loss(d[1], d[2]), data))
 show_every = epochs / 10
 
@@ -77,7 +76,6 @@ end
 function fit_la_unbatched(nn, data, X, y)
     la = Laplace(nn; likelihood=:regression, λ=λ, subset_of_weights=:all)
     fit!(la, data)
-    plot(la, X, y)
 end
 
 print(@benchmark fit_la_unbatched($nn, $data, $X, $y))
