@@ -119,7 +119,7 @@ jobs:
       - name: Run benchmark
         run: |
           ls
-          cd ../test/benchmarks
+          cd test/benchmarks/
           julia --project --color=yes -e '
             using Pkg;
             Pkg.instantiate();
