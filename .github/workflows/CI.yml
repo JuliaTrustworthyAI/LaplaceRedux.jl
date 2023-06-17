@@ -67,7 +67,7 @@ jobs:
           tool: 'julia'
           output-file-path: test/benchmarks/output.json
           # Use personal access token instead of GITHUB_TOKEN due to https://github.community/t/github-action-not-triggering-gh-pages-upon-push/16096
-          github-token: ${{ secrets.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 }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
           auto-push: true
           # Show alert with commit comment on detecting possible performance regression
           alert-threshold: '125%'
