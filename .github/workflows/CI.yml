@@ -118,7 +118,6 @@ jobs:
             ${{ runner.os }}-
       - name: Run benchmark
         run: |
-          ls
           cd test/benchmarks/
           julia --project --color=yes -e '
             using Pkg;
