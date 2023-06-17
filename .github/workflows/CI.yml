@@ -41,7 +41,8 @@ jobs:
             ${{ runner.os }}-
       - name: Run benchmark
         run: |
-          julia  -e 'using Pkg; Pkg.add("LaplaceRedux")'
+          julia  -e 'import Pkg; Pkg.add("LaplaceRedux")'
+          julia  -e 'import Pkg; Pkg.add("Flux)'
           cd test/benchmarks
           julia --project --color=yes -e '
             using Pkg;
