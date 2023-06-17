@@ -50,6 +50,10 @@ jobs:
           julia  -e 'import Pkg; Pkg.add("StatsBase")'
           julia  -e 'import Pkg; Pkg.add("SortingAlgorithms")'
           julia  -e 'import Pkg; Pkg.add("MLStyle")'
+          julia  -e 'import Pkg; Pkg.add("Zygote")'
+          julia  -e 'import Pkg; Pkg.add("Printf")'
+          julia  -e 'import Pkg; Pkg.add("BenchmarkTools")'
+          julia  -e 'import Pkg; Pkg.add("Tullio")'
           cd test/benchmarks
           julia --project --color=yes -e '
             using Pkg;
