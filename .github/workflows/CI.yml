@@ -122,6 +122,7 @@ jobs:
           julia --project --color=yes -e '
             using Pkg;
             Pkg.instantiate();
+            Pkg.add("LaplaceRedux");
             include("BenchmarkUnbatchedFit.jl")'
 
       - name: Store benchmark result
