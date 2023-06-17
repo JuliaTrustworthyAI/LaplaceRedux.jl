@@ -43,6 +43,13 @@ jobs:
         run: |
           julia  -e 'import Pkg; Pkg.add("LaplaceRedux")'
           julia  -e 'import Pkg; Pkg.add("Flux")'
+          julia  -e 'import Pkg; Pkg.add("Plots")'
+          julia  -e 'import Pkg; Pkg.add("OneHotArrays")'
+          julia  -e 'import Pkg; Pkg.add("MLUtils")'
+          julia  -e 'import Pkg; Pkg.add("FLoops")'
+          julia  -e 'import Pkg; Pkg.add("StatsBase")'
+          julia  -e 'import Pkg; Pkg.add("SortingAlgorithms")'
+          julia  -e 'import Pkg; Pkg.add("MLStyle")'
           cd test/benchmarks
           julia --project --color=yes -e '
             using Pkg;
