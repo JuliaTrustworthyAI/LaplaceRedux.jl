@@ -78,5 +78,12 @@ function fit_la_unbatched(nn, data, X, y)
     fit!(la, data)
 end
 
-print(@benchmark fit_la_unbatched($nn, $data, $X, $y))
+suite = BenchmarkGroup()
 
+suite["fit_la_unbatched"] = BenchmarkGroup(["tag1", "tag2"])
+
+suite["fit_la_unbatched"][1]= @benchmarkable fit_la_unbatched($nn, $data, $X, $y) 
+tune!(suite)
+results = run(suite, verbose = true)
+
+BenchmarkTools.save("test/benchmarks/output.json", median(results))
