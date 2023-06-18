@@ -14,7 +14,7 @@ using Tullio
 
 # Setup some dummy data, like in tests
 
-n = 128 * 128
+n = 128 * 128 * 10
 data_dict = Dict()
 bsize = 2
 
@@ -86,4 +86,4 @@ suite["fit_la_unbatched"][1]= @benchmarkable fit_la_unbatched($nn, $data, $X, $y
 tune!(suite)
 results = run(suite, verbose = true)
 
-BenchmarkTools.save("   output.json", median(results))
+BenchmarkTools.save("output.json", median(results))
