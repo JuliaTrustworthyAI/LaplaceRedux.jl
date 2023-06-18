@@ -14,7 +14,7 @@ using Tullio
 
 # Setup some dummy data, like in tests
 
-n = 128 * 128 * 10
+n = 128 * 128 * 2
 data_dict = Dict()
 bsize = 2
 
