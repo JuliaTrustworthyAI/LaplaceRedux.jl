@@ -338,7 +338,9 @@ function kron(curvature::Union{GGN,EmpiricalFisher}, data; batched::Bool=false)
 
     loss_xy = (x, y) -> curvature.loss_fun(nn(x), y)
     loss = sum(d -> loss_xy(d...), data)
-    decomposed = decompose(Kron(collect(interleave(zip(G_exp, A_exp_zb), zip(G_exp_b, A_exp_b_zb)))))
+    decomposed = decompose(
+        Kron(collect(interleave(zip(G_exp, A_exp_zb), zip(G_exp_b, A_exp_b_zb))))
+    )
 
     # NOTE: order is G, A, as in laplace-torch
     return loss, decomposed, n_data
@@ -385,7 +387,11 @@ Multiply by a scalar by changing the eigenvalues. Distribute the scalar along th
 """
 function (*)(K::KronDecomposed, scalar::Number)
     return KronDecomposed(
-        map(b::Tuple -> map(e::Eigen -> Eigen(e.values * pow(scalar, 1 / length(b)), e.vectors), b), K.kfacs),
+        map(
+            b::Tuple ->
+                map(e::Eigen -> Eigen(e.values * pow(scalar, 1 / length(b)), e.vectors), b),
+            K.kfacs,
+        ),
         K.delta,
     )
 end
@@ -398,7 +404,7 @@ end
 (+)(delta::Number, K::KronDecomposed) = (+)(K::KronDecomposed, delta::Number)
 (*)(delta::Number, K::KronDecomposed) = (*)(K::KronDecomposed, delta::Number)
 
-function detblock(block::Tuple{Eigen, Eigen}, delta::Number)
+function detblock(block::Tuple{Eigen,Eigen}, delta::Number)
     L1, L2 = block.values
     return sum(L1 * transpose(L2) + delta)
 end
@@ -407,7 +413,6 @@ function det(K::KronDecomposed)
     return sum(b -> detblock(b, K.delta), K.kfacs)
 end
 
-
 """
 Matrix-multuply for the KronDecomposed Hessian approximation K and a 2-d matrix W,
 applying an exponent to K and transposing W before multiplication.
@@ -415,7 +420,7 @@ Return `(K^x)W^T`, where `x` is the exponent.
 """
 function mm(K::KronDecomposed, W; exponent::Number=-1)
     cur_idx = 1
-    
+
     @assert length(size(W)) == 2
     k, p = size(W)
     M = []

@@ -416,9 +416,15 @@ end
             Iterators.product(backends, batchsizes, subsets_of_weights, hessian_structures)
             batchsize_text = batchsize == 0 ? "unbatched" : "batchsize=$(batchsize)"
             @testset "$(likelihood), $(batchsize_text), backend=$(backend), subset_of_weights=$(subset_of_weights), hessian_structure=$(hessian_structure)" begin
-                println((likelihood, batchsize, backend, subset_of_weights, hessian_structure))
+                println((
+                    likelihood, batchsize, backend, subset_of_weights, hessian_structure
+                ))
                 hessians[likelihood, batchsize, backend, subset_of_weights, hessian_structure] = run_workflow(
-                    val, batchsize, backend, subset_of_weights, hessian_structure=hessian_structure
+                    val,
+                    batchsize,
+                    backend,
+                    subset_of_weights;
+                    hessian_structure=hessian_structure,
                 )
             end
         end

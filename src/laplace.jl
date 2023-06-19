@@ -6,11 +6,11 @@ using LinearAlgebra
 using MLUtils
 
 macro def(name, definition)
-  return quote
-      macro $(esc(name))()
-          esc($(Expr(:quote, definition)))
-      end
-  end
+    return quote
+        macro $(esc(name))()
+            return esc($(Expr(:quote, definition)))
+        end
+    end
 end
 
 @def fields_baselaplace begin
@@ -263,9 +263,12 @@ function _fit!(la::Laplace, data; batched::Bool=false, batchsize::Int, override:
     return la.n_data = n_data
 end
 
-function _fit!(la::KronLaplace, data; batched::Bool=false, batchsize::Int, override::Bool=true)
+function _fit!(
+    la::KronLaplace, data; batched::Bool=false, batchsize::Int, override::Bool=true
+)
     @assert !batched "Batched Kronecker-factored Laplace approximations not supported"
-    @assert la.likelihood == :classification && get_loss_type(la.likelihood, la.curvature.model) == :logitcrossentropy "Only multi-class classification supported"
+    @assert la.likelihood == :classification &&
+        get_loss_type(la.likelihood, la.curvature.model) == :logitcrossentropy "Only multi-class classification supported"
 
     # NOTE: the fitting process is structured differently for Kronecker-factored methods
     # to avoid allocation, initialisation & interleaving overhead
@@ -304,14 +307,13 @@ function functional_variance(la::Laplace, 𝐉)
 end
 
 function functional_variance(la::KronLaplace, 𝐉::Matrix)
-    diag(inv_square_form(la.P, 𝐉))
+    return diag(inv_square_form(la.P, 𝐉))
 end
 
 function inv_square_form(K::KronDecomposed, W::Matrix)
     SW = mm(K, W; exponent=-1)
     return W * SW'
 end
-
 
 # Posterior predictions:
 """

@@ -36,7 +36,7 @@ function get_params(la::BaseLaplace)
     if la.subset_of_weights == :all || la.subset_of_weights == :subnetwork
         # get all parameters and constants in logitbinarycrossentropy
         params = [θ for θ in params]
-    elseif la.subset_of_weights == :last_layer                               
+    elseif la.subset_of_weights == :last_layer
         # Only get last layer parameters:
         # params[n_elements] is the bias vector of the last layer
         # params[n_elements-1] is the weight matrix of the last layer
