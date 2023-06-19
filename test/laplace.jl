@@ -427,11 +427,7 @@ end
             @testset "$(likelihood), $(batchsize_text), backend=$(backend), subset_of_weights=$(subset_of_weights)" begin
                 println((likelihood, batchsize, backend, subset_of_weights))
                 hessians[likelihood, batchsize, backend, subset_of_weights] = run_workflow(
-                    val,
-                    batchsize,
-                    backend,
-                    subset_of_weights;
-                    hessian_structure=hessian_structure,
+                    val, batchsize, backend, subset_of_weights
                 )
             end
         end
