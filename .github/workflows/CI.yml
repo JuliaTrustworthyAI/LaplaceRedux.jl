@@ -58,7 +58,7 @@ jobs:
           julia --project --color=yes -e '
             using Pkg;
             Pkg.instantiate();
-            include("BenchmarkUnbatchedFit.jl")'
+            include("BenchmarkFit.jl")'
 
       - name: Store benchmark result
         uses: benchmark-action/github-action-benchmark@v1.17.0

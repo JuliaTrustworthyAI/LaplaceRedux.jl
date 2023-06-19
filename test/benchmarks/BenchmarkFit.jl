@@ -78,11 +78,18 @@ function fit_la_unbatched(nn, data, X, y)
     fit!(la, data)
 end
 
+function fit_la_batched(nn, dataloader, X, y)
+    la_b = Laplace(nn; likelihood=:regression, λ=λ, subset_of_weights=:all)
+    fit!(la_b, dataloader)
+end
+
 suite = BenchmarkGroup()
 
-suite["fit_la_unbatched"] = BenchmarkGroup(["tag1", "tag2"])
+suite["fit_la_unbatched"] = BenchmarkGroup(["unbatched"])
+suite["fit_la_batched"] = BenchmarkGroup(["batched"])
 
-suite["fit_la_unbatched"][1]= @benchmarkable fit_la_unbatched($nn, $data, $X, $y) 
+suite["fit_la_unbatched"]= @benchmarkable fit_la_unbatched($nn, $data, $X, $y) 
+suite["fit_la_batched"]= @benchmarkable fit_la_batched($nn, $dataloader, $X, $y) 
 tune!(suite)
 results = run(suite, verbose = true)
 
