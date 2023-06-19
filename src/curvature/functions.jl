@@ -60,8 +60,8 @@ Compute the gradients with respect to the loss function: `∇ℓ(f(x;θ),y)` whe
 function gradients(
     curvature::CurvatureInterface, X::AbstractArray, y::Union{Number,AbstractArray}
 )::Zygote.Grads
-    model = curvature.model
-    𝐠 = gradient(() -> curvature.loss_fun(X, y), Flux.params(model))           # compute the gradients of the loss function with respect to the model parameters
+    nn = curvature.model
+    𝐠 = gradient(() -> curvature.loss_fun(nn(X), y), Flux.params(nn))           # compute the gradients of the loss function with respect to the model parameters
     return 𝐠
 end
 
@@ -113,14 +113,15 @@ Compute the full GGN for a singular input-ouput datapoint.
 function full_unbatched(curvature::GGN, d::Tuple)
     x, y = d
 
-    loss = curvature.factor * curvature.loss_fun(x, y)
+    nn = curvature.model
+    loss = curvature.factor * curvature.loss_fun(nn(x), y)
 
     𝐉, fμ = jacobians(curvature, x)
 
     if curvature.likelihood == :regression
         H = 𝐉' * 𝐉
     else
-        p = outdim(curvature.model) > 1 ? softmax(fμ) : sigmoid(fμ)
+        p = outdim(nn) > 1 ? softmax(fμ) : sigmoid(fμ)
         H_lik = diagm(p) - p * p'
         H = 𝐉' * H_lik * 𝐉
     end
@@ -136,14 +137,15 @@ Compute the full GGN for batch of inputs-outputs, with the batch dimension at th
 function full_batched(curvature::GGN, d::Tuple)
     x, y = d
 
-    loss = curvature.factor * curvature.loss_fun(x, y)
+    nn = curvature.model
+    loss = curvature.factor * curvature.loss_fun(nn(x), y)
 
     𝐉, fμ = jacobians_batched(curvature, x)
 
     if curvature.likelihood == :regression
         @tullio H[i, j] := 𝐉[k, i, b] * 𝐉[k, j, b]
     else
-        p = outdim(curvature.model) > 1 ? softmax(fμ) : sigmoid(fμ)
+        p = outdim(nn) > 1 ? softmax(fμ) : sigmoid(fμ)
         # H_lik = diagm(p) - p * p'
         @tullio H_lik[i, j, b] := -p[i, b] * p[j, b]
         @tullio H_lik[i, i, b] += p[i, b]
@@ -202,7 +204,8 @@ Compute the full empirical Fisher for batch of inputs-outputs, with the batch di
 function full_unbatched(curvature::EmpiricalFisher, d::Tuple)
     x, y = d
 
-    loss = curvature.factor * curvature.loss_fun(x, y)
+    nn = curvature.model
+    loss = curvature.factor * curvature.loss_fun(nn(x), y)
     𝐠 = gradients(curvature, x, y)
     # Concatenate the selected gradients into a vector, column-wise
     𝐠 = reduce(vcat, [vec(𝐠[θ]) for θ in curvature.params])
@@ -222,8 +225,9 @@ function full_batched(curvature::EmpiricalFisher, d::Tuple)
     x, y = d
 
     loss = curvature.factor * curvature.loss_fun(x, y)
+    nn = curvature.model
     grads::Zygote.Grads = jacobian(
-        () -> curvature.loss_fun(x, y; agg=identity), Flux.params(curvature.model)
+        () -> curvature.loss_fun(nn(x), y; agg=identity), Flux.params(nn)
     )
     𝐠 = transpose(reduce(hcat, [grads[θ] for θ in curvature.params]))
     if curvature.subset_of_weights == :subnetwork
@@ -236,7 +240,6 @@ function full_batched(curvature::EmpiricalFisher, d::Tuple)
 
     return loss, H
 end
-
 
 """
 Macro for zero-based indexing. Example usage: (@zb A[0]) = ...
