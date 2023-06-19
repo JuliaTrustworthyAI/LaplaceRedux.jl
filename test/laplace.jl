@@ -285,6 +285,8 @@ function run_workflow(
     subset_of_weights::Symbol;
     hessian_structure=:full,
     verbose::Bool=false,
+    do_optimize_prior::Bool=true,
+    do_plot::Bool=true,
 )
     # Unpack:
     X = val[:X]
@@ -317,30 +319,36 @@ function run_workflow(
         hessian_structure=hessian_structure,
     )
     fit!(la, data)
-    optimize_prior!(la; verbose=verbose)
-    if outdim == 1
-        plot(la, X, y)                              # standard
-        plot(la, X, y; xlims=(-5, 5), ylims=(-5, 5))  # lims
-        plot(la, X, y; link_approx=:plugin)         # plugin approximation  
-    else
-        # Classification multi is plotted differently
-        @assert likelihood == :classification
-        # NOTE: do we not allow for vector-output regression?
-        for link_approx in [:probit, :plugin]
-            _labels = sort(unique(y))
-            plt_list = []
-            for target in _labels
-                plt = plot(la, X, y; target=target, clim=(0, 1), link_approx=link_approx)
-                push!(plt_list, plt)
+    if do_optimize_prior
+        optimize_prior!(la; verbose=verbose)
+    end
+    if do_plot
+        if outdim == 1
+            plot(la, X, y)                              # standard
+            plot(la, X, y; xlims=(-5, 5), ylims=(-5, 5))  # lims
+            plot(la, X, y; link_approx=:plugin)         # plugin approximation  
+        else
+            # Classification multi is plotted differently
+            @assert likelihood == :classification
+            # NOTE: do we not allow for vector-output regression?
+            for link_approx in [:probit, :plugin]
+                _labels = sort(unique(y))
+                plt_list = []
+                for target in _labels
+                    plt = plot(
+                        la, X, y; target=target, clim=(0, 1), link_approx=link_approx
+                    )
+                    push!(plt_list, plt)
+                end
+                plot(plt_list...)
             end
-            plot(plt_list...)
         end
     end
 
     return la.H
 end
 
-@testset "Complete Workflow" begin
+@testset "Complete Workflows" begin
 
     # SETUP
     n = 100
@@ -398,28 +406,29 @@ end
 
     # NOTE: batchsize=0 is meant to represent unbatched
     batchsizes = [0, 1, 32]
-    batchsizes = [0]
-    #    backends = [:GGN, :EmpiricalFisher]
-    backends = [:GGN]
+    backends = [:GGN, :EmpiricalFisher]
     subsets_of_weights = [:all, :last_layer, :subnetwork]
-    subsets_of_weights = [:all]
+    # NOTE: not used
     hessian_structures = [:full, :kron]
-    hessian_structures = [:kron]
 
     # Store Hessians to compare them for different batchsizes
     hessians = Dict()
 
-    println("Running workflows.")
+    println("Training networks.")
     for (likelihood, val) in data_dict
         val[:nn] = train_nn(val)
-        for (backend, batchsize, subset_of_weights, hessian_structure) in
-            Iterators.product(backends, batchsizes, subsets_of_weights, hessian_structures)
+    end
+
+    println("Running workflows.")
+    for (likelihood, val) in data_dict
+        for (backend, batchsize, subset_of_weights) in
+            Iterators.product(backends, batchsizes, subsets_of_weights)
             batchsize_text = batchsize == 0 ? "unbatched" : "batchsize=$(batchsize)"
-            @testset "$(likelihood), $(batchsize_text), backend=$(backend), subset_of_weights=$(subset_of_weights), hessian_structure=$(hessian_structure)" begin
+            @testset "$(likelihood), $(batchsize_text), backend=$(backend), subset_of_weights=$(subset_of_weights)" begin
                 println((
-                    likelihood, batchsize, backend, subset_of_weights, hessian_structure
+                    likelihood, batchsize, backend, subset_of_weights
                 ))
-                hessians[likelihood, batchsize, backend, subset_of_weights, hessian_structure] = run_workflow(
+                hessians[likelihood, batchsize, backend, subset_of_weights] = run_workflow(
                     val,
                     batchsize,
                     backend,
@@ -430,20 +439,32 @@ end
         end
     end
 
-    foreach(display, hessians)
+    # Compare collected Hessians
+    println("Comparing Hessians for varying batchsizes.")
+    for ((likelihood, val), backend, subset_of_weights) in
+        Iterators.product(data_dict, backends, subsets_of_weights)
+        println((likelihood, backend, subset_of_weights))
+        hessians_by_batch = [
+            hessians[likelihood, batchsize, backend, subset_of_weights] for
+            batchsize in batchsizes
+        ]
+        # Compare consecutive Hessians
+        for (H_i, H_j) in zip(hessians_by_batch, hessians_by_batch[2:end])
+            @test H_i ≈ H_j atol = 0.05
+        end
+    end
 
-    # # Compare collected Hessians
-    # println("Comparing Hessians for varying batchsizes.")
-    # for ((likelihood, val), backend, subset_of_weights) in
-    #     Iterators.product(data_dict, backends, subsets_of_weights)
-    #     println((likelihood, backend, subset_of_weights))
-    #     hessians_by_batch = [
-    #         hessians[likelihood, batchsize, backend, subset_of_weights] for
-    #         batchsize in batchsizes
-    #     ]
-    #     # Compare consecutive Hessians
-    #     for (H_i, H_j) in zip(hessians_by_batch, hessians_by_batch[2:end])
-    #         @test H_i ≈ H_j atol = 0.05
-    #     end
-    # end
+    @testset "KFAC, unbatched, classification_multi, Fisher" begin
+        likelihood = :classification_multi
+        val = data_dict[likelihood]
+        run_workflow(
+            val,
+            0,
+            :EmpiricalFisher,
+            :all;
+            hessian_structure=:kron,
+            do_optimize_prior=false,
+            do_plot=false,
+        )
+    end
 end

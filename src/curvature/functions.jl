@@ -277,7 +277,6 @@ function kron(curvature::Union{GGN,EmpiricalFisher}, data; batched::Bool=false)
     xs = (pair[1] for pair in data)
     # We use the first element to initialise the shapes
     x_1 = first(xs)
-    display(x_1)
 
     nn = curvature.model
     # NOTE: this method is for classification only, thus the loss must be logitcrossentropy
