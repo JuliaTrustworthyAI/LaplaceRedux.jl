@@ -1,4 +1,4 @@
-using LaplaceRedux.Curvature
+using LaplaceRedux.Curvature: Kron
 
 @testset "Addition one block" begin
     left = Kron([([1 2], [3 4])])

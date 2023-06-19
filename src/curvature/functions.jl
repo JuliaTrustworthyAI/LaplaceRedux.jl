@@ -5,7 +5,7 @@ using Zygote
 using Tullio
 using Compat
 
-import Base: +, *, length
+import Base: +, *, ==, length
 import LinearAlgebra: det, logdet
 
 "Basetype for any curvature interface."
@@ -227,7 +227,8 @@ end
 function full_batched(curvature::EmpiricalFisher, d::Tuple)
     x, y = d
 
-    loss = curvature.factor * curvature.loss_fun(x, y)
+    nn = curvature.model
+    loss = curvature.factor * curvature.loss_fun(nn(x), y)
     nn = curvature.model
     grads::Zygote.Grads = jacobian(
         () -> curvature.loss_fun(nn(x), y; agg=identity), Flux.params(nn)
@@ -259,6 +260,25 @@ end
 mutable struct Kron
     kfacs::Vector{Tuple{AbstractArray,AbstractArray}}
 end
+
+function (+)(l::Kron, r::Kron)
+    @assert length(l.kfacs) == length(r.kfacs)
+    kfacs = [
+        Tuple(Hi + Hj for (Hi, Hj) in zip(Fi, Fj)) for (Fi, Fj) in zip(l.kfacs, r.kfacs)
+    ]
+    return Kron(kfacs)
+end
+
+function (==)(l::Kron, r::Kron)
+    return l.kfacs == r.kfacs
+end
+
+function (*)(l::Real, r::Kron)
+    kfacs = [Tuple(^(l, 1 / length(F)) * Hi for Hi in F) for F in r.kfacs]
+    return Kron(kfacs)
+end
+
+(*)(l::Kron, r::Real) = (*)(r, l)
 
 """
 Interleave elements of multiple iterables in order provided.

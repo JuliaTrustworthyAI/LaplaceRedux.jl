@@ -408,7 +408,7 @@ end
     batchsizes = [0, 1, 32]
     backends = [:GGN, :EmpiricalFisher]
     subsets_of_weights = [:all, :last_layer, :subnetwork]
-    # NOTE: not used
+    # NOTE: not used yet
     hessian_structures = [:full, :kron]
 
     # Store Hessians to compare them for different batchsizes

@@ -13,4 +13,8 @@ using Test
     @testset "Laplace" begin
         include("laplace.jl")
     end
+
+    @testset "Kron" begin
+        include("kron.jl")
+    end
 end
