@@ -5,7 +5,7 @@ using Zygote
 using Tullio
 using Compat
 
-import Base: +, *, ==, length
+import Base: +, *, ==, length, getindex
 import LinearAlgebra: det, logdet
 
 "Basetype for any curvature interface."
@@ -257,7 +257,7 @@ macro zb(expr)
     end
 end
 
-mutable struct Kron
+struct Kron
     kfacs::Vector{Tuple{AbstractArray,AbstractArray}}
 end
 
@@ -279,6 +279,11 @@ function (*)(l::Real, r::Kron)
 end
 
 (*)(l::Kron, r::Real) = (*)(r, l)
+
+function getindex(K::Kron, i::Int)
+    return K.kfacs[i]
+end
+
 
 """
 Interleave elements of multiple iterables in order provided.
@@ -365,7 +370,7 @@ function kron(curvature::Union{GGN,EmpiricalFisher}, data; batched::Bool=false)
     return loss, decomposed, n_data
 end
 
-mutable struct KronDecomposed
+struct KronDecomposed
     # TODO union types
     # kfacs :: Union{Vector{Tuple{AbstractArray, AbstractArray}},Vector{Matrix},Nothing}
     # kfacs :: Vector{Tuple{AbstractArray, AbstractArray}}
@@ -408,7 +413,7 @@ function (*)(K::KronDecomposed, scalar::Number)
     return KronDecomposed(
         map(
             b::Tuple ->
-                map(e::Eigen -> Eigen(e.values * pow(scalar, 1 / length(b)), e.vectors), b),
+                map(e::Eigen -> Eigen(e.values * ^(scalar, 1 / length(b)), e.vectors), b),
             K.kfacs,
         ),
         K.delta,
@@ -419,13 +424,17 @@ function (length)(K::KronDecomposed)
     return length(K.kfacs)
 end
 
+function getindex(K::KronDecomposed, i::Int)
+    return K.kfacs[i]
+end
+
 # Commutative operations
 (+)(delta::Number, K::KronDecomposed) = (+)(K::KronDecomposed, delta::Number)
-(*)(delta::Number, K::KronDecomposed) = (*)(K::KronDecomposed, delta::Number)
+(*)(scalar::Number, K::KronDecomposed) = (*)(K::KronDecomposed, scalar::Number)
 
 function detblock(block::Tuple{Eigen,Eigen}, delta::Number)
-    L1, L2 = block.values
-    return sum(L1 * transpose(L2) + delta)
+    L1, L2 = block[1].values, block[2].values
+    return sum(L1 * transpose(L2) .+ delta)
 end
 
 function det(K::KronDecomposed)

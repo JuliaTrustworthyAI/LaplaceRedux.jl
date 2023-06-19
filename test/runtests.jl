@@ -17,4 +17,8 @@ using Test
     @testset "Kron" begin
         include("kron.jl")
     end
+
+    @testset "KronDecomposed" begin
+        include("krondecomposed.jl")
+    end
 end
