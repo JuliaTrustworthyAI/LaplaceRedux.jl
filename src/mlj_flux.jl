@@ -162,7 +162,12 @@ function MLJFlux.fit!(
 
     la = model.la
 
-    fit!(la, zip(X, y); model.fit_params...)
+    if (model.batch_size > 1)
+        fit!(la, DataLoader((X, y); batchsize=model.batch_size); model.fit_params...)
+    else
+        fit!(la, zip(X, y); model.fit_params...)
+    end
+
     optimize_prior!(la; verbose=false, n_steps=100)
 
     model.la = la
@@ -230,12 +235,15 @@ end
 
 function MMI.predict(model::LaplaceApproximation, fitresult, Xnew)
     chain, la, levels = fitresult
-    return MMI.UnivariateFinite(predict(la, Xnew; link_approx=model.link_approx))
+    X = MLJFlux.reformat(Xnew)
+    println(X)
+    probs = vcat([predict(la, MLJFlux.tomat(X[:, i]); link_approx=model.link_approx)' for i in 1:size(X, 2)]...)
+    return MMI.UnivariateFinite(levels, probs)
 end
 
 MMI.metadata_model(
     LaplaceApproximation;
     input=Union{AbstractArray,MMI.Table(MMI.Continuous)},
-    target=AbstractArray{<:MMI.Finite},
+    target=Union{AbstractArray{<:MMI.Finite},AbstractArray{<:MMI.Continuous}},
     path="MLJFlux.LaplaceApproximation",
 )
