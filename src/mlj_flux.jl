@@ -5,7 +5,7 @@ using ProgressMeter
 using Random
 using Tables
 using ComputationalResources
-using LaplaceRedux
+using Statistics
 
 mutable struct LaplaceApproximation{B,F,O,L} <: MLJFlux.MLJFluxProbabilistic
     builder::B
@@ -26,14 +26,14 @@ mutable struct LaplaceApproximation{B,F,O,L} <: MLJFlux.MLJFluxProbabilistic
     backend::Symbol
     σ::Real
     μ₀::Real
-    P₀::Union{Nothing,AbstractMatrix,UniformScaling}
+    P₀::Union{AbstractMatrix,UniformScaling}
     link_approx::Symbol
     fit_params::Dict{Symbol,Any}
     la::Union{Nothing,Laplace}
 end
 
 function LaplaceApproximation(
-    builder::B=MLJFlux.MLP(; hidden=32, σ=Flux.relu),
+    builder::B=MLJFlux.MLP(; hidden=(32, 32, 32), σ=Flux.swish),
     finaliser::F=Flux.softmax,
     optimiser::O=Flux.Optimise.Adam(),
     loss::L=Flux.crossentropy,
@@ -44,18 +44,16 @@ function LaplaceApproximation(
     rng::Union{AbstractRNG,Int64}=Random.GLOBAL_RNG,
     optimiser_changes_trigger_retraining::Bool=false,
     acceleration::AbstractResource=CPU1(),
-    likelihood::Symbol,
+    likelihood::Symbol=:classification,
     subset_of_weights::Symbol=:all,
     subnetwork_indices::Vector{Vector{Int}}=Vector{Vector{Int}}([]),
     hessian_structure::Symbol=:full,
-    backend::Symbol=:GNN,
-    σ::Real=1.0,
-    μ₀::Real=0.0,
-    P₀::Union{Nothing,AbstractMatrix,UniformScaling}=nothing,
+    backend::Symbol=:GGN,
+    σ::Float64=1.0,
+    μ₀::Float64=0.0,
+    P₀::Union{AbstractMatrix,UniformScaling}=UniformScaling(lambda),
     link_approx::Symbol=:probit,
-    fit_params::Dict{Symbol,Any}=Dict(
-        :batched => false, :batch_size => 1, :override => true
-    ),
+    fit_params::Dict{Symbol,Any}=Dict{Symbol,Any}(:override => true),
 ) where {B,F,O,L}
     return LaplaceApproximation(
         builder,
@@ -92,11 +90,40 @@ function MLJFlux.shape(model::LaplaceApproximation, X, y)
 end
 
 function MLJFlux.build(model::LaplaceApproximation, rng, shape)
-    return Flux.chain(MLJFlux.build(model.builder, rng, shape...), model.finaliser)
+    chain = Flux.Chain(MLJFlux.build(model.builder, rng, shape...), model.finaliser)
+    model.la = Laplace(
+        chain;
+        likelihood=model.likelihood,
+        subset_of_weights=model.subset_of_weights,
+        subnetwork_indices=model.subnetwork_indices,
+        hessian_structure=model.hessian_structure,
+        backend=model.backend,
+        σ=model.σ,
+        μ₀=model.μ₀,
+        P₀=model.P₀,
+    )
+    return chain
 end
 
 function MLJFlux.fitresult(model::LaplaceApproximation, chain, y)
     return (chain, model.la, MMI.classes(y[1]))
+end
+
+function MLJFlux.train!(model::LaplaceApproximation, penalty, chain, optimiser, X, y)
+    loss = model.loss
+    n_batches = length(y)
+    training_loss = zero(Float32)
+    for i in 1:n_batches
+        parameters = Flux.params(chain)
+        gs = Flux.gradient(parameters) do
+            yhat = chain(X[i])
+            batch_loss = loss(yhat, y[i]) + penalty(parameters) / n_batches
+            training_loss += batch_loss
+            return batch_loss
+        end
+        Flux.update!(optimiser, parameters, gs)
+    end
+    return training_loss / n_batches
 end
 
 function MLJFlux.fit!(
@@ -125,25 +152,17 @@ function MLJFlux.fit!(
     history = [mean(losses)]
 
     for i in 1:epochs
-        current_loss = train!(model::MLJFlux.MLJFluxModel, penalty, chain, optimiser, X, y)
+        current_loss = MLJFlux.train!(
+            model::MLJFlux.MLJFluxModel, penalty, chain, optimiser, X, y
+        )
         verbosity < 2 || @info "Loss is $(round(current_loss; sigdigits=4))"
         verbosity != 1 || next!(meter)
         push!(history, current_loss)
     end
 
-    la = Laplace(
-        chain,
-        model.likelihood;
-        subset_of_weights=model.subset_of_weights,
-        subnetwork_indices=model.subnetwork_indices,
-        hessian_structure=model.hessian_structure,
-        backend=model.backend,
-        σ=model.σ,
-        μ₀=model.μ₀,
-        P₀=model.P₀,
-    )
+    la = model.la
 
-    fit!(la, zip(X, y); fit_params=model.fit_params)
+    fit!(la, zip(X, y); model.fit_params...)
     optimize_prior!(la; verbose=false, n_steps=100)
 
     model.la = la
@@ -195,10 +214,10 @@ function MMI.clean!(model::LaplaceApproximation)
             "Resetting `hessian_structure = :full`. "
         model.hessian_structure = :full
     end
-    if model.backend ∉ (:GNN, :EmpiricalFisher)
+    if model.backend ∉ (:GGN, :EmpiricalFisher)
         warning *=
-            "Need `backend ∈ (:GNN, :EmpiricalFisher)`. " * "Resetting `backend = :GNN`. "
-        model.backend = :GNN
+            "Need `backend ∈ (:GGN, :EmpiricalFisher)`. " * "Resetting `backend = :GGN`. "
+        model.backend = :GGN
     end
     if model.link_approx ∉ (:probit, :plugin)
         warning *=
@@ -206,6 +225,7 @@ function MMI.clean!(model::LaplaceApproximation)
             "Resetting `link_approx = :probit`. "
         model.link_approx = :probit
     end
+    return warning
 end
 
 function MMI.predict(model::LaplaceApproximation, fitresult, Xnew)
@@ -216,5 +236,6 @@ end
 MMI.metadata_model(
     LaplaceApproximation;
     input=Union{AbstractArray,MMI.Table(MMI.Continuous)},
-    target=AbstractArray{<:Finite},
+    target=AbstractArray{<:MMI.Finite},
+    path="MLJFlux.LaplaceApproximation",
 )
