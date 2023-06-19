@@ -284,7 +284,6 @@ function getindex(K::Kron, i::Int)
     return K.kfacs[i]
 end
 
-
 """
 Interleave elements of multiple iterables in order provided.
 """
