@@ -22,7 +22,7 @@ x, y = LaplaceRedux.Data.toy_data_regression(n)
 xs = [[x] for x in x]
 X, Y = reduce(hcat, x), reduce(hcat, y)
 
-dataloader = DataLoader((X, Y), batchsize=bsize)
+dataloader = DataLoader((X, Y); batchsize=bsize)
 data = zip(xs, y)
 data_dict[:regression] = Dict(
     :data => data,
@@ -54,9 +54,8 @@ sqnorm(x) = sum(abs2, x)
 weight_regularization(λ=λ) = 1 / 2 * λ^2 * sum(sqnorm, Flux.params(nn))
 loss(x, y) = getfield(Flux.Losses, loss_fun)(nn(x), y) + weight_regularization()
 
-
 opt = Adam()
-epochs = 20#0
+epochs = 200
 avg_loss(data) = mean(map(d -> loss(d[1], d[2]), data))
 show_every = epochs / 10
 
@@ -75,12 +74,12 @@ end
 
 function fit_la_unbatched(nn, data, X, y)
     la = Laplace(nn; likelihood=:regression, λ=λ, subset_of_weights=:all)
-    fit!(la, data)
+    return fit!(la, data)
 end
 
 function fit_la_batched(nn, dataloader, X, y)
     la_b = Laplace(nn; likelihood=:regression, λ=λ, subset_of_weights=:all)
-    fit!(la_b, dataloader)
+    return fit!(la_b, dataloader)
 end
 
 suite = BenchmarkGroup()
@@ -88,10 +87,9 @@ suite = BenchmarkGroup()
 suite["fit_la_unbatched"] = BenchmarkGroup(["unbatched"])
 suite["fit_la_batched"] = BenchmarkGroup(["batched"])
 
-suite["fit_la_unbatched"]= @benchmarkable fit_la_unbatched($nn, $data, $X, $y) 
-suite["fit_la_batched"]= @benchmarkable fit_la_batched($nn, $dataloader, $X, $y) 
+suite["fit_la_unbatched"] = @benchmarkable fit_la_unbatched($nn, $data, $X, $y)
+suite["fit_la_batched"] = @benchmarkable fit_la_batched($nn, $dataloader, $X, $y)
 tune!(suite)
-results = run(suite, verbose = true)
+results = run(suite; verbose=true)
 
 BenchmarkTools.save("output.json", median(results))
-
