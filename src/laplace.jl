@@ -273,7 +273,9 @@ function _fit!(
     # NOTE: the fitting process is structured differently for Kronecker-factored methods
     # to avoid allocation, initialisation & interleaving overhead
     # Thus the loss, Hessian, and data size is computed not in a loop but in a separate function.
-    loss, H, n_data = Curvature.kron(la.curvature, data; batched=batched)
+    loss, H, n_data = Curvature.kron(
+        la.curvature, la.subset_of_weights, data; batched=batched
+    )
 
     la.loss = loss
     la.H = H

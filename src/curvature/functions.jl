@@ -290,8 +290,11 @@ end
 """
 Compute KFAC for the Fisher.
 """
-function kron(curvature::Union{GGN,EmpiricalFisher}, data; batched::Bool=false)
+function kron(
+    curvature::Union{GGN,EmpiricalFisher}, subset_of_weights, data; batched::Bool=false
+)
     @assert !isempty(data)
+    @assert subset_of_weights != :subnetwork "Subnetwork Laplace requires a full or diagonal Hessian approximation!"
     # `d` is a zero-indexed array with layers sizes
     # `_zb` marks zero-based arrays: these should be accessed via the @zb macro
     xs = (pair[1] for pair in data)
@@ -304,13 +307,18 @@ function kron(curvature::Union{GGN,EmpiricalFisher}, data; batched::Bool=false)
 
     d_zb = [[size(x_1)]; map(a -> size(a), collect(Flux.activations(nn, x_1)))]
     n_layers = length(nn.layers)
+    if subset_of_weights == :last_layer
+        initial_layer = n_layers # designate the last layer as the initial layer
+    else
+        initial_layer = 1
+    end
 
     double(sz) = (sz[1], sz[1])
 
-    G_exp = [zeros(double(@zb d_zb[i])) for i in 1:n_layers]
+    G_exp = [zeros(double(@zb d_zb[i])) for i in initial_layer:n_layers]
     # A separate matrix for bias-based gradients.
-    G_exp_b = [zeros(double(@zb d_zb[i])) for i in 1:n_layers]
-    A_exp_zb = [zeros(double(@zb d_zb[i])) for i in 0:(n_layers - 1)]
+    G_exp_b = [zeros(double(@zb d_zb[i])) for i in initial_layer:n_layers]
+    A_exp_zb = [zeros(double(@zb d_zb[i])) for i in (initial_layer - 1):(n_layers - 1)]
 
     # The data iterator is modelled lazily, so the number of samples is counted.
     n_data = 0
@@ -324,7 +332,10 @@ function kron(curvature::Union{GGN,EmpiricalFisher}, data; batched::Bool=false)
         # Approximate the expected value of the activation outer product A = aa'
         # across all samples x_n,
         # from the input to the pen-ultimate layer activation.
-        A_exp_zb += [(@zb a_zb[i]) * transpose(@zb a_zb[i]) for i in 0:(n_layers - 1)]
+        A_exp_zb += [
+            (@zb a_zb[i]) * transpose(@zb a_zb[i]) for
+            i in (initial_layer - 1):(n_layers - 1)
+        ]
 
         # Approx. the exp. value of the gradient (wrt layer non-activated output) outer product G = gg'
         # via the model's predictive distribution.
@@ -336,10 +347,11 @@ function kron(curvature::Union{GGN,EmpiricalFisher}, data; batched::Bool=false)
             # DW[i] <- g[i] * a[i-1]'
             # In our case grads is DW
             g = [
-                grad.layers[i].weight * pinv(transpose(@zb a_zb[i - 1])) for i in 1:n_layers
+                grad.layers[i].weight * pinv(transpose(@zb a_zb[i - 1])) for
+                i in initial_layer:n_layers
             ]
 
-            G = p[j] .* [g[i] * transpose(g[i]) for i in 1:n_layers]
+            G = p[j] .* [g[i] * transpose(g[i]) for i in 1:length(g)]
             G_exp += G
             G_exp_b += G
         end
@@ -351,7 +363,7 @@ function kron(curvature::Union{GGN,EmpiricalFisher}, data; batched::Bool=false)
 
     # The activation for the bias is simply one.
     # TODO: make Kron.kfacs a union type and include only the G
-    A_exp_b_zb = [[1;;] for _ in 1:n_layers]
+    A_exp_b_zb = [[1;;] for _ in initial_layer:n_layers]
     # Q: why are the factors not scaled in pytorch? bug?
     # G_exp_b /= N
 
