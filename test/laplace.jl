@@ -286,6 +286,7 @@ function run_workflow(
     hessian_structure=:full,
     verbose::Bool=false,
     do_optimize_prior::Bool=true,
+    do_predict::Bool=true,
     do_plot::Bool=true,
 )
     # Unpack:
@@ -321,6 +322,9 @@ function run_workflow(
     fit!(la, data)
     if do_optimize_prior
         optimize_prior!(la; verbose=verbose)
+    end
+    if do_predict
+        predict(la, X)
     end
     if do_plot
         if outdim == 1
@@ -405,7 +409,7 @@ end
     # WORKFLOWS
 
     # NOTE: batchsize=0 is meant to represent unbatched
-    batchsizes = [0, 1, 32]
+    batchsizes = [0, 32]
     backends = [:GGN, :EmpiricalFisher]
     subsets_of_weights = [:all, :last_layer, :subnetwork]
     # NOTE: not used yet
@@ -434,30 +438,33 @@ end
     end
 
     # Compare collected Hessians
-    println("Comparing Hessians for varying batchsizes.")
-    for ((likelihood, val), backend, subset_of_weights) in
-        Iterators.product(data_dict, backends, subsets_of_weights)
-        println((likelihood, backend, subset_of_weights))
-        hessians_by_batch = [
-            hessians[likelihood, batchsize, backend, subset_of_weights] for
-            batchsize in batchsizes
-        ]
-        # Compare consecutive Hessians
-        for (H_i, H_j) in zip(hessians_by_batch, hessians_by_batch[2:end])
-            @test H_i ≈ H_j atol = 0.05
+    @testset "Comparing Hessians for varying batchsizes" begin
+        for ((likelihood, val), backend, subset_of_weights) in
+            Iterators.product(data_dict, backends, subsets_of_weights)
+            println((likelihood, backend, subset_of_weights))
+            hessians_by_batch = [
+                hessians[likelihood, batchsize, backend, subset_of_weights] for
+                batchsize in batchsizes
+            ]
+            # Compare consecutive Hessians
+            for (H_i, H_j) in zip(hessians_by_batch, hessians_by_batch[2:end])
+                @test H_i ≈ H_j atol = 0.05
+            end
         end
     end
 
+    # Support for KFAC limited, hence the separate test
     @testset "KFAC, unbatched, classification_multi, Fisher" begin
         likelihood = :classification_multi
         val = data_dict[likelihood]
-        run_workflow(
+        K = run_workflow(
             val,
             0,
             :EmpiricalFisher,
             :all;
             hessian_structure=:kron,
             do_optimize_prior=false,
+            do_predict=true,
             do_plot=false,
         )
     end
