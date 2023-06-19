@@ -86,4 +86,5 @@ suite["fit_la_unbatched"][1]= @benchmarkable fit_la_unbatched($nn, $data, $X, $y
 tune!(suite)
 results = run(suite, verbose = true)
 
-BenchmarkTools.save("../../output.json", median(results))
+BenchmarkTools.save("test/benchmarks/output.json", median(results))
+
