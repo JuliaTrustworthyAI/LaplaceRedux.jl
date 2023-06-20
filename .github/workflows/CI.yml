@@ -43,6 +43,8 @@ jobs:
         run: |
           cd test/benchmarks
           julia --project --color=yes -e '
+            import Pkg; 
+            Pkg.add("LaplaceRedux");
             include("BenchmarkFit.jl")'
 
       - name: Store benchmark result
