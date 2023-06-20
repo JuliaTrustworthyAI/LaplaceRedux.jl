@@ -1,4 +1,4 @@
-using LaplaceRedux.Curvature: Kron, KronDecomposed, decompose, detblock, det
+using LaplaceRedux.Curvature: Kron, KronDecomposed, decompose, logdetblock, logdet, det
 using LinearAlgebra
 
 @testset "Decomposition, scaling" begin
@@ -25,14 +25,12 @@ end
     @test 9 + KD == KD + 9
 end
 
-@testset "Determinant" begin
+@testset "Determinant & log-determinant" begin
     block = ([-1 0; 0 2], [3 0; 0 4])
     K = Kron([block, 2 .* block])
     delta = d = 3
     KD = decompose(K) + delta
-    det_1 = detblock(KD[1], delta)
-    det_2 = detblock(KD[2], delta)
-    @test det_1 == 2 * (3 + 4) + 4d
-    @test det_2 == (2^2) * 2 * (3 + 4) + 4d
-    @test det(KD) == det_1 + det_2
+    det_1 = exp(logdetblock(KD[1], delta))
+    det_2 = exp(logdetblock(KD[2], delta))
+    @test det(KD) ≈ det_1 * det_2
 end

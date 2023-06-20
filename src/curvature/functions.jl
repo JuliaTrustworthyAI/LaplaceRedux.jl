@@ -443,13 +443,32 @@ end
 (+)(delta::Number, K::KronDecomposed) = (+)(K::KronDecomposed, delta::Number)
 (*)(scalar::Number, K::KronDecomposed) = (*)(K::KronDecomposed, scalar::Number)
 
-function detblock(block::Tuple{Eigen,Eigen}, delta::Number)
+"""
+    logdetblock(block::Tuple{Eigen,Eigen}, delta::Number)
+
+Log-determinant of a block in KronDecomposed, shifted by delta by on the diagonal.
+"""
+function logdetblock(block::Tuple{Eigen,Eigen}, delta::Number)
     L1, L2 = block[1].values, block[2].values
-    return sum(L1 * transpose(L2) .+ delta)
+    return sum(log(L1 * transpose(L2) .+ delta))
 end
 
+"""
+    logdet(K::KronDecomposed)
+
+Log-determinant of the KronDecomposed block-diagonal matrix, as the product of the determinants of the blocks
+"""
+function logdet(K::KronDecomposed)
+    return sum(b -> logdetblock(b, K.delta), K.kfacs)
+end
+
+"""
+    det(K::KronDecomposed)
+
+Log-determinant of the KronDecomposed block-diagonal matrix, as the exponentiated log-determinant.
+"""
 function det(K::KronDecomposed)
-    return sum(b -> detblock(b, K.delta), K.kfacs)
+    return exp(logdet(K))
 end
 
 """
