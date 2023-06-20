@@ -5,6 +5,12 @@ using Flux.Optimisers: destructure
 using LinearAlgebra
 using MLUtils
 
+"""
+Compile-time copy-paste macro @def: a macro that creates a macro with the specified name and content,
+which is then immediately applied to the code.
+
+Ref: https://www.stochasticlifestyle.com/type-dispatch-design-post-object-oriented-programming-julia/
+"""
 macro def(name, definition)
     return quote
         macro $(esc(name))()
@@ -300,7 +306,6 @@ end
 functional_variance(la::Laplace,𝐉)
 
 Compute the linearized GLM predictive variance as `𝐉ₙΣ𝐉ₙ'` where `𝐉=∇f(x;θ)|θ̂` is the Jacobian evaluated at the MAP estimate and `Σ = P⁻¹`.
-
 """
 function functional_variance(la::Laplace, 𝐉)
     Σ = posterior_covariance(la)
@@ -308,10 +313,21 @@ function functional_variance(la::Laplace, 𝐉)
     return fvar
 end
 
+"""
+functional_variance(la::KronLaplace, 𝐉::Matrix)
+
+Compute functional variance for the GLM predictive: as the diagonal of the K×K predictive output covariance matrix 𝐉𝐏⁻¹𝐉ᵀ,
+where K is the number of outputs, 𝐏 is the posterior precision, and 𝐉 is the Jacobian of model output `𝐉=∇f(x;θ)|θ̂`.
+"""
 function functional_variance(la::KronLaplace, 𝐉::Matrix)
     return diag(inv_square_form(la.P, 𝐉))
 end
 
+"""
+function inv_square_form(K::KronDecomposed, W::Matrix)
+
+Special function to compute the inverse square form 𝐉𝐏⁻¹𝐉ᵀ (or 𝐖𝐊⁻¹𝐖ᵀ)
+"""
 function inv_square_form(K::KronDecomposed, W::Matrix)
     SW = mm(K, W; exponent=-1)
     return W * SW'

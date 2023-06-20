@@ -480,21 +480,30 @@ function mm(K::KronDecomposed, W; exponent::Number=-1)
     cur_idx = 1
 
     @assert length(size(W)) == 2
+    # If W is the Jacobian matrix of classifier NN output, then 
+    # k - the number of classes 
+    # p - number of params
     k, p = size(W)
     M = []
     for block in K.kfacs
+        # Iterate block by block, compute the multiplication of this block
+        # with the corresponding slice of W, -- the products are independent by block.
         Q1, Q2 = block[1].vectors, block[2].vectors
         L1, L2 = block[1].values, block[2].values
-        # NOTE: order of factors is reversed, like in laplace-torch, (G,A instead of A,G)
-        # NOTE: should this not be the other way?
+        # NOTE: Order of factors is reversed, like in laplace-torch, (G,A instead of A,G)
+        # NOTE: Should this not be the other way?
         p_in = length(L1)
         p_out = length(L2)
         sz = p_in * p_out
 
+        # TODO: find a reference to the derivations
         ldelta_exp = (L1 * transpose(L2) .+ K.delta) .^ exponent
 
-        # NOTE: there may be a better way to translate the operation
         W_p = reshape(W[:, cur_idx:(cur_idx + sz - 1)], k, p_in, p_out)
+        # This code closely mimics the laplace-torch Python counter-part (KronDecomposed._bmm),
+        # however, there may be a better way to translate the operation.
+        # Julia matrices are col-major, Numpy & Pytorch matrices are row-major,
+        # hence the awkward permutedims.
         W_p = permutedims(
             stack([
                 Q1 * ((transpose(Q1) * W_p[i, :, :] * Q2) .* ldelta_exp) * transpose(Q2) for
@@ -505,8 +514,10 @@ function mm(K::KronDecomposed, W; exponent::Number=-1)
         W_p = reshape(W_p, k, sz)
         push!(M, W_p)
 
+        # Slide the pointer forward by the size of the block
         cur_idx += sz
     end
+    # The by-block products are concatenated to the full product.
     M = reduce(hcat, M)
     return M
 end
