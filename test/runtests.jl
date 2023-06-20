@@ -1,6 +1,5 @@
 using LaplaceRedux
 using Test
-using Pkg: Pkg
 
 @testset "LaplaceRedux.jl" begin
     @testset "Data" begin
