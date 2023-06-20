@@ -131,6 +131,7 @@ jobs:
           julia  -e 'import Pkg; Pkg.add("Printf")'
           julia  -e 'import Pkg; Pkg.add("BenchmarkTools")'
           julia  -e 'import Pkg; Pkg.add("Tullio")'
+          julia  -e 'import Pkg; Pkg.resolve()'
           cd test/benchmarks
           julia --project --color=yes -e '
             using Pkg;
