@@ -42,9 +42,22 @@ jobs:
       - name: Run benchmark
         run: |
           cd test/benchmarks
+          julia  -e 'import Pkg; Pkg.add("LaplaceRedux")'
+          julia  -e 'import Pkg; Pkg.add("Flux")'
+          julia  -e 'import Pkg; Pkg.add("Plots")'
+          julia  -e 'import Pkg; Pkg.add("OneHotArrays")'
+          julia  -e 'import Pkg; Pkg.add("MLUtils")'
+          julia  -e 'import Pkg; Pkg.add("FLoops")'
+          julia  -e 'import Pkg; Pkg.add("StatsBase")'
+          julia  -e 'import Pkg; Pkg.add("SortingAlgorithms")'
+          julia  -e 'import Pkg; Pkg.add("MLStyle")'
+          julia  -e 'import Pkg; Pkg.add("Zygote")'
+          julia  -e 'import Pkg; Pkg.add("Printf")'
+          julia  -e 'import Pkg; Pkg.add("BenchmarkTools")'
+          julia  -e 'import Pkg; Pkg.add("Tullio")'
           julia --project --color=yes -e '
-            import Pkg; 
-            Pkg.add("LaplaceRedux");
+            using Pkg;
+            Pkg.instantiate();
             include("BenchmarkFit.jl")'
 
       - name: Store benchmark result
