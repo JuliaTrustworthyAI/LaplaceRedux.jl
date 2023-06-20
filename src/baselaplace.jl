@@ -1,7 +1,9 @@
 using LinearAlgebra
 
-"Abstract base type of Laplace Approximation."
+"Abstract base type for all Laplace approximations in this library"
 abstract type BaseLaplace end
+# NOTE: all subclasses implemented are parametric.
+# If functional LA is implemented, it may make sense to add another layer of interface-inheritance
 
 """
     outdim(la::BaseLaplace)
@@ -32,11 +34,15 @@ function get_params(la::BaseLaplace)
     params = Flux.params(nn)
     n_elements = length(params)
     if la.subset_of_weights == :all || la.subset_of_weights == :subnetwork
-        params = [θ for θ in params]                                         # get all parameters and constants in logitbinarycrossentropy
-    elseif la.subset_of_weights == :last_layer                               # only get last layer parameters and constants
-        params = [params[n_elements - 1], params[n_elements]]                # params[n_elements-1] is the weight matrix of the last layer  
+        # get all parameters and constants in logitbinarycrossentropy
+        params = [θ for θ in params]
+    elseif la.subset_of_weights == :last_layer
+        # Only get last layer parameters:
+        # params[n_elements] is the bias vector of the last layer
+        # params[n_elements-1] is the weight matrix of the last layer
+        params = [params[n_elements - 1], params[n_elements]]
     end
-    return params                                                            # params[n_elements] is the bias vector of the last layer
+    return params
 end
 
 @doc raw"""
