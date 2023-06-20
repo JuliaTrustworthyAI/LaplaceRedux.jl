@@ -44,7 +44,8 @@ jobs:
           cd test/benchmarks
           julia --project --color=yes -e '
             using Pkg;
-            Pkg.instantiate();
+            Pkg.activate(".");
+            Pkg.resolve();
             include("BenchmarkFit.jl")'
 
       - name: Store benchmark result
