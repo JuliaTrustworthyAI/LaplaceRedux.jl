@@ -45,6 +45,7 @@ jobs:
           julia --project --color=yes -e '
             using Pkg;
             Pkg.activate(".");
+            Pkg.Registry.update();
             Pkg.resolve();
             include("BenchmarkFit.jl")'
 
