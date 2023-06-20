@@ -32,6 +32,33 @@ mutable struct LaplaceApproximation{B,F,O,L} <: MLJFlux.MLJFluxProbabilistic
     la::Union{Nothing,Laplace}
 end
 
+"""
+LaplaceApproximation(;
+builder::B,
+finaliser::F,
+optimiser::O,
+loss::L,
+epochs::Int,
+batch_size::Int,
+lambda::Float64,
+alpha::Float64,
+rng::Union{AbstractRNG,Int64},
+optimiser_changes_trigger_retraining::Bool,
+acceleration::AbstractResource,
+likelihood::Symbol,
+subset_of_weights::Symbol,
+subnetwork_indices::Vector{Vector{Int}},
+hessian_structure::Symbol,
+backend::Symbol,
+σ::Float64,
+μ₀::Float64,
+P₀::Union{AbstractMatrix,UniformScaling},
+link_approx::Symbol,
+fit_params::Dict{Symbol,Any},
+) where {B,F,O,L}
+
+Constructor for LaplaceApproximation, a wrapper for Laplace, a bayesian deep learning model.
+"""
 function LaplaceApproximation(;
     builder::B=MLJFlux.MLP(; hidden=(32, 32, 32), σ=Flux.swish),
     finaliser::F=Flux.softmax,
@@ -90,7 +117,9 @@ function MLJFlux.shape(model::LaplaceApproximation, X, y)
 end
 
 function MLJFlux.build(model::LaplaceApproximation, rng, shape)
+    # Construct the chain
     chain = Flux.Chain(MLJFlux.build(model.builder, rng, shape...), model.finaliser)
+    # Construct Laplace model and store it in the model object
     model.la = Laplace(
         chain;
         likelihood=model.likelihood,
@@ -146,6 +175,8 @@ function MLJFlux.fit!(
     n_batches = length(y)
 
     parameters = Flux.params(chain)
+
+    # initial loss:
     losses = (
         loss(chain(X[i]), y[i]) + penalty(parameters) / n_batches for i in 1:n_batches
     )
@@ -162,8 +193,8 @@ function MLJFlux.fit!(
 
     la = model.la
 
+    # fit the Laplace model:
     fit!(la, zip(X, y); model.fit_params...)
-
     optimize_prior!(la; verbose=false, n_steps=100)
 
     model.la = la
@@ -231,13 +262,16 @@ end
 
 function MMI.predict(model::LaplaceApproximation, fitresult, Xnew)
     chain, la, levels = fitresult
+    # re-format Xnew into acceptable input for Laplace:
     X = MLJFlux.reformat(Xnew)
+    # predict using Laplace:
     probs = vcat(
         [
             predict(la, MLJFlux.tomat(X[:, i]); link_approx=model.link_approx)' for
             i in 1:size(X, 2)
         ]...,
     )
+    # return a UnivariateFinite:
     return MMI.UnivariateFinite(levels, probs)
 end
 
