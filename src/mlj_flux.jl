@@ -29,7 +29,7 @@ mutable struct LaplaceApproximation{B,F,O,L} <: MLJFlux.MLJFluxProbabilistic
     P₀::Union{AbstractMatrix,UniformScaling}
     link_approx::Symbol
     fit_params::Dict{Symbol,Any}
-    la::Union{Nothing,Laplace}
+    la::Union{Nothing,BaseLaplace}
 end
 
 """
@@ -271,8 +271,14 @@ function MMI.predict(model::LaplaceApproximation, fitresult, Xnew)
             i in 1:size(X, 2)
         ]...,
     )
-    # return a UnivariateFinite:
-    return MMI.UnivariateFinite(levels, probs)
+    if la.likelihood == :classification
+        # return a UnivariateFinite:
+        return MMI.UnivariateFinite(levels, probs)
+    end
+    if la.likelihood == :regression
+        # return a UnivariateNormal:
+        return MMI.UnivariateNormal(probs[1], sqrt(probs[2]))
+    end
 end
 
 function _isdefined(object, name)
@@ -323,7 +329,11 @@ end
 
 MMI.metadata_model(
     LaplaceApproximation;
-    input=Union{AbstractMatrix{MMI.Continuous},MMI.Table(MMI.Continuous)},
+    input=Union{
+        AbstractMatrix{MMI.Continuous},
+        MMI.Table(MMI.Continuous),
+        MMI.Table{AbstractVector{MMI.Continuous}},
+    },
     target=Union{
         AbstractArray{MMI.Finite},
         AbstractArray{MMI.Continuous},

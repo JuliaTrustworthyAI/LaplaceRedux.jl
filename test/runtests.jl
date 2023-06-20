@@ -15,6 +15,14 @@ using Pkg: Pkg
         include("laplace.jl")
     end
 
+    @testset "Kron" begin
+        include("kron.jl")
+    end
+
+    @testset "KronDecomposed" begin
+        include("krondecomposed.jl")
+    end
+
     @testset "MLJFlux" begin
         include("mlj_flux_interfacing.jl")
     end
