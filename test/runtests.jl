@@ -1,5 +1,6 @@
 using LaplaceRedux
 using Test
+using Pkg: Pkg
 
 @testset "LaplaceRedux.jl" begin
     @testset "Data" begin
@@ -12,5 +13,9 @@ using Test
 
     @testset "Laplace" begin
         include("laplace.jl")
+    end
+
+    @testset "MLJFlux" begin
+        include("mlj_flux_interfacing.jl")
     end
 end

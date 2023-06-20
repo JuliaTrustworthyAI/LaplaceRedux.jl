@@ -137,7 +137,6 @@ Compute the full GGN for batch of inputs-outputs, with the batch dimension at th
 """
 function full_batched(curvature::GGN, d::Tuple)
     x, y = d
-
     loss = curvature.factor * curvature.loss_fun(x, y)
 
     𝐉, fμ = jacobians_batched(curvature, x)

@@ -32,7 +32,7 @@ mutable struct LaplaceApproximation{B,F,O,L} <: MLJFlux.MLJFluxProbabilistic
     la::Union{Nothing,Laplace}
 end
 
-function LaplaceApproximation(
+function LaplaceApproximation(;
     builder::B=MLJFlux.MLP(; hidden=(32, 32, 32), σ=Flux.swish),
     finaliser::F=Flux.softmax,
     optimiser::O=Flux.Optimise.Adam(),
@@ -162,11 +162,7 @@ function MLJFlux.fit!(
 
     la = model.la
 
-    if (model.batch_size > 1)
-        fit!(la, DataLoader((X, y); batchsize=model.batch_size); model.fit_params...)
-    else
-        fit!(la, zip(X, y); model.fit_params...)
-    end
+    fit!(la, zip(X, y); model.fit_params...)
 
     optimize_prior!(la; verbose=false, n_steps=100)
 
@@ -236,14 +232,69 @@ end
 function MMI.predict(model::LaplaceApproximation, fitresult, Xnew)
     chain, la, levels = fitresult
     X = MLJFlux.reformat(Xnew)
-    println(X)
-    probs = vcat([predict(la, MLJFlux.tomat(X[:, i]); link_approx=model.link_approx)' for i in 1:size(X, 2)]...)
+    probs = vcat(
+        [
+            predict(la, MLJFlux.tomat(X[:, i]); link_approx=model.link_approx)' for
+            i in 1:size(X, 2)
+        ]...,
+    )
     return MMI.UnivariateFinite(levels, probs)
+end
+
+function _isdefined(object, name)
+    pnames = propertynames(object)
+    fnames = fieldnames(typeof(object))
+    name in pnames && !(name in fnames) && return true
+    return isdefined(object, name)
+end
+
+function _equal_to_depth_one(x1, x2)
+    names = propertynames(x1)
+    names === propertynames(x2) || return false
+    for name in names
+        getproperty(x1, name) == getproperty(x2, name) || return false
+    end
+    return true
+end
+
+function MMI.is_same_except(
+    m1::M1, m2::M2, exceptions::Symbol...
+) where {M1<:LaplaceApproximation,M2<:LaplaceApproximation}
+    typeof(m1) === typeof(m2) || return false
+    names = propertynames(m1)
+    propertynames(m2) === names || return false
+
+    for name in names
+        if !(name in exceptions) && name != :la
+            if !_isdefined(m1, name)
+                !_isdefined(m2, name) || return false
+            elseif _isdefined(m2, name)
+                if name in MLJFlux.deep_properties(M1)
+                    _equal_to_depth_one(getproperty(m1, name), getproperty(m2, name)) ||
+                        return false
+                else
+                    (
+                        MMI.is_same_except(getproperty(m1, name), getproperty(m2, name)) ||
+                        getproperty(m1, name) isa AbstractRNG ||
+                        getproperty(m2, name) isa AbstractRNG
+                    ) || return false
+                end
+            else
+                return false
+            end
+        end
+    end
+    return true
 end
 
 MMI.metadata_model(
     LaplaceApproximation;
-    input=Union{AbstractArray,MMI.Table(MMI.Continuous)},
-    target=Union{AbstractArray{<:MMI.Finite},AbstractArray{<:MMI.Continuous}},
+    input=Union{AbstractMatrix{MMI.Continuous},MMI.Table(MMI.Continuous)},
+    target=Union{
+        AbstractArray{MMI.Finite},
+        AbstractArray{MMI.Continuous},
+        AbstractVector{MMI.Finite},
+        AbstractVector{MMI.Continuous},
+    },
     path="MLJFlux.LaplaceApproximation",
 )
