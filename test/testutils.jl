@@ -11,7 +11,7 @@ using DelimitedFiles
 
 Random.seed!(42)
 
-function readHessianCSV(filename::String)
+function read_hessian_csv(filename::String)
     # Specify the file path relative to the current directory
     file_path = joinpath(@__DIR__, "datafiles\\" * filename * ".csv")
 
@@ -24,18 +24,18 @@ function readHessianCSV(filename::String)
     return matrix
 end
 
-function rearrangeHessian(h::Matrix{Float64}, nn::Chain)
+function rearrange_hessian(h::Matrix{Float64}, nn::Chain)
 
     to_row_order(h, nn) = h[gen_mapping_sq(Flux.params(nn))]
 
     return to_row_order(h, nn)
 end
 
-function rearrangeHessianLastLayer(h::Matrix{Float64}, nn::Chain)
+function rearrange_hessian_last_layer(h::Matrix{Float64}, nn::Chain)
     ps = [p for p in Flux.params(nn)]
     M = length(ps[end])
     N = length(ps[end-1])
-    return h[:, end-M-N:end][gen_mapping_sq(ps[end-1:end])]
+    return h[:, end-M-N+1:end][gen_mapping_sq(ps[end-1:end])]
 end
 
 function gen_mapping_sq(params)::Array{Tuple{Int64, Int64}}
