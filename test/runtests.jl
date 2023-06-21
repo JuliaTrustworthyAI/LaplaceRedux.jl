@@ -13,4 +13,8 @@ using Test
     @testset "Laplace" begin
         include("laplace.jl")
     end
+
+    @testset "PyTorch Comparisons" begin
+        include("pytorch_comparison.jl")
+    end
 end
