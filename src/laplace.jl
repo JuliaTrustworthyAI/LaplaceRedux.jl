@@ -281,9 +281,7 @@ function _fit!(
     # NOTE: the fitting process is structured differently for Kronecker-factored methods
     # to avoid allocation, initialisation & interleaving overhead
     # Thus the loss, Hessian, and data size is computed not in a loop but in a separate function.
-    loss, H, n_data = Curvature.kron(
-        la.curvature, la.subset_of_weights, data; batched=batched
-    )
+    loss, H, n_data = Curvature.kron(la.curvature, data; batched=batched)
 
     la.loss = loss
     la.H = H
@@ -337,7 +335,7 @@ end
 
 # Posterior predictions:
 """
-predict(la::Laplace, X::AbstractArray; link_approx=:probit)
+predict(la::BaseLaplace, X::AbstractArray; link_approx=:probit)
 
 Computes predictions from Bayesian neural network.
 # Examples
@@ -383,6 +381,16 @@ function predict(la::BaseLaplace, X::AbstractArray; link_approx=:probit)
 
         return p
     end
+end
+
+"""
+Compute predictive posteriors for a batch of inputs.
+
+Note, input is assumed to be batched only if it is a matrix.
+If the input dimensionality of the model is 1 (a vector), one should still prepare a 1×B matrix batch as input.
+"""
+function predict(la::BaseLaplace, X::Matrix; link_approx=:probit)
+    return stack([predict(la, X[:, i]; link_approx=link_approx) for i in 1:size(X, 2)])
 end
 
 """
