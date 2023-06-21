@@ -5,7 +5,19 @@ using Flux
 
 Helper function to choose loss function based on specified model `likelihood`.
 """
-function get_loss_fun(likelihood::Symbol, model::Chain)
+function get_loss_fun(likelihood::Symbol, model::Chain)::Function
+    loss_type = get_loss_type(likelihood, model)
+    flux_loss = getfield(Flux.Losses, loss_type)
+
+    return flux_loss
+end
+
+"""
+    get_loss_type(likelihood::Symbol)
+
+Choose loss function type based on specified model `likelihood`.
+"""
+function get_loss_type(likelihood::Symbol, model::Chain)::Symbol
     if likelihood == :regression
         loss_type = :mse
     else
@@ -15,11 +27,7 @@ function get_loss_fun(likelihood::Symbol, model::Chain)
             loss_type = :logitcrossentropy                              # where the formula for logit cross entropy is LCE = -sum(yᵢ * log(softmax(z)ᵢ))
         end                                                             # and yᵢ is the true probability of the i-th class, z is the vector of logits
     end
-
-    # agg=sum for summative batching    
-    loss(x, ytrue; agg=sum) = getfield(Flux.Losses, loss_type)(model(x), ytrue; agg=agg)
-
-    return loss
+    return loss_type
 end
 
 """ 
@@ -28,6 +36,6 @@ end
 Helper function to determine the output dimension of a `Flux.Chain`,
 corresponding to the number of neurons on the last layer of the NN.
 """
-function outdim(model::Chain)
+function outdim(model::Chain)::Number
     return [size(p) for p in Flux.params(model)][end][1]
 end
