@@ -17,7 +17,7 @@ using Test
     @testset "PyTorch Comparisons" begin
         include("pytorch_comparison.jl")
     end
-    
+
     @testset "Kron" begin
         include("kron.jl")
     end
