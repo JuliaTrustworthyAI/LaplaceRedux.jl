@@ -23,6 +23,8 @@ function jacobians(curvature::CurvatureInterface, X::AbstractArray)
     nn = curvature.model
     # Output:
     ŷ = nn(X)
+    # Convert ŷ to a vector
+    ŷ = vec(ŷ)
     # Jacobian:
     # Differentiate f with regards to the model parameters
     𝐉 = jacobian(() -> nn(X), Flux.params(nn))

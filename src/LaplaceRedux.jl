@@ -19,6 +19,9 @@ export Laplace,
     posterior_covariance,
     posterior_precision
 
+include("mlj_flux.jl")
+export LaplaceApproximation
+
 include("plotting.jl")
 
 end

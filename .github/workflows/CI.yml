@@ -118,6 +118,7 @@ jobs:
             ${{ runner.os }}-
       - name: Run benchmark
         run: |
+          cd test/benchmarks
           julia  -e 'import Pkg; Pkg.add("LaplaceRedux")'
           julia  -e 'import Pkg; Pkg.add("Flux")'
           julia  -e 'import Pkg; Pkg.add("Plots")'
@@ -131,10 +132,9 @@ jobs:
           julia  -e 'import Pkg; Pkg.add("Printf")'
           julia  -e 'import Pkg; Pkg.add("BenchmarkTools")'
           julia  -e 'import Pkg; Pkg.add("Tullio")'
-          cd test/benchmarks
           julia --project --color=yes -e '
             using Pkg;
-            Pkg.instantiate();
+            Pkg.resolve();
             include("BenchmarkFit.jl")'
 
       - name: Store benchmark result

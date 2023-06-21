@@ -162,6 +162,8 @@ function validate_subnetwork_indices(
     subnetwork_indices::Union{Nothing,Vector{Vector{Int}}}, params
 )
     @assert (subnetwork_indices !== nothing) "If `subset_of_weights` is `:subnetwork`, then `subnetwork_indices` should be a vector of vectors of integers."
+    # Check if subnetwork_indices is a vector containing an empty vector
+    @assert !(subnetwork_indices == [[]]) "If `subset_of_weights` is `:subnetwork`, then `subnetwork_indices` should be a vector of vectors of integers."
     # Initialise a set of vectors
     selected = Set{Vector{Int}}()
     for (i, index) in enumerate(subnetwork_indices)
