@@ -31,7 +31,7 @@ using LinearAlgebra
     @test_throws AssertionError Laplace(
         nn; likelihood=:classification, subset_of_weights=:subnetwork
     )
-    
+
     @testset "Subnetworks" begin
         include("subnetworks.jl")
     end

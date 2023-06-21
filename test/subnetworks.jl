@@ -4,7 +4,6 @@ using LaplaceRedux.Data
 using Flux
 
 @testset "Subnetwork Laplace" begin
-
     @testset "Incorrect Indices Errors" begin
         nn = Chain(Dense(2, 2, σ), Dense(2, 1))
         @test_throws AssertionError Laplace(
