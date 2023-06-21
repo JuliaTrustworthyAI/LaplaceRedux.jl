@@ -14,8 +14,10 @@ using Test
         include("laplace.jl")
     end
 
-    @testset "PyTorch Comparisons" begin
-        include("pytorch_comparison.jl")
+    if VERSION >= v"1.8.0"
+        @testset "PyTorch Comparisons" begin
+            include("pytorch_comparison.jl")
+        end
     end
 
     @testset "Kron" begin
