@@ -11,7 +11,7 @@ using DelimitedFiles
 
 Random.seed!(42)
 
-function read_hessian_csv(filename::String)
+function read_matrix_csv(filename::String)
     # Specify the file path relative to the current directory
     file_path = joinpath(@__DIR__, "datafiles", filename * ".csv")
 

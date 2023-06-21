@@ -36,7 +36,7 @@ include("testutils.jl")
                 backend=:GGN,
             )
             fit!(la, data)
-            pytorch_hessian = read_hessian_csv("hessian_multi_all_full_ggn")
+            pytorch_hessian = read_matrix_csv("hessian_multi_all_full_ggn")
             @test isapprox(pytorch_hessian, rearrange_hessian(la.H, nn); atol=0.0001)
         end
 
@@ -49,7 +49,7 @@ include("testutils.jl")
                 backend=:EmpiricalFisher,
             )
             fit!(la, data)
-            pytorch_hessian = read_hessian_csv("hessian_multi_all_full_empfisher")
+            pytorch_hessian = read_matrix_csv("hessian_multi_all_full_empfisher")
             @test isapprox(pytorch_hessian, rearrange_hessian(la.H, nn); atol=0.0001)
         end
 
@@ -62,7 +62,7 @@ include("testutils.jl")
                 backend=:EmpiricalFisher,
             )
             fit!(la, data)
-            pytorch_hessian = read_hessian_csv("hessian_multi_ll_full_empfisher")
+            pytorch_hessian = read_matrix_csv("hessian_multi_ll_full_empfisher")
             @test isapprox(
                 pytorch_hessian, rearrange_hessian_last_layer(la.H, nn); atol=0.0005
             )
@@ -77,7 +77,7 @@ include("testutils.jl")
                 backend=:GGN,
             )
             fit!(la, data)
-            pytorch_hessian = read_hessian_csv("hessian_multi_ll_full_ggn")
+            pytorch_hessian = read_matrix_csv("hessian_multi_ll_full_ggn")
             @test isapprox(
                 pytorch_hessian, rearrange_hessian_last_layer(la.H, nn); atol=0.0005
             )
@@ -102,7 +102,7 @@ include("testutils.jl")
                 backend=:GGN,
             )
             fit!(la, data)
-            pytorch_hessian = read_hessian_csv("hessian_multi_subnet_full_ggn")
+            pytorch_hessian = read_matrix_csv("hessian_multi_subnet_full_ggn")
             @test isapprox(pytorch_hessian, la.H; atol=0.0001)
         end
 
@@ -125,8 +125,34 @@ include("testutils.jl")
                 backend=:EmpiricalFisher,
             )
             fit!(la, data)
-            pytorch_hessian = read_hessian_csv("hessian_multi_subnet_full_empfisher")
+            pytorch_hessian = read_matrix_csv("hessian_multi_subnet_full_empfisher")
             @test isapprox(pytorch_hessian, la.H; atol=0.0001)
+        end
+
+        @testset "LA - full weights - kron - ggn" begin
+            la = Laplace(
+                nn;
+                likelihood=:classification,
+                hessian_structure=:kron,
+                subset_of_weights=:all,
+                backend=:GGN,
+            )
+            fit!(la, data)
+            pytorch_predictions = read_matrix_csv("predictions_multi_all_kron_ggn")
+            @test isapprox(pytorch_predictions, predict(la, X); atol=0.001)
+        end
+
+        @testset "LA - last layer - kron - ggn" begin
+            la = Laplace(
+                nn;
+                likelihood=:classification,
+                hessian_structure=:kron,
+                subset_of_weights=:last_layer,
+                backend=:GGN,
+            )
+            fit!(la, data)
+            pytorch_predictions = read_matrix_csv("predictions_multi_ll_kron_ggn")
+            @test isapprox(pytorch_predictions, predict(la, X); atol=0.001)
         end
     end
 
@@ -153,7 +179,7 @@ include("testutils.jl")
                 backend=:GGN,
             )
             fit!(la, data)
-            pytorch_hessian = read_hessian_csv("hessian_regression_all_full_ggn")
+            pytorch_hessian = read_matrix_csv("hessian_regression_all_full_ggn")
             @test isapprox(pytorch_hessian, la.H; atol=0.05)
         end
 
@@ -166,7 +192,7 @@ include("testutils.jl")
                 backend=:GGN,
             )
             fit!(la, data)
-            pytorch_hessian = read_hessian_csv("hessian_regression_ll_full_ggn")
+            pytorch_hessian = read_matrix_csv("hessian_regression_ll_full_ggn")
             @test isapprox(pytorch_hessian, la.H; atol=0.0005)
         end
 
@@ -182,7 +208,7 @@ include("testutils.jl")
                 backend=:GGN,
             )
             fit!(la, data)
-            pytorch_hessian = read_hessian_csv("hessian_regression_subnet_full_ggn")
+            pytorch_hessian = read_matrix_csv("hessian_regression_subnet_full_ggn")
             @test isapprox(pytorch_hessian, la.H; atol=0.01)
         end
     end
