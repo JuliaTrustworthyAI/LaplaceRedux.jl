@@ -18,8 +18,15 @@ Computes the Jacobian `∇f(x;θ)` where `f: ℝᴰ ↦ ℝᴷ`.
 The Jacobian function can be used to compute the Jacobian of any function that supports automatic differentiation. 
 Here, the nn function is wrapped in an anonymous function using the () -> syntax, which allows it to be differentiated using automatic differentiation.
 """
+function jacobians(curvature::CurvatureInterface, X::AbstractArray; batched::Bool=false)
+    if batched
+        return jacobians_batched(curvature, X)
+    else
+        return jacobians_unbatched(curvature, X)
+    end
+end
 
-function jacobians(curvature::CurvatureInterface, X::AbstractArray)
+function jacobians_unbatched(curvature::CurvatureInterface, X::AbstractArray)
     nn = curvature.model
     # Output:
     ŷ = nn(X)
@@ -296,9 +303,8 @@ end
 """
 Compute KFAC for the Fisher.
 """
-function kron(
-    curvature::Union{GGN,EmpiricalFisher}, subset_of_weights, data; batched::Bool=false
-)
+function kron(curvature::Union{GGN,EmpiricalFisher}, data; batched::Bool=false)
+    subset_of_weights = curvature.subset_of_weights
     @assert !isempty(data)
     @assert subset_of_weights != :subnetwork "Subnetwork Laplace requires a full or diagonal Hessian approximation!"
     # `d` is a zero-indexed array with layers sizes
