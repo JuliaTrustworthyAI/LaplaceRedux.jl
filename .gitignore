@@ -29,3 +29,7 @@ dev/artifacts/data/
 dev/resources/build
 /.quarto/
 .ipynb_checkpoints
+
+# Environments
+.venv
+myenv
