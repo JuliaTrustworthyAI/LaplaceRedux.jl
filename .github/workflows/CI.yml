@@ -118,7 +118,7 @@ jobs:
             ${{ runner.os }}-
       - name: Run benchmark
         run: |
-          cd test/benchmarks
+          cd benchmarks
           julia  -e 'import Pkg; Pkg.add("LaplaceRedux")'
           julia  -e 'import Pkg; Pkg.add("Flux")'
           julia  -e 'import Pkg; Pkg.add("Plots")'
@@ -142,7 +142,7 @@ jobs:
         with:
           name: Julia benchmark result
           tool: 'julia'
-          output-file-path: test/benchmarks/output.json
+          output-file-path: benchmarks/output.json
           # Use personal access token instead of GITHUB_TOKEN due to https://github.community/t/github-action-not-triggering-gh-pages-upon-push/16096
           github-token: ${{ secrets.GITHUB_TOKEN }}
           auto-push: true
