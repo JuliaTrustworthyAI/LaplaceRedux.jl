@@ -26,7 +26,7 @@ mutable struct LaplaceApproximation{B,F,O,L} <: MLJFlux.MLJFluxProbabilistic
     backend::Symbol
     σ::Real
     μ₀::Real
-    P₀::Union{AbstractMatrix,UniformScaling}
+    P₀::Union{AbstractMatrix,UniformScaling,Nothing}
     link_approx::Symbol
     fit_params::Dict{Symbol,Any}
     la::Union{Nothing,BaseLaplace}
@@ -78,11 +78,11 @@ function LaplaceApproximation(;
     backend::Symbol=:GGN,
     σ::Float64=1.0,
     μ₀::Float64=0.0,
-    P₀::Union{AbstractMatrix,UniformScaling}=UniformScaling(lambda),
+    P₀::Union{AbstractMatrix,UniformScaling,Nothing}=nothing,
     link_approx::Symbol=:probit,
     fit_params::Dict{Symbol,Any}=Dict{Symbol,Any}(:override => true),
 ) where {B,F,O,L}
-    return LaplaceApproximation(
+    model = LaplaceApproximation(
         builder,
         finaliser,
         optimiser,
@@ -106,6 +106,11 @@ function LaplaceApproximation(;
         fit_params,
         nothing,
     )
+
+    message = MMI.clean!(model)
+    isempty(message) || @warn message
+
+    return model
 end
 
 function MLJFlux.shape(model::LaplaceApproximation, X, y)
@@ -216,8 +221,8 @@ function MMI.clean!(model::LaplaceApproximation)
         warning *= "Need `epochs ≥ 0`. Resetting `epochs = 10`. "
         model.epochs = 10
     end
-    if model.batch_size < 0
-        warning *= "Need `batch_size ≥ 0`. Resetting `batch_size = 1`. "
+    if model.batch_size <= 0
+        warning *= "Need `batch_size > 0`. Resetting `batch_size = 1`. "
         model.batch_size = 1
     end
     if model.acceleration isa CUDALibs && gpu_isdead()

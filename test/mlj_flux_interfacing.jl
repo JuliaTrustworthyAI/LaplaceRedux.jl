@@ -6,13 +6,25 @@ using MLJFlux
 using Flux
 using StableRNGs
 
-function basictest(X, y, builder, optimiser, threshold, accel)
+function basictest(X, y, builder, optimiser, threshold)
     optimiser = deepcopy(optimiser)
 
     stable_rng = StableRNGs.StableRNG(123)
 
     model = LaplaceApproximation(;
-        builder=builder, optimiser=optimiser, acceleration=accel, rng=stable_rng
+        builder=builder,
+        optimiser=optimiser,
+        acceleration=CPUThreads(),
+        rng=stable_rng,
+        lambda=-1.0,
+        alpha=-1.0,
+        epochs=-1,
+        batch_size=-1,
+        likelihood=:incorrect,
+        subset_of_weights=:incorrect,
+        hessian_structure=:incorrect,
+        backend=:incorrect,
+        link_approx=:incorrect,
     )
 
     fitresult, cache, _report = MLJBase.fit(model, 0, X, y)
@@ -42,7 +54,7 @@ function basictest(X, y, builder, optimiser, threshold, accel)
 
     # start fresh with small epochs:
     model = LaplaceApproximation(;
-        builder=builder, optimiser=optimiser, epochs=2, acceleration=accel, rng=stable_rng
+        builder=builder, optimiser=optimiser, epochs=2, acceleration=CPU1(), rng=stable_rng
     )
 
     fitresult, cache, _report = MLJBase.fit(model, 0, X, y)
@@ -93,4 +105,4 @@ y = categorical(
 builder = MLJFlux.MLP(; hidden=(16, 8), σ=Flux.relu)
 optimizer = Flux.Optimise.Adam(0.03)
 
-@test basictest(X, y, builder, optimizer, 0.9, CPU1())
+@test basictest(X, y, builder, optimizer, 0.9)
