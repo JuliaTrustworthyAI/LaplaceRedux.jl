@@ -142,6 +142,7 @@ jobs:
         with:
           name: Julia benchmark result
           tool: 'julia'
+           gh-pages-branch: benchmarks
           output-file-path: benchmarks/output.json
           # Use personal access token instead of GITHUB_TOKEN due to https://github.community/t/github-action-not-triggering-gh-pages-upon-push/16096
           github-token: ${{ secrets.GITHUB_TOKEN }}
