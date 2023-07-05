@@ -12,11 +12,9 @@ import LinearAlgebra: det, logdet
 abstract type CurvatureInterface end
 
 """
-    jacobians(curvature::CurvatureInterface, X::AbstractArray)
+    jacobians(curvature::CurvatureInterface, X::AbstractArray; batched::Bool=false)
 
 Computes the Jacobian `∇f(x;θ)` where `f: ℝᴰ ↦ ℝᴷ`.
-The Jacobian function can be used to compute the Jacobian of any function that supports automatic differentiation. 
-Here, the nn function is wrapped in an anonymous function using the () -> syntax, which allows it to be differentiated using automatic differentiation.
 """
 function jacobians(curvature::CurvatureInterface, X::AbstractArray; batched::Bool=false)
     if batched
@@ -26,6 +24,12 @@ function jacobians(curvature::CurvatureInterface, X::AbstractArray; batched::Boo
     end
 end
 
+"""
+    jacobians_unbatched(curvature::CurvatureInterface, X::AbstractArray)
+
+Compute the Jacobian of the model output w.r.t. model parameters for the point X, without batching.
+Here, the nn function is wrapped in an anonymous function using the () -> syntax, which allows it to be differentiated using automatic differentiation.
+"""
 function jacobians_unbatched(curvature::CurvatureInterface, X::AbstractArray)
     nn = curvature.model
     # Output:
@@ -43,6 +47,11 @@ function jacobians_unbatched(curvature::CurvatureInterface, X::AbstractArray)
     return 𝐉, ŷ
 end
 
+"""
+    jacobians_batched(curvature::CurvatureInterface, X::AbstractArray)
+
+Compute Jacobians of the model output w.r.t. model parameters for points in X, with batching.
+"""
 function jacobians_batched(curvature::CurvatureInterface, X::AbstractArray)
     nn = curvature.model
     # Output:
@@ -77,7 +86,7 @@ function gradients(
     return 𝐠
 end
 
-"Constructor for Empirical Fisher."
+"Constructor for curvature approximated by Generalized Gauss-Newton."
 mutable struct GGN <: CurvatureInterface
     model::Any
     likelihood::Symbol
@@ -105,9 +114,9 @@ function GGN(
 end
 
 """
-    full(curvature::GGN, d::Union{Tuple,NamedTuple})
+    full(curvature::GGN, d::Tuple; batched::Bool=false)
 
-Compute the full GGN.
+Compute the full GGN, for either a single input-output datapoint or a batch of such. 
 """
 function full(curvature::GGN, d::Tuple; batched::Bool=false)
     if batched
@@ -118,7 +127,7 @@ function full(curvature::GGN, d::Tuple; batched::Bool=false)
 end
 
 """
-    full(curvature::GGN, d::Union{Tuple,NamedTuple})
+    full_unbatched(curvature::GGN, d::Tuple)
 
 Compute the full GGN for a singular input-ouput datapoint. 
 """
@@ -142,7 +151,7 @@ function full_unbatched(curvature::GGN, d::Tuple)
 end
 
 """
-    full(curvature::GGN, d::Union{Tuple,NamedTuple})
+    full_batched(curvature::GGN, d::Tuple)
 
 Compute the full GGN for batch of inputs-outputs, with the batch dimension at the end.
 """
@@ -168,7 +177,7 @@ function full_batched(curvature::GGN, d::Tuple)
     return loss, H
 end
 
-"Constructor for Empirical Fisher."
+"Constructor for curvature approximated by empirical Fisher."
 mutable struct EmpiricalFisher <: CurvatureInterface
     model::Any
     likelihood::Symbol
@@ -196,9 +205,9 @@ function EmpiricalFisher(
 end
 
 """
-    full(curvature::EmpiricalFisher, d::Union{Tuple,NamedTuple})
+    full(curvature::EmpiricalFisher, d::Tuple; batched::Bool=false)
 
-Compute the full empirical Fisher for a singular input-ouput datapoint. 
+Compute the full empirical Fisher for either a single input-output datapoint or a batch of such. 
 """
 function full(curvature::EmpiricalFisher, d::Tuple; batched::Bool=false)
     if batched
@@ -209,9 +218,9 @@ function full(curvature::EmpiricalFisher, d::Tuple; batched::Bool=false)
 end
 
 """
-    full(curvature::EmpiricalFisher, d::Union{Tuple,NamedTuple})
+    full_unbatched(curvature::EmpiricalFisher, d::Tuple)
 
-Compute the full empirical Fisher for batch of inputs-outputs, with the batch dimension at the end.
+Compute the full empirical Fisher for a single datapoint.
 """
 function full_unbatched(curvature::EmpiricalFisher, d::Tuple)
     x, y = d
@@ -233,6 +242,11 @@ function full_unbatched(curvature::EmpiricalFisher, d::Tuple)
     return loss, H
 end
 
+"""
+    full_batched(curvature::EmpiricalFisher, d::Tuple)
+
+Compute the full empirical Fisher for batch of inputs-outputs, with the batch dimension at the end.
+"""
 function full_batched(curvature::EmpiricalFisher, d::Tuple)
     x, y = d
 
@@ -255,7 +269,7 @@ function full_batched(curvature::EmpiricalFisher, d::Tuple)
 end
 
 """
-Macro for zero-based indexing. Example usage: (@zb A[0]) = ...
+Macro for zero-based indexing. Example of usage: (@zb A[0]) = ...
 """
 macro zb(expr)
     if expr.head == :ref
@@ -266,10 +280,17 @@ macro zb(expr)
     end
 end
 
+"""
+Kronecker-factored approximate curvature representation for a neural network model.
+Each element in kfacs represents two Kronecker factors (𝐆, 𝐀), such that the full block Hessian approximation would be approximated as 𝐀⊗𝐆.
+"""
 struct Kron
     kfacs::Vector{Tuple{AbstractArray,AbstractArray}}
 end
 
+"""
+Kronecker-factored curvature sum.
+"""
 function (+)(l::Kron, r::Kron)
     @assert length(l.kfacs) == length(r.kfacs)
     kfacs = [
@@ -278,18 +299,28 @@ function (+)(l::Kron, r::Kron)
     return Kron(kfacs)
 end
 
+"""
+Kronecker-factored curvature equality.
+"""
 function (==)(l::Kron, r::Kron)
     return l.kfacs == r.kfacs
 end
 
+"""
+Kronecker-factored curvature scalar scaling.
+"""
 function (*)(l::Real, r::Kron)
     kfacs = [Tuple(^(l, 1 / length(F)) * Hi for Hi in F) for F in r.kfacs]
     return Kron(kfacs)
 end
 
+# Commutative operation
 (*)(l::Kron, r::Real) = (*)(r, l)
 
-function getindex(K::Kron, i::Int)
+"""
+Get Kronecker-factored block represenation.
+"""
+function getindex(K::Kron, i::Int)::Tuple{AbstractArray,AbstractArray}
     return K.kfacs[i]
 end
 
@@ -301,7 +332,10 @@ function interleave(iters...)
 end
 
 """
-Compute KFAC for the Fisher.
+Compute the eigendecomposed Kronecker-factored approximate curvature as the Fisher information matrix.
+
+Note, since the network predictive distribution is used in a weighted sum, and the number of backward
+passes is linear in the number of target classes, e.g. 100 for CIFAR-100.
 """
 function kron(curvature::Union{GGN,EmpiricalFisher}, data; batched::Bool=false)
     subset_of_weights = curvature.subset_of_weights
@@ -332,7 +366,7 @@ function kron(curvature::Union{GGN,EmpiricalFisher}, data; batched::Bool=false)
     G_exp_b = [zeros(double(@zb d_zb[i])) for i in initial_layer:n_layers]
     A_exp_zb = [zeros(double(@zb d_zb[i])) for i in (initial_layer - 1):(n_layers - 1)]
 
-    # The data iterator is modelled lazily, so the number of samples is counted.
+    # The data iterator is modeled lazily, so the number of samples is counted.
     n_data = 0
 
     for x_n in xs
@@ -389,6 +423,12 @@ function kron(curvature::Union{GGN,EmpiricalFisher}, data; batched::Bool=false)
     return loss, decomposed, n_data
 end
 
+"""
+Decomposed Kronecker-factored approximate curvature representation for a neural network model.
+
+Decomposition is required to add the prior (diagonal matrix) to the posterior (`KronDecomposed`).
+It also has the benefits of reducing the costs for computation of inverses and log-determinants.
+"""
 struct KronDecomposed
     # TODO union types
     # kfacs :: Union{Vector{Tuple{AbstractArray, AbstractArray}},Vector{Matrix},Nothing}
@@ -397,6 +437,12 @@ struct KronDecomposed
     delta::Number
 end
 
+"""
+Clamp eigenvalues in an eigendecomposition to be non-negative.
+
+Since the Fisher information matrix is a positive-semidefinite by construction, the (near-zero) negative
+eigenvalues should be neglected.
+"""
 function clamp(eig::Eigen)
     return Eigen(max.(0, eig.values), eig.vectors)
 end
@@ -439,10 +485,16 @@ function (*)(K::KronDecomposed, scalar::Number)
     )
 end
 
+"""
+Number of blocks in a Kronecker-factored curvature.
+"""
 function (length)(K::KronDecomposed)
     return length(K.kfacs)
 end
 
+"""
+Get i-th block of a a Kronecker-factored curvature.
+"""
 function getindex(K::KronDecomposed, i::Int)
     return K.kfacs[i]
 end
