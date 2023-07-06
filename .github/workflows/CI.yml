@@ -50,7 +50,7 @@ jobs:
         version:
           - '1.7'
           - '1.8'
-          - '~1.9.0-0'
+          - '1.9'
         os:
           - ubuntu-latest
           - windows-latest
@@ -90,3 +90,23 @@ jobs:
       - uses: codecov/codecov-action@v2
         with:
           files: lcov.info
+  docs:
+    name: Documentation
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v2
+      - uses: julia-actions/setup-julia@v1
+        with:
+          version: '1'
+      - uses: julia-actions/julia-buildpkg@v1
+      - uses: julia-actions/julia-docdeploy@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - run: |
+          julia --project=docs -e '
+            using Documenter: DocMeta, doctest
+            using LaplaceRedux
+            DocMeta.setdocmeta!(LaplaceRedux, :DocTestSetup, :(using LaplaceRedux); recursive=true)
+            doctest(LaplaceRedux)'
