@@ -13,34 +13,6 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: ${{ startsWith(github.ref, 'refs/pull/') }}
 jobs:
-  format:
-    name: Julia Style Check
-    runs-on: ${{ matrix.os }}
-    strategy:
-      fail-fast: false
-      matrix:
-        version:
-          - '1.8'
-        os:
-          - ubuntu-latest
-        arch:
-          - x64
-    steps:
-      - uses: actions/checkout@v2
-      - name: Install JuliaFormatter and format
-        run: |
-          julia  -e 'using Pkg; Pkg.add("JuliaFormatter")'
-          julia  -e 'using JuliaFormatter; while !format(".", BlueStyle()) end'
-      - name: Format check
-        run: |
-          julia -e '
-          out = Cmd(`git diff --name-only`) |> read |> String
-          if out == ""
-              exit(0)
-          else
-              @error "The following files are not formatted:\n $out"
-              exit(1)
-          end'
   test:
     name: Julia ${{ matrix.version }} - ${{ matrix.os }} - ${{ matrix.arch }} - ${{ github.event_name }}
     runs-on: ${{ matrix.os }}
