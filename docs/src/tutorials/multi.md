@@ -1,9 +1,4 @@
-
-``` @meta
-CurrentModule = LaplaceRedux
-```
-
-## Multi-class problem
+# Multi-class problem
 
 ``` julia
 using LaplaceRedux.Data
@@ -51,7 +46,7 @@ end
 ``` julia
 la = Laplace(nn; likelihood=:classification)
 fit!(la, data)
-optimize_prior!(la; verbose=true, n_steps=1000)
+optimize_prior!(la; verbose=true, n_steps=100)
 ```
 
 ``` julia

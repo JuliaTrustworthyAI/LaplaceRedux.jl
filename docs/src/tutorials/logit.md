@@ -1,9 +1,8 @@
+# Bayesian Logistic Regression
 
 ``` @meta
 CurrentModule = LaplaceRedux
 ```
-
-# Bayesian Logisitic Regression
 
 We will use synthetic data with linearly separable samples:
 
@@ -47,7 +46,7 @@ for epoch = 1:epochs
 end
 ```
 
-## Laplace appoximation
+## Laplace approximation
 
 Laplace approximation for the posterior predictive can be implemented as follows:
 

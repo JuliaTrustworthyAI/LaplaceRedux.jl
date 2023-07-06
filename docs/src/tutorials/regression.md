@@ -1,9 +1,8 @@
+# Data
 
 ``` @meta
 CurrentModule = LaplaceRedux
 ```
-
-## Data
 
 We first generate some synthetic data:
 
@@ -74,46 +73,45 @@ optimize_prior!(la; verbose=true)
 plot(la, X, y; zoom=-5, size=(400,400))
 ```
 
-    loss(exp.(logP₀), exp.(logσ)) = 117.66664854620934
-    Log likelihood: -85.92178189333164
-    Log det ratio: 35.71426712713756
-    Scatter: 27.77546617861784
-    loss(exp.(logP₀), exp.(logσ)) = 121.87231511858798
-    Log likelihood: -94.6377872523882
-    Log det ratio: 40.7731858243348
-    Scatter: 13.695869908064768
-    loss(exp.(logP₀), exp.(logσ)) = 105.74544738246172
-    Log likelihood: -79.26976568466756
-    Log det ratio: 43.950740004518195
-    Scatter: 9.000623391070134
-    loss(exp.(logP₀), exp.(logσ)) = 103.88142914896216
-    Log likelihood: -77.44149990175734
-    Log det ratio: 45.50530524149423
-    Scatter: 7.374553252915389
-    loss(exp.(logP₀), exp.(logσ)) = 104.09479293926637
-    Log likelihood: -77.63140243238486
-    Log det ratio: 45.99843510214248
-    Scatter: 6.928345911620529
+    loss(exp.(logP₀), exp.(logσ)) = 115.75735421748533
+    Log likelihood: -79.2200866848734
+    Log det ratio: 41.447703478591464
+    Scatter: 31.626831586632402
+    loss(exp.(logP₀), exp.(logσ)) = 117.86642880183206
+    Log likelihood: -86.56623967031658
+    Log det ratio: 47.038810369756135
+    Scatter: 15.561567893274834
+    loss(exp.(logP₀), exp.(logσ)) = 99.47631633578109
+    Log likelihood: -69.09330443512576
+    Log det ratio: 50.58494846478561
+    Scatter: 10.18107533652504
+    loss(exp.(logP₀), exp.(logσ)) = 98.39016022405285
+    Log likelihood: -68.06679631670653
+    Log det ratio: 52.35553006863444
+    Scatter: 8.291197746058197
+    loss(exp.(logP₀), exp.(logσ)) = 98.32796211733199
+    Log likelihood: -67.97958599228153
+    Log det ratio: 52.957723488965314
+    Scatter: 7.739028761135608
+    loss(exp.(logP₀), exp.(logσ)) = 97.4846502485071
+    Log likelihood: -67.13783329716615
+    Log det ratio: 52.93077798129934
+    Scatter: 7.7628559213825294
+    loss(exp.(logP₀), exp.(logσ)) = 97.35181187147037
+    Log likelihood: -67.01886503956803
+    Log det ratio: 52.64896810867424
+    Scatter: 8.016925555130463
+    loss(exp.(logP₀), exp.(logσ)) = 97.36438554054067
+    Log likelihood: -67.04148717903837
+    Log det ratio: 52.335624298852
+    Scatter: 8.310172424152613
+    loss(exp.(logP₀), exp.(logσ)) = 97.349858431591
+    Log likelihood: -67.03065735188642
+    Log det ratio: 52.098394400933444
+    Scatter: 8.540007758475733
+    loss(exp.(logP₀), exp.(logσ)) = 97.33749417115928
+    Log likelihood: -67.01884461669445
+    Log det ratio: 51.96485166001452
+    Scatter: 8.67244744891513
 
-    loss(exp.(logP₀), exp.(logσ)) = 103.3468498181464
-    Log likelihood: -76.88770063543016
-    Log det ratio: 45.92861066847996
-    Scatter: 6.989687696952491
-    loss(exp.(logP₀), exp.(logσ)) = 103.16246637027459
-    Log likelihood: -76.71757535070529
-    Log det ratio: 45.64189954216795
-    Scatter: 7.247882496970637
-    loss(exp.(logP₀), exp.(logσ)) = 103.16978958495622
-    Log likelihood: -76.7341717145966
-    Log det ratio: 45.34308830278303
-    Scatter: 7.528147437936199
-    loss(exp.(logP₀), exp.(logσ)) = 103.16445388078068
-    Log likelihood: -76.73183970804324
-    Log det ratio: 45.1273375561218
-    Scatter: 7.737890789353098
-    loss(exp.(logP₀), exp.(logσ)) = 103.15526534959244
-    Log likelihood: -76.72294852715255
-    Log det ratio: 45.01394675305761
-    Scatter: 7.850686891822177
-
-![](regression_files/figure-commonmark/cell-7-output-3.svg)
+![](regression_files/figure-commonmark/cell-7-output-2.svg)

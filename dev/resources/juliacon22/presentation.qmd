@@ -144,9 +144,9 @@ Laplace Redux (@immer2020improving,@daxberger2021laplace)
 
 # Laplace Redux in Julia 
 
-## [`LaplaceRedux.jl`](https://github.com/pat-alt/LaplaceRedux.jl) - a small package 📦
+## [`LaplaceRedux.jl`](https://github.com/JuliaTrustworthyAI/LaplaceRedux.jl) - a small package 📦
 
-[![Dev](https://img.shields.io/badge/docs-dev-blue.svg)](https://pat-alt.github.io/LaplaceRedux.jl/dev) [![Build Status](https://github.com/pat-alt/LaplaceRedux.jl/actions/workflows/CI.yml/badge.svg?branch=main)](https://github.com/pat-alt/LaplaceRedux.jl/actions/workflows/CI.yml?query=branch%3Amain) [![Coverage](https://codecov.io/gh/pat-alt/LaplaceRedux.jl/branch/main/graph/badge.svg)](https://codecov.io/gh/pat-alt/LaplaceRedux.jl)
+[![Dev](https://img.shields.io/badge/docs-dev-blue.svg)](https://juliatrustworthyai.github.io/LaplaceRedux.jl/dev) [![Build Status](https://github.com/JuliaTrustworthyAI/LaplaceRedux.jl/actions/workflows/CI.yml/badge.svg?branch=main)](https://github.com/JuliaTrustworthyAI/LaplaceRedux.jl/actions/workflows/CI.yml?query=branch%3Amain) [![Coverage](https://codecov.io/gh/JuliaTrustworthyAI/LaplaceRedux.jl/branch/main/graph/badge.svg)](https://codecov.io/gh/JuliaTrustworthyAI/LaplaceRedux.jl)
 
 > What started out as my first coding project Julia ... 
 
@@ -171,7 +171,7 @@ So let's add the package ...
 
 ```julia
 using Pkg
-Pkg.add("https://github.com/pat-alt/LaplaceRedux.jl")
+Pkg.add("https://github.com/JuliaTrustworthyAI/LaplaceRedux.jl")
 ```
 
 ... and use it. 
@@ -570,7 +570,7 @@ Package is bare-bones at this point and needs a lot of work.
 
 - Blog post (1) -- Bayesian Logisitic Regression: [[TDS](https://towardsdatascience.com/bayesian-logistic-regression-53df017ba90f), [homepage](https://www.paltmeyer.com/blog/posts/bayesian-logit/)].
 - Blog post (2) -- Bayesian Deep Learning: [[TDS](https://towardsdatascience.com/go-deep-but-also-go-bayesian-ab25efa6f7b), [homepage](https://www.paltmeyer.com/blog/posts/effortsless-bayesian-dl/)].
-- Detailed slide pack generously shared by [Professor José Miguel Hernández-Lobato](https://jmhl.org/): [[pdf](https://github.com/pat-alt/LaplaceRedux.jl/blob/main/dev/resources/juliacon22/slides_lobato.pdf)]
+- Detailed slide pack generously shared by [Professor José Miguel Hernández-Lobato](https://jmhl.org/): [[pdf](https://github.com/JuliaTrustworthyAI/LaplaceRedux.jl/blob/main/dev/resources/juliacon22/slides_lobato.pdf)]
 - Package [docs](https://www.paltmeyer.com/CounterfactualExplanations.jl/dev/).
 
 > ... or even better: get involved! 🤗
