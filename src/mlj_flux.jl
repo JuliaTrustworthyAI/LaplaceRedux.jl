@@ -182,7 +182,9 @@ function MLJFlux.fit!(
     parameters = Flux.params(chain)
 
     # initial loss:
-    losses = (loss(chain(X[i]), y[i]) + penalty(parameters) / n_batches for i in 1:n_batches)
+    losses = (
+        loss(chain(X[i]), y[i]) + penalty(parameters) / n_batches for i in 1:n_batches
+    )
     history = [mean(losses)]
 
     for i in 1:epochs
