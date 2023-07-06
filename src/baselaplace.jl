@@ -1,4 +1,5 @@
 using LinearAlgebra
+using MLUtils
 
 "Abstract base type for all Laplace approximations in this library"
 abstract type BaseLaplace end
@@ -150,15 +151,193 @@ function log_det_ratio(la::BaseLaplace)
 end
 
 """
-    log_det_prior_precision(la::Laplace)
+    log_det_prior_precision(la::BaseLaplace)
 
 
 """
 log_det_prior_precision(la::BaseLaplace) = sum(log.(diag(la.P₀)))
 
 """
-    log_det_posterior_precision(la::Laplace)
+    log_det_posterior_precision(la::BaseLaplace)
 
 
 """
 log_det_posterior_precision(la::BaseLaplace) = logdet(posterior_precision(la))
+
+"""
+    hessian_approximation(la::BaseLaplace, d; batched::Bool=false)
+
+Computes the local Hessian approximation at a single datapoint `d`.
+"""
+function hessian_approximation(la::BaseLaplace, d; batched::Bool=false)
+    loss, H = getfield(Curvature, la.hessian_structure)(la.curvature, d; batched=batched)
+    return loss, H
+end
+
+"""
+    fit!(la::BaseLaplace,data)
+
+Fits the Laplace approximation for a data set.
+The function returns the number of observations (n_data) that were used to update the Laplace object.
+It does not return the updated Laplace object itself because the function modifies the input Laplace object in place (as denoted by the use of '!' in the function's name).
+
+# Examples
+
+```julia-repl
+using Flux, LaplaceRedux
+x, y = LaplaceRedux.Data.toy_data_linear()
+data = zip(x,y)
+nn = Chain(Dense(2,1))
+la = Laplace(nn)
+fit!(la, data)
+```
+
+"""
+function fit!(la::BaseLaplace, data; override::Bool=true)
+    return _fit!(la, data; batched=false, batchsize=1, override=override)
+end
+
+"""
+Fit the Laplace approximation, with batched data.
+"""
+function fit!(la::BaseLaplace, data::DataLoader; override::Bool=true)
+    return _fit!(la, data; batched=true, batchsize=data.batchsize, override=override)
+end
+
+"""
+    glm_predictive_distribution(la::BaseLaplace, X::AbstractArray)
+
+Computes the linearized GLM predictive.
+"""
+function glm_predictive_distribution(la::BaseLaplace, X::AbstractArray)
+    𝐉, fμ = Curvature.jacobians(la.curvature, X)
+    fvar = functional_variance(la, 𝐉)
+    fvar = reshape(fvar, size(fμ)...)
+    return fμ, fvar
+end
+
+# Posterior predictions:
+"""
+    predict(la::BaseLaplace, X::AbstractArray; link_approx=:probit)
+
+Computes predictions from Bayesian neural network.
+
+# Examples
+
+```julia-repl
+using Flux, LaplaceRedux
+x, y = toy_data_linear()
+data = zip(x,y)
+nn = Chain(Dense(2,1))
+la = Laplace(nn)
+fit!(la, data)
+predict(la, hcat(x...))
+```
+
+"""
+function predict(la::BaseLaplace, X::AbstractArray; link_approx=:probit)
+    fμ, fvar = glm_predictive_distribution(la, X)
+
+    # Regression:
+    if la.likelihood == :regression
+        return fμ, fvar
+    end
+
+    # Classification:
+    if la.likelihood == :classification
+
+        # Probit approximation
+        if link_approx == :probit
+            κ = 1 ./ sqrt.(1 .+ π / 8 .* fvar)
+            z = κ .* fμ
+        end
+
+        if link_approx == :plugin
+            z = fμ
+        end
+
+        # Sigmoid/Softmax
+        if outdim(la) == 1
+            p = Flux.sigmoid(z)
+        else
+            p = Flux.softmax(z; dims=1)
+        end
+
+        return p
+    end
+end
+
+"""
+Compute predictive posteriors for a batch of inputs.
+
+Note, input is assumed to be batched only if it is a matrix.
+If the input dimensionality of the model is 1 (a vector), one should still prepare a 1×B matrix batch as input.
+"""
+function predict(la::BaseLaplace, X::Matrix; link_approx=:probit)
+    return stack([predict(la, X[:, i]; link_approx=link_approx) for i in 1:size(X, 2)])
+end
+
+"""
+    (la::BaseLaplace)(X::AbstractArray; kwrgs...)
+
+Calling a model with Laplace Approximation on an array of inputs is equivalent to explicitly calling the `predict` function.
+"""
+function (la::BaseLaplace)(X::AbstractArray; kwrgs...)
+    return predict(la, X; kwrgs...)
+end
+
+"""
+    optimize_prior!(
+        la::BaseLaplace; 
+        n_steps::Int=100, lr::Real=1e-1,
+        λinit::Union{Nothing,Real}=nothing,
+        σinit::Union{Nothing,Real}=nothing
+    )
+    
+Optimize the prior precision post-hoc through Empirical Bayes (marginal log-likelihood maximization).
+"""
+function optimize_prior!(
+    la::BaseLaplace;
+    n_steps::Int=100,
+    lr::Real=1e-1,
+    λinit::Union{Nothing,Real}=nothing,
+    σinit::Union{Nothing,Real}=nothing,
+    verbose::Bool=false,
+    tune_σ::Bool=la.likelihood == :regression,
+)
+
+    # Setup:
+    logP₀ = isnothing(λinit) ? log.(unique(diag(la.P₀))) : log.([λinit])   # prior precision (scalar)
+    logσ = isnothing(σinit) ? log.([la.σ]) : log.([σinit])                 # noise (scalar)
+    opt = Adam(lr)
+    show_every = round(n_steps / 10)
+    i = 0
+    if tune_σ
+        @assert la.likelihood == :regression "Observational noise σ tuning only applicable to regression."
+        ps = Flux.params(logP₀, logσ)
+    else
+        if la.likelihood == :regression
+            @warn "You have specified not to tune observational noise σ, even though this is a regression model. Are you sure you do not want to tune σ?"
+        end
+        ps = Flux.params(logP₀)
+    end
+    loss(P₀, σ) = -log_marginal_likelihood(la; P₀=P₀[1], σ=σ[1])
+
+    # Optimization:
+    while i < n_steps
+        gs = gradient(ps) do
+            loss(exp.(logP₀), exp.(logσ))
+        end
+        update!(opt, ps, gs)
+        i += 1
+        if verbose
+            if i % show_every == 0
+                @info "Iteration $(i): P₀=$(exp(logP₀[1])), σ=$(exp(logσ[1]))"
+                @show loss(exp.(logP₀), exp.(logσ))
+                println("Log likelihood: $(log_likelihood(la))")
+                println("Log det ratio: $(log_det_ratio(la))")
+                println("Scatter: $(_weight_penalty(la))")
+            end
+        end
+    end
+end

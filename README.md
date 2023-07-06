@@ -1,9 +1,10 @@
+# LaplaceRedux
 
 ![](docs/src/assets/wide_logo.png)
 
 [![Stable](https://img.shields.io/badge/docs-stable-blue.svg)](https://juliatrustworthyai.github.io/LaplaceRedux.jl/stable) [![Dev](https://img.shields.io/badge/docs-dev-blue.svg)](https://juliatrustworthyai.github.io/LaplaceRedux.jl/dev) [![Build Status](https://github.com/JuliaTrustworthyAI/LaplaceRedux.jl/actions/workflows/CI.yml/badge.svg?branch=main)](https://github.com/JuliaTrustworthyAI/LaplaceRedux.jl/actions/workflows/CI.yml?query=branch%3Amain) [![Coverage](https://codecov.io/gh/JuliaTrustworthyAI/LaplaceRedux.jl/branch/main/graph/badge.svg)](https://codecov.io/gh/JuliaTrustworthyAI/LaplaceRedux.jl) [![Code Style: Blue](https://img.shields.io/badge/code%20style-blue-4495d1.svg)](https://github.com/invenia/BlueStyle) [![ColPrac: Contributor’s Guide on Collaborative Practices for Community Packages](https://img.shields.io/badge/ColPrac-Contributor's%20Guide-blueviolet.png)](https://github.com/SciML/ColPrac) [![Twitter Badge](https://img.shields.io/twitter/url/https/twitter.com/paltmey.svg?style=social&label=Follow%20%40paltmey)](https://twitter.com/paltmey)
 
-`LaplaceRedux.jl` is a library written in pure Julia that can be used for effortless Bayesian Deep Learning trough Laplace Approximation (LA). In the development of this package I have drawn inspiration from this Python [library](https://aleximmer.github.io/Laplace/index.html#setup) and its companion [paper](https://arxiv.org/abs/2106.14806) (Daxberger et al. 2021).
+`LaplaceRedux.jl` is a library written in pure Julia that can be used for effortless Bayesian Deep Learning through Laplace Approximation (LA). In the development of this package I have drawn inspiration from this Python [library](https://aleximmer.github.io/Laplace/index.html#setup) and its companion [paper](https://arxiv.org/abs/2106.14806) (Daxberger et al. 2021).
 
 ## 🚩 Installation
 
@@ -36,7 +37,7 @@ optimize_prior!(la)
 plot(la, X, y; zoom=-5, size=(500,500))
 ```
 
-![](README_files/figure-commonmark/cell-4-output-1.png)
+![](README_files/figure-commonmark/cell-4-output-1.svg)
 
 ### Binary Classification
 
@@ -58,7 +59,7 @@ p_laplace = plot(la, X, ys; title="LA - tuned (λ=$(round(unique(diag(la.P₀))[
 plot(p_plugin, p_untuned, p_laplace, layout=(1,3), size=(1700,400))
 ```
 
-![](README_files/figure-commonmark/cell-6-output-1.svg)
+![](README_files/figure-commonmark/cell-7-output-1.svg)
 
 ## 📢 JuliaCon 2022
 

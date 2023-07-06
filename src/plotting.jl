@@ -53,8 +53,7 @@ function Plots.plot(
             title=title,
             kwargs...,
         )
-        # plot!(xrange, fun.(xrange), label="ytrue")
-        _x = permutedims([x for x in x_range])
+        _x = collect(x_range)[:, :]'
         fμ, fvar = la(_x)
         fμ = vec(fμ)
         fσ = vec(sqrt.(fvar))
@@ -68,7 +67,6 @@ function Plots.plot(
             lw=lw,
             kwargs...,
         )   # the specific values 1.96 are used here to create a 95% confidence interval
-
     else
 
         # CLASSIFICATION

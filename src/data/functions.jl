@@ -20,7 +20,9 @@ function toy_data_linear(N=100)
 
     # Store all the data for later.
     xs = [xt1s; xt0s]
+    xs = map(x -> Float32.(x), xs)
     ts = [ones(M); zeros(M)]
+    ts = map(x -> Float32.(x), ts)
     return xs, ts
 end
 
@@ -55,7 +57,9 @@ function toy_data_non_linear(N=100)
 
     # Store all the data for later.
     xs = [xt1s; xt0s]
+    xs = map(x -> Float32.(x), xs)
     ts = [ones(2 * M); zeros(2 * M)]
+    ts = map(x -> Float32.(x), ts)
     return xs, ts
 end
 
@@ -90,7 +94,9 @@ function toy_data_multi(N=100)
 
     # Store all the data for later.
     xs = [xt1s; xt0s]
+    xs = map(x -> Float32.(x), xs)
     ts = [ones(M); ones(M) .* 2; ones(M) .* 3; ones(M) .* 4]
+    ts = map(x -> Float32.(x), ts)
     return xs, ts
 end
 
@@ -109,7 +115,9 @@ function toy_data_regression(
 )
     X = rand(N) * xmax
     X = center_origin ? X .- xmax / 2 : X
+    X = Float32.(X)
     ε = randn(N) .* noise
     y = @.(fun(X)) + ε
+    y = Float32.(y)
     return X, y
 end

@@ -20,7 +20,7 @@ include("testutils.jl")
 
         X = hcat(x...)
         y_train = Flux.onehotbatch(y, unique(y))
-        y_train = Flux.unstack(y_train', 1)
+        y_train = Flux.unstack(y_train'; dims=1)
 
         data = zip(x, y_train)
 

@@ -1,7 +1,7 @@
 using Flux
 using MLJFlux
 import MLJModelInterface as MMI
-using ProgressMeter
+using ProgressMeter: Progress, next!, BarGlyphs
 using Random
 using Tables
 using ComputationalResources
@@ -270,7 +270,7 @@ function MMI.predict(model::LaplaceApproximation, fitresult, Xnew)
     # re-format Xnew into acceptable input for Laplace:
     X = MLJFlux.reformat(Xnew)
     # predict using Laplace:
-    probs = vcat(
+    yhat = vcat(
         [
             predict(la, MLJFlux.tomat(X[:, i]); link_approx=model.link_approx)' for
             i in 1:size(X, 2)
@@ -278,11 +278,11 @@ function MMI.predict(model::LaplaceApproximation, fitresult, Xnew)
     )
     if la.likelihood == :classification
         # return a UnivariateFinite:
-        return MMI.UnivariateFinite(levels, probs)
+        return MMI.UnivariateFinite(levels, yhat)
     end
     if la.likelihood == :regression
         # return a UnivariateNormal:
-        return MMI.UnivariateNormal(probs[1], sqrt(probs[2]))
+        return MMI.UnivariateNormal(yhat[1], sqrt(yhat[2]))
     end
 end
 

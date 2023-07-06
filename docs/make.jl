@@ -22,8 +22,8 @@ makedocs(;
             "MLP Regression" => "tutorials/regression.md",
             "A note on the prior ..." => "tutorials/prior.md",
         ],
-        "Reference" => "reference.md",
-        "Additional Resources" => "resources/resources.md",
+        "Reference" => "_reference.md",
+        "Additional Resources" => "resources/_resources.md",
     ],
 )
 
