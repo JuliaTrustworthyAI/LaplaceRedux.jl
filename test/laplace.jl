@@ -15,25 +15,21 @@ using LinearAlgebra
 
     # Expected error
     @test_throws AssertionError Laplace(
-        nn;
-        likelihood = :classification,
-        subset_of_weights = :last,
+        nn; likelihood=:classification, subset_of_weights=:last
     )
 
     # Correct:
-    la = Laplace(nn; likelihood = :classification)
+    la = Laplace(nn; likelihood=:classification)
     @test la.n_params == 3
 
     # Multi-layer:
     nn = Chain(Dense(2, 2, σ), Dense(2, 1))
-    la = Laplace(nn; likelihood = :regression, subset_of_weights = :last_layer)
+    la = Laplace(nn; likelihood=:regression, subset_of_weights=:last_layer)
     @test la.n_params == 3
-    la = Laplace(nn; likelihood = :classification, subset_of_weights = :all)
+    la = Laplace(nn; likelihood=:classification, subset_of_weights=:all)
     @test la.n_params == 9
     @test_throws AssertionError Laplace(
-        nn;
-        likelihood = :classification,
-        subset_of_weights = :subnetwork,
+        nn; likelihood=:classification, subset_of_weights=:subnetwork
     )
 
     @testset "Subnetworks" begin
@@ -43,10 +39,10 @@ end
 
 @testset "Parameters" begin
     nn = Chain(Dense(2, 2, σ), Dense(2, 1))
-    la = Laplace(nn; likelihood = :classification, subset_of_weights = :last_layer)
-    @test LaplaceRedux.get_params(la) == collect(Flux.params(nn))[(end-1):end]
+    la = Laplace(nn; likelihood=:classification, subset_of_weights=:last_layer)
+    @test LaplaceRedux.get_params(la) == collect(Flux.params(nn))[(end - 1):end]
 
-    la = Laplace(nn; likelihood = :classification, subset_of_weights = :all)
+    la = Laplace(nn; likelihood=:classification, subset_of_weights=:all)
     @test LaplaceRedux.get_params(la) == collect(Flux.params(nn))
 end
 
@@ -57,7 +53,7 @@ end
 
     # (always ignoring constant)
     @testset "Empirical Fisher - full" begin
-        la = Laplace(nn; likelihood = :classification, backend = :EmpiricalFisher)
+        la = Laplace(nn; likelihood=:classification, backend=:EmpiricalFisher)
 
         target = 1
         x = [1, 1]
@@ -76,7 +72,7 @@ end
         @test H[1:2, 1:2] == grad * grad'
 
         # Regression
-        la = Laplace(nn; likelihood = :regression, backend = :EmpiricalFisher)
+        la = Laplace(nn; likelihood=:regression, backend=:EmpiricalFisher)
         target = 3
         x = [1, 2]
         grad = [-6.0, -12.0, -6.0]
@@ -86,7 +82,7 @@ end
 
     @testset "Generalized Gauss–Newton (GGN) - full" begin
         # Regression
-        la = Laplace(nn; likelihood = :regression, backend = :GGN)
+        la = Laplace(nn; likelihood=:regression, backend=:GGN)
         target = 3
         x = [1, 2]
         J = [1; 2; 1;;] # pre-calculated jacobians
@@ -94,7 +90,7 @@ end
         @test H == J * J'
 
         # Binary Classification
-        la = Laplace(nn; likelihood = :classification, backend = :GGN)
+        la = Laplace(nn; likelihood=:classification, backend=:GGN)
         target = 1
         x = [1, 1]
         J = [1; 1; 1;;] # pre-calculated jacobians
@@ -110,7 +106,7 @@ end
 
 @testset "Fitting" begin
     nn = Chain(Dense([0 0]))
-    la = Laplace(nn; likelihood = :classification)
+    la = Laplace(nn; likelihood=:classification)
 
     function hessian_exact(x, target)
         return (nn(x) .- target) .* (nn(x) .* (1 .- nn(x)) .* x * x') + la.P₀[1:2, 1:2]
@@ -124,7 +120,7 @@ end
     end
 end
 
-function train_nn(val::Dict; verbose = false)
+function train_nn(val::Dict; verbose=false)
     # Unpack:
     X = val[:X]
     Y = val[:Y]
@@ -141,7 +137,7 @@ function train_nn(val::Dict; verbose = false)
     nn = Chain(Dense(D, n_hidden, σ), Dense(n_hidden, outdim))
     λ = 0.01
     sqnorm(x) = sum(abs2, x)
-    weight_regularization(λ = λ) = 1 / 2 * λ^2 * sum(sqnorm, Flux.params(nn))
+    weight_regularization(λ=λ) = 1 / 2 * λ^2 * sum(sqnorm, Flux.params(nn))
     loss(x, y) = getfield(Flux.Losses, loss_fun)(nn(x), y) + weight_regularization()
 
     opt = Adam()
@@ -149,7 +145,7 @@ function train_nn(val::Dict; verbose = false)
     avg_loss(data) = mean(map(d -> loss(d[1], d[2]), data))
     show_every = epochs / 10
 
-    for epoch = 1:epochs
+    for epoch in 1:epochs
         for d in data
             gs = gradient(Flux.params(nn)) do
                 l = loss(d...)
@@ -170,11 +166,11 @@ function run_workflow(
     batchsize::Int,
     backend::Symbol,
     subset_of_weights::Symbol;
-    hessian_structure = :full,
-    verbose::Bool = false,
-    do_optimize_prior::Bool = true,
-    do_predict::Bool = true,
-    do_plot::Bool = true,
+    hessian_structure=:full,
+    verbose::Bool=false,
+    do_optimize_prior::Bool=true,
+    do_predict::Bool=true,
+    do_plot::Bool=true,
 )
     # Unpack:
     X = val[:X]
@@ -184,7 +180,7 @@ function run_workflow(
     if batchsize == 0
         data = val[:data]
     else
-        data = DataLoader((X, Y); batchsize = batchsize)
+        data = DataLoader((X, Y); batchsize=batchsize)
     end
     outdim = val[:outdim]
     loss_fun = val[:loss_fun]
@@ -199,16 +195,16 @@ function run_workflow(
 
     la = Laplace(
         nn;
-        likelihood = likelihood,
-        λ = λ,
-        subset_of_weights = subset_of_weights,
-        backend = backend,
-        subnetwork_indices = subnetwork_indices,
-        hessian_structure = hessian_structure,
+        likelihood=likelihood,
+        λ=λ,
+        subset_of_weights=subset_of_weights,
+        backend=backend,
+        subnetwork_indices=subnetwork_indices,
+        hessian_structure=hessian_structure,
     )
     fit!(la, data)
     if do_optimize_prior
-        optimize_prior!(la; verbose = verbose)
+        optimize_prior!(la; verbose=verbose)
     end
     if do_predict
         predict(la, X)
@@ -216,8 +212,8 @@ function run_workflow(
     if do_plot
         if outdim == 1
             plot(la, X, y)                              # standard
-            plot(la, X, y; xlims = (-5, 5), ylims = (-5, 5))  # lims
-            plot(la, X, y; link_approx = :plugin)         # plugin approximation  
+            plot(la, X, y; xlims=(-5, 5), ylims=(-5, 5))  # lims
+            plot(la, X, y; link_approx=:plugin)         # plugin approximation  
         else
             # Classification multi is plotted differently
             @assert likelihood == :classification
@@ -227,12 +223,7 @@ function run_workflow(
                 plt_list = []
                 for target in _labels
                     plt = plot(
-                        la,
-                        X,
-                        y;
-                        target = target,
-                        clim = (0, 1),
-                        link_approx = link_approx,
+                        la, X, y; target=target, clim=(0, 1), link_approx=link_approx
                     )
                     push!(plt_list, plt)
                 end
@@ -268,7 +259,7 @@ end
     # Classification multi:
     xs, y = LaplaceRedux.Data.toy_data_multi(n)
     ytrain = Flux.onehotbatch(y, unique(y))
-    ytrain = Flux.unstack(ytrain'; dims = 1)
+    ytrain = Flux.unstack(ytrain'; dims=1)
     X = reduce(hcat, xs)
     Y = reduce(hcat, ytrain)
     data = zip(xs, ytrain)
@@ -322,9 +313,10 @@ end
             batchsize_text = batchsize == 0 ? "unbatched" : "batchsize=$(batchsize)"
             @testset "$(likelihood), $(batchsize_text), backend=$(backend), subset_of_weights=$(subset_of_weights)" begin
                 @info "Running workflow for: " *
-                      "($likelihood, $batchsize, $backend, $subset_of_weights)"
-                hessians[likelihood, batchsize, backend, subset_of_weights] =
-                    run_workflow(val, batchsize, backend, subset_of_weights)
+                    "($likelihood, $batchsize, $backend, $subset_of_weights)"
+                hessians[likelihood, batchsize, backend, subset_of_weights] = run_workflow(
+                    val, batchsize, backend, subset_of_weights
+                )
             end
         end
     end
@@ -354,10 +346,10 @@ end
             0,
             :EmpiricalFisher,
             :all;
-            hessian_structure = :kron,
-            do_optimize_prior = false,
-            do_predict = true,
-            do_plot = false,
+            hessian_structure=:kron,
+            do_optimize_prior=false,
+            do_predict=true,
+            do_plot=false,
         )
     end
 end

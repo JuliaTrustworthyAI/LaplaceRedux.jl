@@ -14,21 +14,9 @@ plot_data!(plt, hcat(X...)', y)
 
 """
 function plot_data!(plt, X, y)
-    Plots.scatter!(
-        plt,
-        X[y.==1.0, 1],
-        X[y.==1.0, 2];
-        color = 1,
-        clim = (0, 1),
-        label = "y=1",
-    )
+    Plots.scatter!(plt, X[y .== 1.0, 1], X[y .== 1.0, 2]; color=1, clim=(0, 1), label="y=1")
     return Plots.scatter!(
-        plt,
-        X[y.==0.0, 1],
-        X[y.==0.0, 2];
-        color = 0,
-        clim = (0, 1),
-        label = "y=0",
+        plt, X[y .== 0.0, 1], X[y .== 0.0, 2]; color=0, clim=(0, 1), label="y=0"
     )
 end
 
@@ -58,13 +46,13 @@ function plot_contour(
     X,
     y,
     𝑴;
-    clegend = true,
-    title = "",
-    length_out = 50,
-    type = :laplace,
-    zoom = 0,
-    xlim = nothing,
-    ylim = nothing,
+    clegend=true,
+    title="",
+    length_out=50,
+    type=:laplace,
+    zoom=0,
+    xlim=nothing,
+    ylim=nothing,
 )
 
     # Surface range:
@@ -78,8 +66,8 @@ function plot_contour(
     else
         ylim = ylim .+ (zoom, -zoom)
     end
-    x_range = collect(range(xlim[1]; stop = xlim[2], length = length_out))
-    y_range = collect(range(ylim[1]; stop = ylim[2], length = length_out))
+    x_range = collect(range(xlim[1]; stop=xlim[2], length=length_out))
+    y_range = collect(range(ylim[1]; stop=ylim[2], length=length_out))
 
     # Predictions:
     if type == :laplace
@@ -93,12 +81,12 @@ function plot_contour(
         x_range,
         y_range,
         Z';
-        legend = clegend,
-        title = title,
-        linewidth = 0,
-        clims = (0.0, 1.0),
-        xlim = xlim,
-        ylim = ylim,
+        legend=clegend,
+        title=title,
+        linewidth=0,
+        clims=(0.0, 1.0),
+        xlim=xlim,
+        ylim=ylim,
     )
     return plot_data!(plt, X, y)
 end

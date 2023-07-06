@@ -41,7 +41,7 @@ function get_params(la::BaseLaplace)
         # Only get last layer parameters:
         # params[n_elements] is the bias vector of the last layer
         # params[n_elements-1] is the weight matrix of the last layer
-        params = [params[n_elements-1], params[n_elements]]
+        params = [params[n_elements - 1], params[n_elements]]
     end
     return params
 end
@@ -57,7 +57,7 @@ P = \sum_{n=1}^N\nabla_{\theta}^2\log p(\mathcal{D}_n|\theta)|_{\theta}_{MAP} + 
 
 where ``\sum_{n=1}^N\nabla_{\theta}^2\log p(\mathcal{D}_n|\theta)|_{\theta}_{MAP}=H`` and ``\nabla_{\theta}^2 \log p(\theta)|_{\theta}_{MAP}=P_0``.
 """
-function posterior_precision(la::BaseLaplace, H = la.H, P₀ = la.P₀)
+function posterior_precision(la::BaseLaplace, H=la.H, P₀=la.P₀)
     @assert !isnothing(H) "Hessian not available. Either no value supplied or Laplace Approximation has not yet been estimated."
     return H + P₀
 end
@@ -67,7 +67,7 @@ end
 
 Computes the posterior covariance ``∑`` as the inverse of the posterior precision: ``\Sigma=P^{-1}``.
 """
-function posterior_covariance(la::BaseLaplace, P = posterior_precision(la))
+function posterior_covariance(la::BaseLaplace, P=posterior_precision(la))
     @assert !isnothing(P) "Posterior precision not available. Either no value supplied or Laplace Approximation has not yet been estimated."
     return inv(P)
 end
@@ -123,8 +123,8 @@ end                                                                          # u
 """
 function log_marginal_likelihood(
     la::BaseLaplace;
-    P₀::Union{Nothing,AbstractFloat,AbstractMatrix} = nothing,
-    σ::Union{Nothing,Real} = nothing,
+    P₀::Union{Nothing,AbstractFloat,AbstractMatrix}=nothing,
+    σ::Union{Nothing,Real}=nothing,
 )
 
     # update prior precision:
@@ -169,8 +169,8 @@ log_det_posterior_precision(la::BaseLaplace) = logdet(posterior_precision(la))
 
 Computes the local Hessian approximation at a single datapoint `d`.
 """
-function hessian_approximation(la::BaseLaplace, d; batched::Bool = false)
-    loss, H = getfield(Curvature, la.hessian_structure)(la.curvature, d; batched = batched)
+function hessian_approximation(la::BaseLaplace, d; batched::Bool=false)
+    loss, H = getfield(Curvature, la.hessian_structure)(la.curvature, d; batched=batched)
     return loss, H
 end
 
@@ -193,15 +193,15 @@ fit!(la, data)
 ```
 
 """
-function fit!(la::BaseLaplace, data; override::Bool = true)
-    return _fit!(la, data; batched = false, batchsize = 1, override = override)
+function fit!(la::BaseLaplace, data; override::Bool=true)
+    return _fit!(la, data; batched=false, batchsize=1, override=override)
 end
 
 """
 Fit the Laplace approximation, with batched data.
 """
-function fit!(la::BaseLaplace, data::DataLoader; override::Bool = true)
-    return _fit!(la, data; batched = true, batchsize = data.batchsize, override = override)
+function fit!(la::BaseLaplace, data::DataLoader; override::Bool=true)
+    return _fit!(la, data; batched=true, batchsize=data.batchsize, override=override)
 end
 
 """
@@ -235,7 +235,7 @@ predict(la, hcat(x...))
 ```
 
 """
-function predict(la::BaseLaplace, X::AbstractArray; link_approx = :probit)
+function predict(la::BaseLaplace, X::AbstractArray; link_approx=:probit)
     fμ, fvar = glm_predictive_distribution(la, X)
 
     # Regression:
@@ -260,7 +260,7 @@ function predict(la::BaseLaplace, X::AbstractArray; link_approx = :probit)
         if outdim(la) == 1
             p = Flux.sigmoid(z)
         else
-            p = Flux.softmax(z, dims = 1)
+            p = Flux.softmax(z; dims=1)
         end
 
         return p
@@ -273,8 +273,8 @@ Compute predictive posteriors for a batch of inputs.
 Note, input is assumed to be batched only if it is a matrix.
 If the input dimensionality of the model is 1 (a vector), one should still prepare a 1×B matrix batch as input.
 """
-function predict(la::BaseLaplace, X::Matrix; link_approx = :probit)
-    return stack([predict(la, X[:, i]; link_approx = link_approx) for i = 1:size(X, 2)])
+function predict(la::BaseLaplace, X::Matrix; link_approx=:probit)
+    return stack([predict(la, X[:, i]; link_approx=link_approx) for i in 1:size(X, 2)])
 end
 
 """
@@ -298,12 +298,12 @@ Optimize the prior precision post-hoc through Empirical Bayes (marginal log-like
 """
 function optimize_prior!(
     la::BaseLaplace;
-    n_steps::Int = 100,
-    lr::Real = 1e-1,
-    λinit::Union{Nothing,Real} = nothing,
-    σinit::Union{Nothing,Real} = nothing,
-    verbose::Bool = false,
-    tune_σ::Bool = la.likelihood == :regression,
+    n_steps::Int=100,
+    lr::Real=1e-1,
+    λinit::Union{Nothing,Real}=nothing,
+    σinit::Union{Nothing,Real}=nothing,
+    verbose::Bool=false,
+    tune_σ::Bool=la.likelihood == :regression,
 )
 
     # Setup:
@@ -321,7 +321,7 @@ function optimize_prior!(
         end
         ps = Flux.params(logP₀)
     end
-    loss(P₀, σ) = -log_marginal_likelihood(la; P₀ = P₀[1], σ = σ[1])
+    loss(P₀, σ) = -log_marginal_likelihood(la; P₀=P₀[1], σ=σ[1])
 
     # Optimization:
     while i < n_steps
@@ -340,5 +340,4 @@ function optimize_prior!(
             end
         end
     end
-
 end

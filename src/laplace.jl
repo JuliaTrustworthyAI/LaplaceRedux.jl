@@ -130,11 +130,7 @@ function Laplace(model::Any; likelihood::Symbol, kwargs...)
         nothing
     end
     la.curvature = getfield(Curvature, args.backend)(
-        nn,
-        likelihood,
-        params,
-        la.subset_of_weights,
-        subnetwork_indices,
+        nn, likelihood, params, la.subset_of_weights, subnetwork_indices
     )
 
     if la.subset_of_weights == :subnetwork
@@ -142,7 +138,7 @@ function Laplace(model::Any; likelihood::Symbol, kwargs...)
     else
         la.n_params = length(reduce(vcat, [vec(θ) for θ in params]))                # number of params
     end
-    la.μ = la.μ[(end-la.n_params+1):end]                                    # adjust weight vector
+    la.μ = la.μ[(end - la.n_params + 1):end]                                    # adjust weight vector
     if typeof(la.P₀) <: UniformScaling
         la.P₀ = la.P₀(la.n_params)
     end
@@ -163,8 +159,7 @@ subnetwork_indices::Union{Nothing,Vector{Vector{Int}}}, params
 Determines whether subnetwork_indices is a valid input for specified parameters.
 """
 function validate_subnetwork_indices(
-    subnetwork_indices::Union{Nothing,Vector{Vector{Int}}},
-    params,
+    subnetwork_indices::Union{Nothing,Vector{Vector{Int}}}, params
 )
     @assert (subnetwork_indices !== nothing) "If `subset_of_weights` is `:subnetwork`, then `subnetwork_indices` should be a vector of vectors of integers."
     # Check if subnetwork_indices is a vector containing an empty vector
@@ -179,7 +174,7 @@ function validate_subnetwork_indices(
         theta_dims = size(params[theta_index])
         @assert length(index) - 1 == length(theta_dims) "Element $(i) in `subnetwork_indices` should have $(theta_dims) coordinates."
         for j in eachindex(index)[2:end]
-            @assert (index[j] in 1:theta_dims[j-1]) "The index $(j) of element $(i) in `subnetwork_indices` should be between 1 and $(theta_dims[j - 1])."
+            @assert (index[j] in 1:theta_dims[j - 1]) "The index $(j) of element $(i) in `subnetwork_indices` should be between 1 and $(theta_dims[j - 1])."
         end
         push!(selected, index)
     end
@@ -192,12 +187,11 @@ Converts the subnetwork indices from the user given format [theta, row, column] 
 of that weight in the flattened array of weights.
 """
 function convert_subnetwork_indices(
-    subnetwork_indices::Vector{Vector{Int}},
-    params::AbstractArray,
+    subnetwork_indices::Vector{Vector{Int}}, params::AbstractArray
 )
     converted_indices = Vector{Int}()
     for i in subnetwork_indices
-        flat_theta_index = reduce((acc, p) -> acc + length(p), params[1:(i[1]-1)]; init = 0)
+        flat_theta_index = reduce((acc, p) -> acc + length(p), params[1:(i[1] - 1)]; init=0)
         if length(i) == 2
             push!(converted_indices, flat_theta_index + i[2])
         elseif length(i) == 3
@@ -210,13 +204,7 @@ function convert_subnetwork_indices(
     return converted_indices
 end
 
-function _fit!(
-    la::Laplace,
-    data;
-    batched::Bool = false,
-    batchsize::Int,
-    override::Bool = true,
-)
+function _fit!(la::Laplace, data; batched::Bool=false, batchsize::Int, override::Bool=true)
     if override
         H = _init_H(la)
         loss = 0.0
@@ -224,7 +212,7 @@ function _fit!(
     end
 
     for d in data
-        loss_batch, H_batch = hessian_approximation(la, d; batched = batched)
+        loss_batch, H_batch = hessian_approximation(la, d; batched=batched)
         loss += loss_batch
         H += H_batch
         n_data += batchsize
@@ -244,20 +232,16 @@ function _fit!(
 end
 
 function _fit!(
-    la::KronLaplace,
-    data;
-    batched::Bool = false,
-    batchsize::Int,
-    override::Bool = true,
+    la::KronLaplace, data; batched::Bool=false, batchsize::Int, override::Bool=true
 )
     @assert !batched "Batched Kronecker-factored Laplace approximations not supported"
     @assert la.likelihood == :classification &&
-            get_loss_type(la.likelihood, la.curvature.model) == :logitcrossentropy "Only multi-class classification supported"
+        get_loss_type(la.likelihood, la.curvature.model) == :logitcrossentropy "Only multi-class classification supported"
 
     # NOTE: the fitting process is structured differently for Kronecker-factored methods
     # to avoid allocation, initialisation & interleaving overhead
     # Thus the loss, Hessian, and data size is computed not in a loop but in a separate function.
-    loss, H, n_data = Curvature.kron(la.curvature, data; batched = batched)
+    loss, H, n_data = Curvature.kron(la.curvature, data; batched=batched)
 
     la.loss = loss
     la.H = H
@@ -293,6 +277,6 @@ function inv_square_form(K::KronDecomposed, W::Matrix)
 Special function to compute the inverse square form 𝐉𝐏⁻¹𝐉ᵀ (or 𝐖𝐊⁻¹𝐖ᵀ)
 """
 function inv_square_form(K::KronDecomposed, W::Matrix)
-    SW = mm(K, W; exponent = -1)
+    SW = mm(K, W; exponent=-1)
     return W * SW'
 end

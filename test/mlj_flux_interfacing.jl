@@ -12,19 +12,19 @@ function basictest(X, y, builder, optimiser, threshold)
     stable_rng = StableRNGs.StableRNG(123)
 
     model = LaplaceApproximation(;
-        builder = builder,
-        optimiser = optimiser,
-        acceleration = CPUThreads(),
-        rng = stable_rng,
-        lambda = -1.0,
-        alpha = -1.0,
-        epochs = -1,
-        batch_size = -1,
-        likelihood = :incorrect,
-        subset_of_weights = :incorrect,
-        hessian_structure = :incorrect,
-        backend = :incorrect,
-        link_approx = :incorrect,
+        builder=builder,
+        optimiser=optimiser,
+        acceleration=CPUThreads(),
+        rng=stable_rng,
+        lambda=-1.0,
+        alpha=-1.0,
+        epochs=-1,
+        batch_size=-1,
+        likelihood=:incorrect,
+        subset_of_weights=:incorrect,
+        hessian_structure=:incorrect,
+        backend=:incorrect,
+        link_approx=:incorrect,
     )
 
     fitresult, cache, _report = MLJBase.fit(model, 0, X, y)
@@ -54,11 +54,7 @@ function basictest(X, y, builder, optimiser, threshold)
 
     # start fresh with small epochs:
     model = LaplaceApproximation(;
-        builder = builder,
-        optimiser = optimiser,
-        epochs = 2,
-        acceleration = CPU1(),
-        rng = stable_rng,
+        builder=builder, optimiser=optimiser, epochs=2, acceleration=CPU1(), rng=stable_rng
     )
 
     fitresult, cache, _report = MLJBase.fit(model, 0, X, y)
@@ -93,18 +89,20 @@ N = 300
 X = MLJBase.table(rand(Float32, N, 4));
 ycont = 2 * X.x1 - X.x3 + 0.1 * rand(N)
 m, M = minimum(ycont), maximum(ycont)
-_, a, b, _ = collect(range(m; stop = M, length = 4))
-y = categorical(map(ycont) do η
-    if η < 0.9 * a
-        'a'
-    elseif η < 1.1 * b
-        'b'
-    else
-        'c'
-    end
-end);
+_, a, b, _ = collect(range(m; stop=M, length=4))
+y = categorical(
+    map(ycont) do η
+        if η < 0.9 * a
+            'a'
+        elseif η < 1.1 * b
+            'b'
+        else
+            'c'
+        end
+    end,
+);
 
-builder = MLJFlux.MLP(; hidden = (16, 8), σ = Flux.relu)
+builder = MLJFlux.MLP(; hidden=(16, 8), σ=Flux.relu)
 optimizer = Flux.Optimise.Adam(0.03)
 
 @test basictest(X, y, builder, optimizer, 0.9)

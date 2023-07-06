@@ -42,8 +42,8 @@ Take the submatrix of the Hessian corresponding to the last layers, rearranged a
 function rearrange_hessian_last_layer(h::Matrix{Float64}, nn::Chain)
     ps = [p for p in Flux.params(nn)]
     M = length(ps[end])
-    N = length(ps[end-1])
-    return h[:, (end-M-N+1):end][gen_mapping_sq(ps[(end-1):end])]
+    N = length(ps[end - 1])
+    return h[:, (end - M - N + 1):end][gen_mapping_sq(ps[(end - 1):end])]
 end
 
 """

@@ -15,12 +15,12 @@ include("testutils.jl")
         # Read the dataset from a CSV file
         df = CSV.read(joinpath(@__DIR__, "datafiles", "data_multi.csv"), DataFrame)
         x = Matrix(df[:, 1:2])
-        x = [x[i, :] for i = 1:size(x, 1)]
+        x = [x[i, :] for i in 1:size(x, 1)]
         y = df[:, 3]
 
         X = hcat(x...)
         y_train = Flux.onehotbatch(y, unique(y))
-        y_train = Flux.unstack(y_train'; dims = 1)
+        y_train = Flux.unstack(y_train'; dims=1)
 
         data = zip(x, y_train)
 
@@ -30,70 +30,66 @@ include("testutils.jl")
         @testset "LA - full weights - full hessian - ggn" begin
             la = Laplace(
                 nn;
-                likelihood = :classification,
-                hessian_structure = :full,
-                subset_of_weights = :all,
-                backend = :GGN,
+                likelihood=:classification,
+                hessian_structure=:full,
+                subset_of_weights=:all,
+                backend=:GGN,
             )
             fit!(la, data)
             pytorch_hessian = read_matrix_csv("hessian_multi_all_full_ggn")
-            @test isapprox(pytorch_hessian, rearrange_hessian(la.H, nn); atol = 0.0001)
+            @test isapprox(pytorch_hessian, rearrange_hessian(la.H, nn); atol=0.0001)
         end
 
         @testset "LA - full weights - full hessian - empfisher" begin
             la = Laplace(
                 nn;
-                likelihood = :classification,
-                hessian_structure = :full,
-                subset_of_weights = :all,
-                backend = :EmpiricalFisher,
+                likelihood=:classification,
+                hessian_structure=:full,
+                subset_of_weights=:all,
+                backend=:EmpiricalFisher,
             )
             fit!(la, data)
             pytorch_hessian = read_matrix_csv("hessian_multi_all_full_empfisher")
-            @test isapprox(pytorch_hessian, rearrange_hessian(la.H, nn); atol = 0.0001)
+            @test isapprox(pytorch_hessian, rearrange_hessian(la.H, nn); atol=0.0001)
         end
 
         @testset "LA - last layer - full hessian - empfisher" begin
             la = Laplace(
                 nn;
-                likelihood = :classification,
-                hessian_structure = :full,
-                subset_of_weights = :last_layer,
-                backend = :EmpiricalFisher,
+                likelihood=:classification,
+                hessian_structure=:full,
+                subset_of_weights=:last_layer,
+                backend=:EmpiricalFisher,
             )
             fit!(la, data)
             pytorch_hessian = read_matrix_csv("hessian_multi_ll_full_empfisher")
             @test isapprox(
-                pytorch_hessian,
-                rearrange_hessian_last_layer(la.H, nn);
-                atol = 0.0005,
+                pytorch_hessian, rearrange_hessian_last_layer(la.H, nn); atol=0.0005
             )
         end
 
         @testset "LA - last layer - full hessian - ggn" begin
             la = Laplace(
                 nn;
-                likelihood = :classification,
-                hessian_structure = :full,
-                subset_of_weights = :last_layer,
-                backend = :GGN,
+                likelihood=:classification,
+                hessian_structure=:full,
+                subset_of_weights=:last_layer,
+                backend=:GGN,
             )
             fit!(la, data)
             pytorch_hessian = read_matrix_csv("hessian_multi_ll_full_ggn")
             @test isapprox(
-                pytorch_hessian,
-                rearrange_hessian_last_layer(la.H, nn);
-                atol = 0.0005,
+                pytorch_hessian, rearrange_hessian_last_layer(la.H, nn); atol=0.0005
             )
         end
 
         @testset "LA - subnetwork - full hessian - ggn" begin
             la = Laplace(
                 nn;
-                likelihood = :classification,
-                hessian_structure = :full,
-                subset_of_weights = :subnetwork,
-                subnetwork_indices = [
+                likelihood=:classification,
+                hessian_structure=:full,
+                subset_of_weights=:subnetwork,
+                subnetwork_indices=[
                     [1, 1, 1],
                     [1, 3, 2],
                     [2, 1],
@@ -103,20 +99,20 @@ include("testutils.jl")
                     [4, 1],
                     [4, 4],
                 ],
-                backend = :GGN,
+                backend=:GGN,
             )
             fit!(la, data)
             pytorch_hessian = read_matrix_csv("hessian_multi_subnet_full_ggn")
-            @test isapprox(pytorch_hessian, la.H; atol = 0.0001)
+            @test isapprox(pytorch_hessian, la.H; atol=0.0001)
         end
 
         @testset "LA - subnetwork - full hessian - empfisher" begin
             la = Laplace(
                 nn;
-                likelihood = :classification,
-                hessian_structure = :full,
-                subset_of_weights = :subnetwork,
-                subnetwork_indices = [
+                likelihood=:classification,
+                hessian_structure=:full,
+                subset_of_weights=:subnetwork,
+                subnetwork_indices=[
                     [1, 1, 1],
                     [1, 3, 2],
                     [2, 1],
@@ -126,37 +122,37 @@ include("testutils.jl")
                     [4, 1],
                     [4, 4],
                 ],
-                backend = :EmpiricalFisher,
+                backend=:EmpiricalFisher,
             )
             fit!(la, data)
             pytorch_hessian = read_matrix_csv("hessian_multi_subnet_full_empfisher")
-            @test isapprox(pytorch_hessian, la.H; atol = 0.0001)
+            @test isapprox(pytorch_hessian, la.H; atol=0.0001)
         end
 
         @testset "LA - full weights - kron - ggn" begin
             la = Laplace(
                 nn;
-                likelihood = :classification,
-                hessian_structure = :kron,
-                subset_of_weights = :all,
-                backend = :GGN,
+                likelihood=:classification,
+                hessian_structure=:kron,
+                subset_of_weights=:all,
+                backend=:GGN,
             )
             fit!(la, data)
             pytorch_predictions = read_matrix_csv("predictions_multi_all_kron_ggn")
-            @test isapprox(pytorch_predictions, predict(la, X); atol = 0.001)
+            @test isapprox(pytorch_predictions, predict(la, X); atol=0.001)
         end
 
         @testset "LA - last layer - kron - ggn" begin
             la = Laplace(
                 nn;
-                likelihood = :classification,
-                hessian_structure = :kron,
-                subset_of_weights = :last_layer,
-                backend = :GGN,
+                likelihood=:classification,
+                hessian_structure=:kron,
+                subset_of_weights=:last_layer,
+                backend=:GGN,
             )
             fit!(la, data)
             pytorch_predictions = read_matrix_csv("predictions_multi_ll_kron_ggn")
-            @test isapprox(pytorch_predictions, predict(la, X); atol = 0.001)
+            @test isapprox(pytorch_predictions, predict(la, X); atol=0.001)
         end
     end
 
@@ -177,48 +173,43 @@ include("testutils.jl")
         @testset "LA - full weights - full hessian - ggn" begin
             la = Laplace(
                 nn;
-                likelihood = :regression,
-                hessian_structure = :full,
-                subset_of_weights = :all,
-                backend = :GGN,
+                likelihood=:regression,
+                hessian_structure=:full,
+                subset_of_weights=:all,
+                backend=:GGN,
             )
             fit!(la, data)
             pytorch_hessian = read_matrix_csv("hessian_regression_all_full_ggn")
-            @test isapprox(pytorch_hessian, la.H; atol = 0.05)
+            @test isapprox(pytorch_hessian, la.H; atol=0.05)
         end
 
         @testset "LA - last layer - full hessian - ggn" begin
             la = Laplace(
                 nn;
-                likelihood = :regression,
-                hessian_structure = :full,
-                subset_of_weights = :last_layer,
-                backend = :GGN,
+                likelihood=:regression,
+                hessian_structure=:full,
+                subset_of_weights=:last_layer,
+                backend=:GGN,
             )
             fit!(la, data)
             pytorch_hessian = read_matrix_csv("hessian_regression_ll_full_ggn")
-            @test isapprox(pytorch_hessian, la.H; atol = 0.0005)
+            @test isapprox(pytorch_hessian, la.H; atol=0.0005)
         end
 
         @testset "LA - subnetwork - full hessian - ggn" begin
             la = Laplace(
                 nn;
-                likelihood = :regression,
-                hessian_structure = :full,
-                subset_of_weights = :subnetwork,
-                subnetwork_indices = [
-                    [1, 2, 1],
-                    [1, 4, 1],
-                    [1, 6, 1],
-                    [1, 7, 1],
-                    [1, 8, 1],
-                    [1, 10, 1],
+                likelihood=:regression,
+                hessian_structure=:full,
+                subset_of_weights=:subnetwork,
+                subnetwork_indices=[
+                    [1, 2, 1], [1, 4, 1], [1, 6, 1], [1, 7, 1], [1, 8, 1], [1, 10, 1]
                 ],
-                backend = :GGN,
+                backend=:GGN,
             )
             fit!(la, data)
             pytorch_hessian = read_matrix_csv("hessian_regression_subnet_full_ggn")
-            @test isapprox(pytorch_hessian, la.H; atol = 0.01)
+            @test isapprox(pytorch_hessian, la.H; atol=0.01)
         end
     end
 end

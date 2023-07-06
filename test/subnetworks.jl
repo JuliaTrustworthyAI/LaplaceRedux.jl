@@ -8,27 +8,27 @@ using Flux
         nn = Chain(Dense(2, 2, σ), Dense(2, 1))
         @test_throws AssertionError Laplace(
             nn;
-            likelihood = :classification,
-            subset_of_weights = :subnetwork,
-            subnetwork_indices = [[1, 1, 1], [3, 1, 1], [5, 1]],
+            likelihood=:classification,
+            subset_of_weights=:subnetwork,
+            subnetwork_indices=[[1, 1, 1], [3, 1, 1], [5, 1]],
         )
         @test_throws AssertionError Laplace(
             nn;
-            likelihood = :classification,
-            subset_of_weights = :subnetwork,
-            subnetwork_indices = [[1, 1, 1], [6, 1, 1], [4, 1]],
+            likelihood=:classification,
+            subset_of_weights=:subnetwork,
+            subnetwork_indices=[[1, 1, 1], [6, 1, 1], [4, 1]],
         )
         @test_throws AssertionError Laplace(
             nn;
-            likelihood = :classification,
-            subset_of_weights = :subnetwork,
-            subnetwork_indices = [[1, 1, 1, 1], [6, 1, 1], [4, 1]],
+            likelihood=:classification,
+            subset_of_weights=:subnetwork,
+            subnetwork_indices=[[1, 1, 1, 1], [6, 1, 1], [4, 1]],
         )
         la = Laplace(
             nn;
-            likelihood = :classification,
-            subset_of_weights = :subnetwork,
-            subnetwork_indices = [[1, 1, 1], [3, 1, 1], [4, 1]],
+            likelihood=:classification,
+            subset_of_weights=:subnetwork,
+            subnetwork_indices=[[1, 1, 1], [3, 1, 1], [4, 1]],
         )
         @test la.n_params == 3
         @test la.curvature.subnetwork_indices == [1, 7, 9]
@@ -38,9 +38,9 @@ using Flux
         nn = Chain(Dense(2, 10, σ), Dense(10, 1))
         la = Laplace(
             nn;
-            likelihood = :classification,
-            subset_of_weights = :subnetwork,
-            subnetwork_indices = [
+            likelihood=:classification,
+            subset_of_weights=:subnetwork,
+            subnetwork_indices=[
                 [1, 1, 1],
                 [1, 1, 2],
                 [1, 2, 1],

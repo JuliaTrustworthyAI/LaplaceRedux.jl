@@ -60,27 +60,27 @@ fit_params::Dict{Symbol,Any},
 Constructor for LaplaceApproximation, a wrapper for Laplace, a bayesian deep learning model.
 """
 function LaplaceApproximation(;
-    builder::B = MLJFlux.MLP(; hidden = (32, 32, 32), σ = Flux.swish),
-    finaliser::F = Flux.softmax,
-    optimiser::O = Flux.Optimise.Adam(),
-    loss::L = Flux.crossentropy,
-    epochs::Int = 10,
-    batch_size::Int = 1,
-    lambda::Float64 = 1.0,
-    alpha::Float64 = 0.0,
-    rng::Union{AbstractRNG,Int64} = Random.GLOBAL_RNG,
-    optimiser_changes_trigger_retraining::Bool = false,
-    acceleration::AbstractResource = CPU1(),
-    likelihood::Symbol = :classification,
-    subset_of_weights::Symbol = :all,
-    subnetwork_indices::Vector{Vector{Int}} = Vector{Vector{Int}}([]),
-    hessian_structure::Symbol = :full,
-    backend::Symbol = :GGN,
-    σ::Float64 = 1.0,
-    μ₀::Float64 = 0.0,
-    P₀::Union{AbstractMatrix,UniformScaling,Nothing} = nothing,
-    link_approx::Symbol = :probit,
-    fit_params::Dict{Symbol,Any} = Dict{Symbol,Any}(:override => true),
+    builder::B=MLJFlux.MLP(; hidden=(32, 32, 32), σ=Flux.swish),
+    finaliser::F=Flux.softmax,
+    optimiser::O=Flux.Optimise.Adam(),
+    loss::L=Flux.crossentropy,
+    epochs::Int=10,
+    batch_size::Int=1,
+    lambda::Float64=1.0,
+    alpha::Float64=0.0,
+    rng::Union{AbstractRNG,Int64}=Random.GLOBAL_RNG,
+    optimiser_changes_trigger_retraining::Bool=false,
+    acceleration::AbstractResource=CPU1(),
+    likelihood::Symbol=:classification,
+    subset_of_weights::Symbol=:all,
+    subnetwork_indices::Vector{Vector{Int}}=Vector{Vector{Int}}([]),
+    hessian_structure::Symbol=:full,
+    backend::Symbol=:GGN,
+    σ::Float64=1.0,
+    μ₀::Float64=0.0,
+    P₀::Union{AbstractMatrix,UniformScaling,Nothing}=nothing,
+    link_approx::Symbol=:probit,
+    fit_params::Dict{Symbol,Any}=Dict{Symbol,Any}(:override => true),
 ) where {B,F,O,L}
     model = LaplaceApproximation(
         builder,
@@ -127,14 +127,14 @@ function MLJFlux.build(model::LaplaceApproximation, rng, shape)
     # Construct Laplace model and store it in the model object
     model.la = Laplace(
         chain;
-        likelihood = model.likelihood,
-        subset_of_weights = model.subset_of_weights,
-        subnetwork_indices = model.subnetwork_indices,
-        hessian_structure = model.hessian_structure,
-        backend = model.backend,
-        σ = model.σ,
-        μ₀ = model.μ₀,
-        P₀ = model.P₀,
+        likelihood=model.likelihood,
+        subset_of_weights=model.subset_of_weights,
+        subnetwork_indices=model.subnetwork_indices,
+        hessian_structure=model.hessian_structure,
+        backend=model.backend,
+        σ=model.σ,
+        μ₀=model.μ₀,
+        P₀=model.P₀,
     )
     return chain
 end
@@ -147,7 +147,7 @@ function MLJFlux.train!(model::LaplaceApproximation, penalty, chain, optimiser, 
     loss = model.loss
     n_batches = length(y)
     training_loss = zero(Float32)
-    for i = 1:n_batches
+    for i in 1:n_batches
         parameters = Flux.params(chain)
         gs = Flux.gradient(parameters) do
             yhat = chain(X[i])
@@ -161,25 +161,18 @@ function MLJFlux.train!(model::LaplaceApproximation, penalty, chain, optimiser, 
 end
 
 function MLJFlux.fit!(
-    model::LaplaceApproximation,
-    penalty,
-    chain,
-    optimiser,
-    epochs,
-    verbosity,
-    X,
-    y,
+    model::LaplaceApproximation, penalty, chain, optimiser, epochs, verbosity, X, y
 )
     loss = model.loss
 
     # intitialize and start progress meter:
     meter = Progress(
         epochs + 1;
-        dt = 0,
-        desc = "Optimising neural net:",
-        barglyphs = BarGlyphs("[=> ]"),
-        barlen = 25,
-        color = :yellow,
+        dt=0,
+        desc="Optimising neural net:",
+        barglyphs=BarGlyphs("[=> ]"),
+        barlen=25,
+        color=:yellow,
     )
     verbosity != 1 || next!(meter)
 
@@ -189,12 +182,13 @@ function MLJFlux.fit!(
     parameters = Flux.params(chain)
 
     # initial loss:
-    losses = (loss(chain(X[i]), y[i]) + penalty(parameters) / n_batches for i = 1:n_batches)
+    losses = (loss(chain(X[i]), y[i]) + penalty(parameters) / n_batches for i in 1:n_batches)
     history = [mean(losses)]
 
-    for i = 1:epochs
-        current_loss =
-            MLJFlux.train!(model::MLJFlux.MLJFluxModel, penalty, chain, optimiser, X, y)
+    for i in 1:epochs
+        current_loss = MLJFlux.train!(
+            model::MLJFlux.MLJFluxModel, penalty, chain, optimiser, X, y
+        )
         verbosity < 2 || @info "Loss is $(round(current_loss; sigdigits=4))"
         verbosity != 1 || next!(meter)
         push!(history, current_loss)
@@ -204,7 +198,7 @@ function MLJFlux.fit!(
 
     # fit the Laplace model:
     fit!(la, zip(X, y); model.fit_params...)
-    optimize_prior!(la; verbose = false, n_steps = 100)
+    optimize_prior!(la; verbose=false, n_steps=100)
 
     model.la = la
 
@@ -276,8 +270,8 @@ function MMI.predict(model::LaplaceApproximation, fitresult, Xnew)
     # predict using Laplace:
     yhat = vcat(
         [
-            predict(la, MLJFlux.tomat(X[:, i]); link_approx = model.link_approx)' for
-            i = 1:size(X, 2)
+            predict(la, MLJFlux.tomat(X[:, i]); link_approx=model.link_approx)' for
+            i in 1:size(X, 2)
         ]...,
     )
     if la.likelihood == :classification
@@ -307,9 +301,7 @@ function _equal_to_depth_one(x1, x2)
 end
 
 function MMI.is_same_except(
-    m1::M1,
-    m2::M2,
-    exceptions::Symbol...,
+    m1::M1, m2::M2, exceptions::Symbol...
 ) where {M1<:LaplaceApproximation,M2<:LaplaceApproximation}
     typeof(m1) === typeof(m2) || return false
     names = propertynames(m1)
@@ -340,16 +332,16 @@ end
 
 MMI.metadata_model(
     LaplaceApproximation;
-    input = Union{
+    input=Union{
         AbstractMatrix{MMI.Continuous},
         MMI.Table(MMI.Continuous),
         MMI.Table{AbstractVector{MMI.Continuous}},
     },
-    target = Union{
+    target=Union{
         AbstractArray{MMI.Finite},
         AbstractArray{MMI.Continuous},
         AbstractVector{MMI.Finite},
         AbstractVector{MMI.Continuous},
     },
-    path = "MLJFlux.LaplaceApproximation",
+    path="MLJFlux.LaplaceApproximation",
 )

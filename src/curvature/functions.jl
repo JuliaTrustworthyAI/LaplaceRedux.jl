@@ -16,7 +16,7 @@ abstract type CurvatureInterface end
 
 Computes the Jacobian `∇f(x;θ)` where `f: ℝᴰ ↦ ℝᴷ`.
 """
-function jacobians(curvature::CurvatureInterface, X::AbstractArray; batched::Bool = false)
+function jacobians(curvature::CurvatureInterface, X::AbstractArray; batched::Bool=false)
     if batched
         return jacobians_batched(curvature, X)
     else
@@ -62,8 +62,8 @@ function jacobians_batched(curvature::CurvatureInterface, X::AbstractArray)
     grads = jacobian(() -> nn(X), Flux.params(nn))
     grads_joint = reduce(hcat, [grads[θ] for θ in curvature.params])
     views = [
-        @view grads_joint[batch_start:(batch_start+out_size-1), :] for
-        batch_start = 1:out_size:(batch_size*out_size)
+        @view grads_joint[batch_start:(batch_start + out_size - 1), :] for
+        batch_start in 1:out_size:(batch_size * out_size)
     ]
     𝐉 = stack(views)
     if curvature.subset_of_weights == :subnetwork
@@ -79,9 +79,7 @@ end
 Compute the gradients with respect to the loss function: `∇ℓ(f(x;θ),y)` where `f: ℝᴰ ↦ ℝᴷ`.
 """
 function gradients(
-    curvature::CurvatureInterface,
-    X::AbstractArray,
-    y::Union{Number,AbstractArray},
+    curvature::CurvatureInterface, X::AbstractArray, y::Union{Number,AbstractArray}
 )::Zygote.Grads
     nn = curvature.model
     𝐠 = gradient(() -> curvature.loss_fun(nn(X), y), Flux.params(nn))           # compute the gradients of the loss function with respect to the model parameters
@@ -111,13 +109,7 @@ function GGN(
     factor = likelihood == :regression ? 0.5 : 1.0
 
     return GGN(
-        model,
-        likelihood,
-        loss_fun,
-        params,
-        factor,
-        subset_of_weights,
-        subnetwork_indices,
+        model, likelihood, loss_fun, params, factor, subset_of_weights, subnetwork_indices
     )
 end
 
@@ -126,7 +118,7 @@ end
 
 Compute the full GGN, for either a single input-output datapoint or a batch of such. 
 """
-function full(curvature::GGN, d::Tuple; batched::Bool = false)
+function full(curvature::GGN, d::Tuple; batched::Bool=false)
     if batched
         full_batched(curvature, d)
     else
@@ -208,13 +200,7 @@ function EmpiricalFisher(
     factor = likelihood == :regression ? 0.5 : 1.0
 
     return EmpiricalFisher(
-        model,
-        likelihood,
-        loss_fun,
-        params,
-        factor,
-        subset_of_weights,
-        subnetwork_indices,
+        model, likelihood, loss_fun, params, factor, subset_of_weights, subnetwork_indices
     )
 end
 
@@ -223,7 +209,7 @@ end
 
 Compute the full empirical Fisher for either a single input-output datapoint or a batch of such. 
 """
-function full(curvature::EmpiricalFisher, d::Tuple; batched::Bool = false)
+function full(curvature::EmpiricalFisher, d::Tuple; batched::Bool=false)
     if batched
         full_batched(curvature, d)
     else
@@ -267,8 +253,9 @@ function full_batched(curvature::EmpiricalFisher, d::Tuple)
     nn = curvature.model
     loss = curvature.factor * curvature.loss_fun(nn(x), y)
     nn = curvature.model
-    grads::Zygote.Grads =
-        jacobian(() -> curvature.loss_fun(nn(x), y; agg = identity), Flux.params(nn))
+    grads::Zygote.Grads = jacobian(
+        () -> curvature.loss_fun(nn(x), y; agg=identity), Flux.params(nn)
+    )
     𝐠 = transpose(reduce(hcat, [grads[θ] for θ in curvature.params]))
     if curvature.subset_of_weights == :subnetwork
         𝐠 = 𝐠[curvature.subnetwork_indices, :]
@@ -306,8 +293,9 @@ Kronecker-factored curvature sum.
 """
 function (+)(l::Kron, r::Kron)
     @assert length(l.kfacs) == length(r.kfacs)
-    kfacs =
-        [Tuple(Hi + Hj for (Hi, Hj) in zip(Fi, Fj)) for (Fi, Fj) in zip(l.kfacs, r.kfacs)]
+    kfacs = [
+        Tuple(Hi + Hj for (Hi, Hj) in zip(Fi, Fj)) for (Fi, Fj) in zip(l.kfacs, r.kfacs)
+    ]
     return Kron(kfacs)
 end
 
@@ -349,7 +337,7 @@ Compute the eigendecomposed Kronecker-factored approximate curvature as the Fish
 Note, since the network predictive distribution is used in a weighted sum, and the number of backward
 passes is linear in the number of target classes, e.g. 100 for CIFAR-100.
 """
-function kron(curvature::Union{GGN,EmpiricalFisher}, data; batched::Bool = false)
+function kron(curvature::Union{GGN,EmpiricalFisher}, data; batched::Bool=false)
     subset_of_weights = curvature.subset_of_weights
     @assert !isempty(data)
     @assert subset_of_weights != :subnetwork "Subnetwork Laplace requires a full or diagonal Hessian approximation!"
@@ -373,10 +361,10 @@ function kron(curvature::Union{GGN,EmpiricalFisher}, data; batched::Bool = false
 
     double(sz) = (sz[1], sz[1])
 
-    G_exp = [zeros(double(@zb d_zb[i])) for i = initial_layer:n_layers]
+    G_exp = [zeros(double(@zb d_zb[i])) for i in initial_layer:n_layers]
     # A separate matrix for bias-based gradients.
-    G_exp_b = [zeros(double(@zb d_zb[i])) for i = initial_layer:n_layers]
-    A_exp_zb = [zeros(double(@zb d_zb[i])) for i = (initial_layer-1):(n_layers-1)]
+    G_exp_b = [zeros(double(@zb d_zb[i])) for i in initial_layer:n_layers]
+    A_exp_zb = [zeros(double(@zb d_zb[i])) for i in (initial_layer - 1):(n_layers - 1)]
 
     # The data iterator is modeled lazily, so the number of samples is counted.
     n_data = 0
@@ -390,8 +378,10 @@ function kron(curvature::Union{GGN,EmpiricalFisher}, data; batched::Bool = false
         # Approximate the expected value of the activation outer product A = aa'
         # across all samples x_n,
         # from the input to the pen-ultimate layer activation.
-        A_exp_zb +=
-            [(@zb a_zb[i]) * transpose(@zb a_zb[i]) for i = (initial_layer-1):(n_layers-1)]
+        A_exp_zb += [
+            (@zb a_zb[i]) * transpose(@zb a_zb[i]) for
+            i in (initial_layer - 1):(n_layers - 1)
+        ]
 
         # Approx. the exp. value of the gradient (wrt layer non-activated output) outer product G = gg'
         # via the model's predictive distribution.
@@ -403,11 +393,11 @@ function kron(curvature::Union{GGN,EmpiricalFisher}, data; batched::Bool = false
             # DW[i] <- g[i] * a[i-1]'
             # In our case grads is DW
             g = [
-                grad.layers[i].weight * pinv(transpose(@zb a_zb[i-1])) for
-                i = initial_layer:n_layers
+                grad.layers[i].weight * pinv(transpose(@zb a_zb[i - 1])) for
+                i in initial_layer:n_layers
             ]
 
-            G = p[j] .* [g[i] * transpose(g[i]) for i = 1:length(g)]
+            G = p[j] .* [g[i] * transpose(g[i]) for i in 1:length(g)]
             G_exp += G
             G_exp_b += G
         end
@@ -419,14 +409,15 @@ function kron(curvature::Union{GGN,EmpiricalFisher}, data; batched::Bool = false
 
     # The activation for the bias is simply one.
     # TODO: make Kron.kfacs a union type and include only the G
-    A_exp_b_zb = [[1;;] for _ = initial_layer:n_layers]
+    A_exp_b_zb = [[1;;] for _ in initial_layer:n_layers]
     # Q: why are the factors not scaled in pytorch? bug?
     # G_exp_b /= N
 
     loss_xy = (x, y) -> curvature.loss_fun(nn(x), y)
     loss = sum(d -> loss_xy(d...), data)
-    decomposed =
-        decompose(Kron(collect(interleave(zip(G_exp, A_exp_zb), zip(G_exp_b, A_exp_b_zb)))))
+    decomposed = decompose(
+        Kron(collect(interleave(zip(G_exp, A_exp_zb), zip(G_exp_b, A_exp_b_zb))))
+    )
 
     # NOTE: order is G, A, as in laplace-torch
     return loss, decomposed, n_data
@@ -545,7 +536,7 @@ Matrix-multuply for the KronDecomposed Hessian approximation K and a 2-d matrix 
 applying an exponent to K and transposing W before multiplication.
 Return `(K^x)W^T`, where `x` is the exponent.
 """
-function mm(K::KronDecomposed, W; exponent::Number = -1)
+function mm(K::KronDecomposed, W; exponent::Number=-1)
     cur_idx = 1
 
     @assert length(size(W)) == 2
@@ -568,14 +559,15 @@ function mm(K::KronDecomposed, W; exponent::Number = -1)
         # TODO: find a reference to the derivations
         ldelta_exp = (L1 * transpose(L2) .+ K.delta) .^ exponent
 
-        W_p = reshape(W[:, cur_idx:(cur_idx+sz-1)], k, p_in, p_out)
+        W_p = reshape(W[:, cur_idx:(cur_idx + sz - 1)], k, p_in, p_out)
         # This code closely mimics the laplace-torch Python counter-part (KronDecomposed._bmm),
         # however, there may be a better way to translate the operation.
         # Julia matrices are col-major, Numpy & Pytorch matrices are row-major,
         # hence the awkward permutedims.
         W_p = permutedims(
             stack([
-                Q1 * ((transpose(Q1) * W_p[i, :, :] * Q2) .* ldelta_exp) * transpose(Q2) for i in range(1, size(W_p, 1))
+                Q1 * ((transpose(Q1) * W_p[i, :, :] * Q2) .* ldelta_exp) * transpose(Q2) for
+                i in range(1, size(W_p, 1))
             ]),
             (3, 1, 2),
         )

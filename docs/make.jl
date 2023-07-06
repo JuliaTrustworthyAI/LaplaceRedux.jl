@@ -1,19 +1,19 @@
 using LaplaceRedux
 using Documenter
 
-DocMeta.setdocmeta!(LaplaceRedux, :DocTestSetup, :(using LaplaceRedux); recursive = true)
+DocMeta.setdocmeta!(LaplaceRedux, :DocTestSetup, :(using LaplaceRedux); recursive=true)
 
 makedocs(;
-    modules = [LaplaceRedux],
-    authors = "Patrick Altmeyer",
-    repo = "https://github.com/JuliaTrustworthyAI/LaplaceRedux.jl/blob/{commit}{path}#{line}",
-    sitename = "LaplaceRedux.jl",
-    format = Documenter.HTML(;
-        prettyurls = get(ENV, "CI", "false") == "true",
-        canonical = "https://juliatrustworthyai.github.io/LaplaceRedux.jl",
-        assets = String[],
+    modules=[LaplaceRedux],
+    authors="Patrick Altmeyer",
+    repo="https://github.com/JuliaTrustworthyAI/LaplaceRedux.jl/blob/{commit}{path}#{line}",
+    sitename="LaplaceRedux.jl",
+    format=Documenter.HTML(;
+        prettyurls=get(ENV, "CI", "false") == "true",
+        canonical="https://juliatrustworthyai.github.io/LaplaceRedux.jl",
+        assets=String[],
     ),
-    pages = [
+    pages=[
         "Home" => "index.md",
         "Tutorials" => [
             "Logistic Regression" => "tutorials/logit.md",
@@ -27,4 +27,4 @@ makedocs(;
     ],
 )
 
-deploydocs(; repo = "github.com/JuliaTrustworthyAI/LaplaceRedux.jl", devbranch = "main")
+deploydocs(; repo="github.com/JuliaTrustworthyAI/LaplaceRedux.jl", devbranch="main")
