@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>MLP Regression · LaplaceRedux.jl</title><script data-outdated-warner src="../../assets/warner.js"></script><link rel="canonical" href="https://juliatrustworthyai.github.io/LaplaceRedux.jl/tutorials/regression/"/><link href="https://cdnjs.cloudflare.com/ajax/libs/lato-font/3.0.0/css/lato-font.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/juliamono/0.045/juliamono.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.13.24/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="../.."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../../assets/documenter.js"></script><script src="../../siteinfo.js"></script><script src="../../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><a class="docs-logo" href="../../"><img src="../../assets/logo.svg" alt="LaplaceRedux.jl logo"/></a><div class="docs-package-name"><span class="docs-autofit"><a href="../../">LaplaceRedux.jl</a></span></div><form class="docs-search" action="../../search/"><input class="docs-search-query" id="documenter-search-query" name="q" type="text" placeholder="Search docs"/></form><ul class="docs-menu"><li><a class="tocitem" href="../../">Home</a></li><li><span class="tocitem">Tutorials</span><ul><li><a class="tocitem" href="../logit/">Logistic Regression</a></li><li><a class="tocitem" href="../mlp/">MLP Binary Classifier</a></li><li><a class="tocitem" href="../multi/">MLP Multi-Label Classifier</a></li><li class="is-active"><a class="tocitem" href>MLP Regression</a><ul class="internal"><li><a class="tocitem" href="#Data"><span>Data</span></a></li><li><a class="tocitem" href="#MLP"><span>MLP</span></a></li><li><a class="tocitem" href="#Laplace-Approximation"><span>Laplace Approximation</span></a></li></ul></li><li><a class="tocitem" href="../prior/">A note on the prior ...</a></li></ul></li><li><a class="tocitem" href="../../reference/">Reference</a></li><li><a class="tocitem" href="../../resources/resources/">Additional Resources</a></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><nav class="breadcrumb"><ul class="is-hidden-mobile"><li><a class="is-disabled">Tutorials</a></li><li class="is-active"><a href>MLP Regression</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>MLP Regression</a></li></ul></nav><div class="docs-right"><a class="docs-edit-link" href="https://github.com/JuliaTrustworthyAI/LaplaceRedux.jl/blob/main/docs/src/tutorials/regression.md#" title="Edit on GitHub"><span class="docs-icon fab"></span><span class="docs-label is-hidden-touch">Edit on GitHub</span></a><a class="docs-settings-button fas fa-cog" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-sidebar-button fa fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a></div></header><article class="content" id="documenter-page"><h2 id="Data"><a class="docs-heading-anchor" href="#Data">Data</a><a id="Data-1"></a><a class="docs-heading-anchor-permalink" href="#Data" title="Permalink"></a></h2><p>We first generate some synthetic data:</p><pre><code class="language-julia hljs">using LaplaceRedux.Data
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>MLP Regression · LaplaceRedux.jl</title><script data-outdated-warner src="../../assets/warner.js"></script><link rel="canonical" href="https://juliatrustworthyai.github.io/LaplaceRedux.jl/tutorials/regression/"/><link href="https://cdnjs.cloudflare.com/ajax/libs/lato-font/3.0.0/css/lato-font.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/juliamono/0.045/juliamono.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.13.24/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="../.."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../../assets/documenter.js"></script><script src="../../siteinfo.js"></script><script src="../../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><a class="docs-logo" href="../../"><img src="../../assets/logo.svg" alt="LaplaceRedux.jl logo"/></a><div class="docs-package-name"><span class="docs-autofit"><a href="../../">LaplaceRedux.jl</a></span></div><form class="docs-search" action="../../search/"><input class="docs-search-query" id="documenter-search-query" name="q" type="text" placeholder="Search docs"/></form><ul class="docs-menu"><li><a class="tocitem" href="../../">Home</a></li><li><span class="tocitem">Tutorials</span><ul><li><a class="tocitem" href="../logit/">Logistic Regression</a></li><li><a class="tocitem" href="../mlp/">MLP Binary Classifier</a></li><li><a class="tocitem" href="../multi/">MLP Multi-Label Classifier</a></li><li class="is-active"><a class="tocitem" href>MLP Regression</a><ul class="internal"><li><a class="tocitem" href="#MLP"><span>MLP</span></a></li><li><a class="tocitem" href="#Laplace-Approximation"><span>Laplace Approximation</span></a></li></ul></li><li><a class="tocitem" href="../prior/">A note on the prior ...</a></li></ul></li><li><a class="tocitem" href="../../_reference/">Reference</a></li><li><a class="tocitem" href="../../resources/_resources/">Additional Resources</a></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><nav class="breadcrumb"><ul class="is-hidden-mobile"><li><a class="is-disabled">Tutorials</a></li><li class="is-active"><a href>MLP Regression</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>MLP Regression</a></li></ul></nav><div class="docs-right"><a class="docs-edit-link" href="https://github.com/JuliaTrustworthyAI/LaplaceRedux.jl/blob/main/docs/src/tutorials/regression.md#" title="Edit on GitHub"><span class="docs-icon fab"></span><span class="docs-label is-hidden-touch">Edit on GitHub</span></a><a class="docs-settings-button fas fa-cog" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-sidebar-button fa fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a></div></header><article class="content" id="documenter-page"><h1 id="Data"><a class="docs-heading-anchor" href="#Data">Data</a><a id="Data-1"></a><a class="docs-heading-anchor-permalink" href="#Data" title="Permalink"></a></h1><p>We first generate some synthetic data:</p><pre><code class="language-julia hljs">using LaplaceRedux.Data
 n = 300       # number of observations
 σtrue = 0.30  # true observational noise
 x, y = Data.toy_data_regression(n;noise=σtrue)
@@ -32,44 +32,43 @@ end</code></pre><h2 id="Laplace-Approximation"><a class="docs-heading-anchor" hr
 la = Laplace(nn; likelihood=:regression, subset_of_weights=subset_w)
 fit!(la, data)
 plot(la, X, y; zoom=-5, size=(400,400))</code></pre><p><img src="../regression_files/figure-commonmark/cell-6-output-1.svg" alt/></p><p>Next we optimize the prior precision <em>P</em>₀ and and observational noise <em>σ</em> using Empirical Bayes:</p><pre><code class="language-julia hljs">optimize_prior!(la; verbose=true)
-plot(la, X, y; zoom=-5, size=(400,400))</code></pre><pre><code class="nohighlight hljs">loss(exp.(logP₀), exp.(logσ)) = 117.66664854620934
-Log likelihood: -85.92178189333164
-Log det ratio: 35.71426712713756
-Scatter: 27.77546617861784
-loss(exp.(logP₀), exp.(logσ)) = 121.87231511858798
-Log likelihood: -94.6377872523882
-Log det ratio: 40.7731858243348
-Scatter: 13.695869908064768
-loss(exp.(logP₀), exp.(logσ)) = 105.74544738246172
-Log likelihood: -79.26976568466756
-Log det ratio: 43.950740004518195
-Scatter: 9.000623391070134
-loss(exp.(logP₀), exp.(logσ)) = 103.88142914896216
-Log likelihood: -77.44149990175734
-Log det ratio: 45.50530524149423
-Scatter: 7.374553252915389
-loss(exp.(logP₀), exp.(logσ)) = 104.09479293926637
-Log likelihood: -77.63140243238486
-Log det ratio: 45.99843510214248
-Scatter: 6.928345911620529
-
-loss(exp.(logP₀), exp.(logσ)) = 103.3468498181464
-Log likelihood: -76.88770063543016
-Log det ratio: 45.92861066847996
-Scatter: 6.989687696952491
-loss(exp.(logP₀), exp.(logσ)) = 103.16246637027459
-Log likelihood: -76.71757535070529
-Log det ratio: 45.64189954216795
-Scatter: 7.247882496970637
-loss(exp.(logP₀), exp.(logσ)) = 103.16978958495622
-Log likelihood: -76.7341717145966
-Log det ratio: 45.34308830278303
-Scatter: 7.528147437936199
-loss(exp.(logP₀), exp.(logσ)) = 103.16445388078068
-Log likelihood: -76.73183970804324
-Log det ratio: 45.1273375561218
-Scatter: 7.737890789353098
-loss(exp.(logP₀), exp.(logσ)) = 103.15526534959244
-Log likelihood: -76.72294852715255
-Log det ratio: 45.01394675305761
-Scatter: 7.850686891822177</code></pre><p><img src="../regression_files/figure-commonmark/cell-7-output-3.svg" alt/></p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../multi/">« MLP Multi-Label Classifier</a><a class="docs-footer-nextpage" href="../prior/">A note on the prior ... »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 0.27.23 on <span class="colophon-date" title="Thursday 13 April 2023 11:17">Thursday 13 April 2023</span>. Using Julia version 1.8.5.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+plot(la, X, y; zoom=-5, size=(400,400))</code></pre><pre><code class="nohighlight hljs">loss(exp.(logP₀), exp.(logσ)) = 115.75735421748533
+Log likelihood: -79.2200866848734
+Log det ratio: 41.447703478591464
+Scatter: 31.626831586632402
+loss(exp.(logP₀), exp.(logσ)) = 117.86642880183206
+Log likelihood: -86.56623967031658
+Log det ratio: 47.038810369756135
+Scatter: 15.561567893274834
+loss(exp.(logP₀), exp.(logσ)) = 99.47631633578109
+Log likelihood: -69.09330443512576
+Log det ratio: 50.58494846478561
+Scatter: 10.18107533652504
+loss(exp.(logP₀), exp.(logσ)) = 98.39016022405285
+Log likelihood: -68.06679631670653
+Log det ratio: 52.35553006863444
+Scatter: 8.291197746058197
+loss(exp.(logP₀), exp.(logσ)) = 98.32796211733199
+Log likelihood: -67.97958599228153
+Log det ratio: 52.957723488965314
+Scatter: 7.739028761135608
+loss(exp.(logP₀), exp.(logσ)) = 97.4846502485071
+Log likelihood: -67.13783329716615
+Log det ratio: 52.93077798129934
+Scatter: 7.7628559213825294
+loss(exp.(logP₀), exp.(logσ)) = 97.35181187147037
+Log likelihood: -67.01886503956803
+Log det ratio: 52.64896810867424
+Scatter: 8.016925555130463
+loss(exp.(logP₀), exp.(logσ)) = 97.36438554054067
+Log likelihood: -67.04148717903837
+Log det ratio: 52.335624298852
+Scatter: 8.310172424152613
+loss(exp.(logP₀), exp.(logσ)) = 97.349858431591
+Log likelihood: -67.03065735188642
+Log det ratio: 52.098394400933444
+Scatter: 8.540007758475733
+loss(exp.(logP₀), exp.(logσ)) = 97.33749417115928
+Log likelihood: -67.01884461669445
+Log det ratio: 51.96485166001452
+Scatter: 8.67244744891513</code></pre><p><img src="../regression_files/figure-commonmark/cell-7-output-2.svg" alt/></p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../multi/">« MLP Multi-Label Classifier</a><a class="docs-footer-nextpage" href="../prior/">A note on the prior ... »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 0.27.25 on <span class="colophon-date" title="Thursday 6 July 2023 13:54">Thursday 6 July 2023</span>. Using Julia version 1.9.2.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
