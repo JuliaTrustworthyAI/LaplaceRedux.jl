@@ -4,3 +4,6 @@
 *.drawio linguist-vendored
 *.tex linguist-vendored
 *.qmd linguist-vendored
+
+dev/** linguist-vendored
+paper/** linguist-vendored
