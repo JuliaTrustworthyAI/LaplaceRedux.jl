@@ -10,6 +10,9 @@ using .Curvature
 
 include("baselaplace.jl")       # abstract base type and methods
 include("laplace.jl")           # full Laplace
+include("kron.jl")              # Kronecker-factored Laplace
+
+include("subnet.jl")
 
 export Laplace
 export fit!, predict

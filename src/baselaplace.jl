@@ -7,6 +7,48 @@ abstract type BaseLaplace end
 # If functional LA is implemented, it may make sense to add another layer of interface-inheritance
 
 """
+Compile-time copy-paste macro @def: a macro that creates a macro with the specified name and content,
+which is then immediately applied to the code.
+
+Ref: https://www.stochasticlifestyle.com/type-dispatch-design-post-object-oriented-programming-julia/
+"""
+macro def(name, definition)
+    return quote
+        macro $(esc(name))()
+            return esc($(Expr(:quote, definition)))
+        end
+    end
+end
+
+@def fields_baselaplace begin
+    model::Flux.Chain
+    likelihood::Symbol
+    subset_of_weights::Symbol
+    # indices of the subnetwork
+    subnetwork_indices::Union{Nothing,Vector{Vector{Int}}}
+    hessian_structure::Symbol
+    curvature::Union{Curvature.CurvatureInterface,Nothing}
+    # standard deviation in the Gaussian prior
+    σ::Real
+    # prior mean
+    μ₀::Real
+    # posterior mean
+    μ::AbstractVector
+    # prior precision (i.e. inverse covariance matrix)
+    P₀::Union{AbstractMatrix,UniformScaling}
+    # Hessian matrix
+    H::Union{AbstractArray,KronDecomposed,Nothing}
+    # posterior precision
+    P::Union{AbstractArray,KronDecomposed,Nothing}
+    # posterior covariance matrix
+    Σ::Union{AbstractArray,Nothing}
+    n_params::Union{Int,Nothing}
+    n_data::Union{Int,Nothing}
+    n_out::Union{Int,Nothing}
+    loss::Real
+end
+
+"""
     outdim(la::BaseLaplace)
 
 Helper function to determine the output dimension, corresponding to the number of neurons 
