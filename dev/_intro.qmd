@@ -26,6 +26,10 @@ using Pkg
 Pkg.add("https://github.com/JuliaTrustworthyAI/LaplaceRedux.jl")
 ```
 
+## 🏃 Getting Started
+
+If you are new to Deep Learning in Julia or simply prefer learning through videos, check out this awesome YouTube [tutorial](https://www.youtube.com/channel/UCQwQVlIkbalDzmMnr-0tRhw) by [doggo.jl](https://www.youtube.com/@doggodotjl/about) 🐶. Additionally, you can also find a [video](https://www.youtube.com/watch?v=oWko8FRj_64) of my presentation at JuliaCon 2022 on YouTube. 
+
 ## 🖥️ Basic Usage
 
 `LaplaceRedux.jl` can be used for any neural network trained in [`Flux.jl`](https://fluxml.ai/Flux.jl/dev/). Below we show basic usage examples involving two simple models for a regression and a classification task, respectively.
