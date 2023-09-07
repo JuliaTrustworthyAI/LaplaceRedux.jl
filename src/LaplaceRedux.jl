@@ -22,6 +22,4 @@ export optimize_prior!,
 include("mlj_flux.jl")
 export LaplaceApproximation
 
-include("plotting.jl")
-
 end
