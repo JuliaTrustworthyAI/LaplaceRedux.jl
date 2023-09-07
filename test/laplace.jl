@@ -170,7 +170,6 @@ function run_workflow(
     verbose::Bool=false,
     do_optimize_prior::Bool=true,
     do_predict::Bool=true,
-    do_plot::Bool=true,
 )
     # Unpack:
     X = val[:X]
@@ -208,28 +207,6 @@ function run_workflow(
     end
     if do_predict
         predict(la, X)
-    end
-    if do_plot
-        if outdim == 1
-            plot(la, X, y)                              # standard
-            plot(la, X, y; xlims=(-5, 5), ylims=(-5, 5))  # lims
-            plot(la, X, y; link_approx=:plugin)         # plugin approximation  
-        else
-            # Classification multi is plotted differently
-            @assert likelihood == :classification
-            # NOTE: do we not allow for vector-output regression?
-            for link_approx in [:probit, :plugin]
-                _labels = sort(unique(y))
-                plt_list = []
-                for target in _labels
-                    plt = plot(
-                        la, X, y; target=target, clim=(0, 1), link_approx=link_approx
-                    )
-                    push!(plt_list, plt)
-                end
-                plot(plt_list...)
-            end
-        end
     end
 
     return la.H
@@ -349,7 +326,6 @@ end
             hessian_structure=:kron,
             do_optimize_prior=false,
             do_predict=true,
-            do_plot=false,
         )
     end
 end
