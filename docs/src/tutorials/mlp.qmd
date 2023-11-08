@@ -8,7 +8,7 @@ CurrentModule = LaplaceRedux
 #| echo: false
 using Pkg; Pkg.activate("docs")
 # Import libraries
-using Flux, Plots, Random, Statistics, LaplaceRedux, LinearAlgebra
+using Flux, Plots, TaijaPlotting, Random, Statistics, LaplaceRedux, LinearAlgebra
 theme(:lime)
 ```
 
