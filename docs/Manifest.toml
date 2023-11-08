@@ -2,7 +2,7 @@
 
 julia_version = "1.9.3"
 manifest_format = "2.0"
-project_hash = "effe7fde1f570fadf73ac1e1d36d23d2bfafa7a9"
+project_hash = "89145376c7506aacdd7535aa1062567925d9d8fb"
 
 [[deps.ANSIColoredPrinters]]
 git-tree-sha1 = "574baf8110975760d391c710b6341da1afa48d8c"
@@ -354,10 +354,10 @@ uuid = "f0e56b4a-5159-44fe-b623-3e5288b988bb"
 version = "2.3.0"
 
 [[deps.ConformalPrediction]]
-deps = ["CategoricalArrays", "ChainRules", "ComputationalResources", "Flux", "LazyArtifacts", "LinearAlgebra", "MLJBase", "MLJEnsembles", "MLJFlux", "MLJModelInterface", "MLUtils", "NaturalSort", "ProgressMeter", "Random", "Serialization", "StatsBase", "Tables"]
-git-tree-sha1 = "5ae9a307c350e2afeb411b2f4cc89ac2efbe9823"
+deps = ["CategoricalArrays", "MLJBase", "MLJModelInterface", "NaturalSort", "Plots", "StatsBase"]
+git-tree-sha1 = "ee084331dcb2772dbd25a7c6afcaa664f36a0f04"
 uuid = "98bfc277-1877-43dc-819b-a3e38c30242f"
-version = "0.1.12"
+version = "0.1.6"
 
 [[deps.ConstructionBase]]
 deps = ["LinearAlgebra"]
@@ -643,18 +643,22 @@ uuid = "53c48c17-4a7d-5ca2-90c5-79b7896eea93"
 version = "0.8.4"
 
 [[deps.Flux]]
-deps = ["Adapt", "CUDA", "ChainRulesCore", "Functors", "LinearAlgebra", "MLUtils", "MacroTools", "NNlib", "NNlibCUDA", "OneHotArrays", "Optimisers", "Preferences", "ProgressLogging", "Random", "Reexport", "SparseArrays", "SpecialFunctions", "Statistics", "Zygote", "cuDNN"]
-git-tree-sha1 = "3e2c3704c2173ab4b1935362384ca878b53d4c34"
+deps = ["Adapt", "ChainRulesCore", "Functors", "LinearAlgebra", "MLUtils", "MacroTools", "NNlib", "OneHotArrays", "Optimisers", "Preferences", "ProgressLogging", "Random", "Reexport", "SparseArrays", "SpecialFunctions", "Statistics", "Zygote"]
+git-tree-sha1 = "b97c3fc4f3628b8835d83789b09382961a254da4"
 uuid = "587475ba-b771-5e3f-ad9e-33799f191a9c"
-version = "0.13.17"
+version = "0.14.6"
 
     [deps.Flux.extensions]
-    AMDGPUExt = "AMDGPU"
+    FluxAMDGPUExt = "AMDGPU"
+    FluxCUDAExt = "CUDA"
+    FluxCUDAcuDNNExt = ["CUDA", "cuDNN"]
     FluxMetalExt = "Metal"
 
     [deps.Flux.weakdeps]
     AMDGPU = "21141c5a-9bdb-4563-92ae-f87d6854732e"
+    CUDA = "052768ef-5323-5732-b1bb-66c8b64840ba"
     Metal = "dde4c033-4e86-420c-a63e-0dd931031962"
+    cuDNN = "02a925ec-e4fe-4b08-9a7e-0d78e3d38ccd"
 
 [[deps.Fontconfig_jll]]
 deps = ["Artifacts", "Bzip2_jll", "Expat_jll", "FreeType2_jll", "JLLWrappers", "Libdl", "Libuuid_jll", "Pkg", "Zlib_jll"]
@@ -1216,9 +1220,9 @@ version = "0.1.1"
 
 [[deps.MLJFlux]]
 deps = ["CategoricalArrays", "ColorTypes", "ComputationalResources", "Flux", "MLJModelInterface", "Metalhead", "ProgressMeter", "Random", "Statistics", "Tables"]
-git-tree-sha1 = "40f9e99a6770bc795f70f1908316e1491488a7b7"
+git-tree-sha1 = "72935b7de07a7f6b72fd49ecc7898dac79248d46"
 uuid = "094fc8d1-fd35-5302-93ea-dabda2abf845"
-version = "0.3.1"
+version = "0.4.0"
 
 [[deps.MLJIteration]]
 deps = ["IterationControl", "MLJBase", "Random", "Serialization"]
@@ -1317,10 +1321,14 @@ uuid = "442fdcdd-2543-5da2-b0f3-8c86c306513e"
 version = "0.3.2"
 
 [[deps.Metalhead]]
-deps = ["Artifacts", "BSON", "CUDA", "ChainRulesCore", "Flux", "Functors", "JLD2", "LazyArtifacts", "MLUtils", "NNlib", "PartialFunctions", "Random", "Statistics"]
-git-tree-sha1 = "4bbdb628c60c5f473148292df3ecb87058ba515f"
+deps = ["Artifacts", "BSON", "ChainRulesCore", "Flux", "Functors", "JLD2", "LazyArtifacts", "MLUtils", "NNlib", "PartialFunctions", "Random", "Statistics"]
+git-tree-sha1 = "9ecbb04ec44bb292576064ace129ea0d92dee37a"
 uuid = "dbeba491-748d-5e0e-a39e-b530a07fa0cc"
-version = "0.8.3"
+version = "0.9.0"
+weakdeps = ["CUDA"]
+
+    [deps.Metalhead.extensions]
+    MetalheadCUDAExt = "CUDA"
 
 [[deps.MicroCollections]]
 deps = ["BangBang", "InitialValues", "Setfield"]
@@ -1373,21 +1381,21 @@ version = "7.8.3"
 
 [[deps.NNlib]]
 deps = ["Adapt", "Atomix", "ChainRulesCore", "GPUArraysCore", "KernelAbstractions", "LinearAlgebra", "Pkg", "Random", "Requires", "Statistics"]
-git-tree-sha1 = "72240e3f5ca031937bd536182cb2c031da5f46dd"
+git-tree-sha1 = "3bc568de99214f72a76c7773ade218819afcc36e"
 uuid = "872c559c-99b0-510c-b3b7-b6c96a88d5cd"
-version = "0.8.21"
+version = "0.9.7"
 
     [deps.NNlib.extensions]
     NNlibAMDGPUExt = "AMDGPU"
+    NNlibCUDACUDNNExt = ["CUDA", "cuDNN"]
+    NNlibCUDAExt = "CUDA"
+    NNlibEnzymeCoreExt = "EnzymeCore"
 
     [deps.NNlib.weakdeps]
     AMDGPU = "21141c5a-9bdb-4563-92ae-f87d6854732e"
-
-[[deps.NNlibCUDA]]
-deps = ["Adapt", "CUDA", "LinearAlgebra", "NNlib", "Random", "Statistics", "cuDNN"]
-git-tree-sha1 = "f94a9684394ff0d325cc12b06da7032d8be01aaf"
-uuid = "a00861dc-f156-4864-bf3c-e6376f28a68d"
-version = "0.2.7"
+    CUDA = "052768ef-5323-5732-b1bb-66c8b64840ba"
+    EnzymeCore = "f151be2c-9106-41f4-ab19-57ee4f262869"
+    cuDNN = "02a925ec-e4fe-4b08-9a7e-0d78e3d38ccd"
 
 [[deps.NPZ]]
 deps = ["FileIO", "ZipFile"]
@@ -1510,9 +1518,9 @@ version = "2.0.2"
 
 [[deps.Optimisers]]
 deps = ["ChainRulesCore", "Functors", "LinearAlgebra", "Random", "Statistics"]
-git-tree-sha1 = "c1fc26bab5df929a5172f296f25d7d08688fd25b"
+git-tree-sha1 = "34205b1204cc83c43cd9cfe53ffbd3b310f6e8c5"
 uuid = "3bd65402-5787-11e9-1adc-39752487f4e2"
-version = "0.2.20"
+version = "0.3.1"
 
 [[deps.Opus_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
@@ -2016,9 +2024,9 @@ version = "1.11.1"
 
 [[deps.TaijaPlotting]]
 deps = ["CategoricalArrays", "ConformalPrediction", "CounterfactualExplanations", "DataAPI", "Distributions", "Flux", "LaplaceRedux", "LinearAlgebra", "MLJBase", "ManifoldLearning", "MultivariateStats", "NaturalSort", "NearestNeighborModels", "Plots"]
-path = "../../TaijaPlotting.jl"
+git-tree-sha1 = "f86ed2cbb9e9a08b2fe19f44d6c0a1266d05a2f4"
 uuid = "bd7198b4-c7d6-400c-9bab-9a24614b0240"
-version = "1.0.2"
+version = "1.0.3"
 
 [[deps.Tar]]
 deps = ["ArgTools", "SHA"]
@@ -2217,9 +2225,9 @@ version = "1.1.34+0"
 
 [[deps.XZ_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl"]
-git-tree-sha1 = "cf2c7de82431ca6f39250d2fc4aacd0daa1675c0"
+git-tree-sha1 = "522b8414d40c4cbbab8dee346ac3a09f9768f25d"
 uuid = "ffd25f8a-64ca-5728-b0f7-c24cf3aae800"
-version = "5.4.4+0"
+version = "5.4.5+0"
 
 [[deps.Xorg_libICE_jll]]
 deps = ["Libdl", "Pkg"]
