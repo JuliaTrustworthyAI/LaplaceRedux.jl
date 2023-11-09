@@ -13,6 +13,7 @@ CurrentModule = LaplaceRedux
 Modules = [
     LaplaceRedux,
     LaplaceRedux.Curvature
+    LaplaceRedux.Data
 ]
 Private = false
 ```
@@ -23,6 +24,7 @@ Private = false
 Modules = [
     LaplaceRedux,
     LaplaceRedux.Curvature
+    LaplaceRedux.Data
 ]
 Public = false
 ```
