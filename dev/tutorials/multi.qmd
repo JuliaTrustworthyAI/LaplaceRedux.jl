@@ -4,7 +4,7 @@
 #| echo: false
 using Pkg; Pkg.activate("docs")
 # Import libraries
-using Flux, Plots, Random, Statistics, LaplaceRedux
+using Flux, Plots, TaijaPlotting, Random, Statistics, LaplaceRedux
 theme(:lime)
 ```
 
