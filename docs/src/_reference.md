@@ -12,8 +12,8 @@ CurrentModule = LaplaceRedux
 ```@autodocs
 Modules = [
     LaplaceRedux,
-    LaplaceRedux.Curvature
-    LaplaceRedux.Data
+    LaplaceRedux.Curvature,
+    LaplaceRedux.Data,
 ]
 Private = false
 ```
@@ -23,8 +23,8 @@ Private = false
 ```@autodocs
 Modules = [
     LaplaceRedux,
-    LaplaceRedux.Curvature
-    LaplaceRedux.Data
+    LaplaceRedux.Curvature,
+    LaplaceRedux.Data,
 ]
 Public = false
 ```
