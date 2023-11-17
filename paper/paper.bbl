@@ -1,0 +1,47 @@
+\begin{thebibliography}{1}
+
+\bibitem{blundell2015weight}
+Charles Blundell, Julien Cornebise, Koray Kavukcuoglu, and Daan Wierstra.
+Weight uncertainty in neural network.
+In {\em International Conference on Machine Learning}, pages 1613--1622. {PMLR}.
+
+\bibitem{daxberger2021laplace}
+Erik Daxberger, Agustinus Kristiadi, Alexander Immer, Runa Eschenhagen, Matthias Bauer, and Philipp Hennig.
+Laplace {{Redux-Effortless Bayesian Deep Learning}}.
+34.
+
+\bibitem{gal2016dropout}
+Yarin Gal and Zoubin Ghahramani.
+Dropout as a bayesian approximation: {{Representing}} model uncertainty in deep learning.
+In {\em International Conference on Machine Learning}, pages 1050--1059. {PMLR}.
+
+\bibitem{goodfellow2014explaining}
+Ian~J Goodfellow, Jonathon Shlens, and Christian Szegedy.
+Explaining and harnessing adversarial examples.
+arxiv:\href{http://arxiv.org/abs/1412.6572}{1412.6572}.
+
+\bibitem{immer2020improving}
+Alexander Immer, Maciej Korzepa, and Matthias Bauer.
+Improving predictions of bayesian neural networks via local linearization.
+arxiv:\href{http://arxiv.org/abs/2008.08400}{2008.08400}.
+
+\bibitem{lakshminarayanan2016simple}
+Balaji Lakshminarayanan, Alexander Pritzel, and Charles Blundell.
+Simple and scalable predictive uncertainty estimation using deep ensembles.
+arxiv:\href{http://arxiv.org/abs/1612.01474}{1612.01474}.
+
+\bibitem{lawrence2001variational}
+Neil~David Lawrence.
+Variational inference in probabilistic models.
+
+\bibitem{martens2015optimizing}
+James Martens and Roger Grosse.
+Optimizing neural networks with kronecker-factored approximate curvature.
+In {\em International conference on machine learning}, pages 2408--2417. PMLR, 2015.
+
+\bibitem{wilson2020case}
+Andrew~Gordon Wilson.
+The case for {{Bayesian}} deep learning.
+arxiv:\href{http://arxiv.org/abs/2001.10995}{2001.10995}.
+
+\end{thebibliography}

@@ -1,12 +1,12 @@
 # Fdb version 4
-["biber paper"] 1700229277 "paper.bcf" "paper.bbl" "paper" 1700229285 0
+["biber paper"] 1700230506 "paper.bcf" "paper.bbl" "paper" 1700230515 0
   "./ref.bib" 1700223655 63826 bb023038e35b331df3631a38adb2a740 ""
-  "paper.bcf" 1700229285 109106 f7b24b49ba9a44ec348dad771148f25a "pdflatex"
+  "paper.bcf" 1700230515 109106 f7b24b49ba9a44ec348dad771148f25a "pdflatex"
   (generated)
   "paper.bbl"
   "paper.blg"
   (rewritten before read)
-["pdflatex"] 1700229284 "paper.tex" "paper.pdf" "paper" 1700229285 0
+["pdflatex"] 1700230514 "paper.tex" "paper.pdf" "paper" 1700230515 0
   "/usr/local/texlive/2023/texmf-dist/fonts/enc/dvips/cm-super/cm-super-t1.enc" 1136849721 2971 def0b6c1f0b107b3b936def894055589 ""
   "/usr/local/texlive/2023/texmf-dist/fonts/enc/dvips/tex-gyre/q-ec.enc" 1529098226 2457 aaabbccba4df2a7f7371410ee4e075a3 ""
   "/usr/local/texlive/2023/texmf-dist/fonts/map/fontname/texfonts.map" 1577235249 3524 cb3e574dea2d1052e39280babc910dc8 ""
@@ -267,10 +267,10 @@
   "journal_dat.tex" 1700229137 150 4281908cbdc15e71918b51b1dfcd42f9 ""
   "juliacon.cls" 1700229137 30622 c4c9dfa27e0f02b412fe8f4e7b09136f ""
   "logojuliacon.pdf" 1700229137 4937 0cb75c4e65b0cf72a69c7716f140efe5 ""
-  "paper.aux" 1700229285 7357 dd5ded2e31578d1bf52bb56b21e41e83 "pdflatex"
-  "paper.bbl" 1700229284 13250 fa2772edf8f94842d4a3e3084ce74b0b "biber paper"
-  "paper.run.xml" 1700229285 2305 790763489cdf8976f325748a55d6e69e "pdflatex"
-  "paper.tex" 1700229270 15878 c0df557fcd8e0d441d93bb57761df317 ""
+  "paper.aux" 1700230515 7357 139c7cc7e368de6a202970fb095c80c8 "pdflatex"
+  "paper.bbl" 1700230513 13250 fa2772edf8f94842d4a3e3084ce74b0b "biber paper"
+  "paper.run.xml" 1700230515 2305 790763489cdf8976f325748a55d6e69e "pdflatex"
+  "paper.tex" 1700230500 16485 1b42ac3347e040e7bf0785e18a9fbabf ""
   "www/posterior_predictive_mlp.png" 1700224576 233810 0ea3ab1522655067b37b8a752731b153 ""
   "www/regression.png" 1700224576 35612 bc26b8c0249e8850408e84726d29c859 ""
   (generated)

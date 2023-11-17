@@ -1,0 +1,57 @@
+This is BibTeX, Version 0.99d (TeX Live 2023)
+Capacity: max_strings=200000, hash_size=200000, hash_prime=170003
+The top-level auxiliary file: paper.aux
+The style file: juliacon.bst
+Database file #1: ref.bib
+Warning--entry type for "lawrence2001variational" isn't style-file defined
+--line 1053 of file ref.bib
+Warning--empty year in blundell2015weight
+Warning--empty journal in daxberger2021laplace
+Warning--empty year in daxberger2021laplace
+Warning--empty year in gal2016dropout
+Warning--empty note in goodfellow2014explaining
+Warning--empty note in immer2020improving
+Warning--empty note in lakshminarayanan2016simple
+Warning--empty note in wilson2020case
+You've used 9 entries,
+            2314 wiz_defined-function locations,
+            564 strings with 5555 characters,
+and the built_in function-call counts, 3240 in all, are:
+= -- 328
+> -- 150
+< -- 3
++ -- 60
+- -- 50
+* -- 216
+:= -- 517
+add.period$ -- 29
+call.type$ -- 9
+change.case$ -- 52
+chr.to.int$ -- 0
+cite$ -- 17
+duplicate$ -- 125
+empty$ -- 251
+format.name$ -- 50
+if$ -- 702
+int.to.chr$ -- 0
+int.to.str$ -- 9
+missing$ -- 4
+newline$ -- 47
+num.names$ -- 18
+pop$ -- 74
+preamble$ -- 1
+purify$ -- 43
+quote$ -- 0
+skip$ -- 107
+stack$ -- 0
+substring$ -- 166
+swap$ -- 40
+text.length$ -- 3
+text.prefix$ -- 0
+top$ -- 0
+type$ -- 36
+warning$ -- 8
+while$ -- 27
+width$ -- 10
+write$ -- 88
+(There were 9 warnings)

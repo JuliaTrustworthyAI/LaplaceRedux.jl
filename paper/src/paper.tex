@@ -195,6 +195,18 @@ Approximation, Deep Learning, Artificial Intelligence},
 \maketitle
 
 % Abstract
+\begin{abstract}
+
+Treating deep neural networks probabilistically comes with numerous
+advantages including improved robustness and greater interpretability.
+These factors are key to building Artificial Intelligence (AI) that is
+trustworthy. A drawback commonly associated with existing Bayesian
+methods is that they increase computational costs. Recent work has shown
+that Bayesian deep learning can be effortless through Laplace
+approximation. We propose a small Julia package,
+\texttt{LaplaceRedux.jl} that implements this new approach for deep
+neural networks trained in \texttt{Flux.jl}.
+\end{abstract}
 
 % Keywords
 \JCONkeywords{Julia, Probabilistic Machine Learning, Laplace
@@ -212,7 +224,7 @@ Approximation, Deep Learning, Artificial Intelligence},
 
 \setcounter{page}{1}
 
-\ifdefined\Shaded\renewenvironment{Shaded}{\begin{tcolorbox}[interior hidden, breakable, borderline west={3pt}{0pt}{shadecolor}, boxrule=0pt, enhanced, frame hidden, sharp corners]}{\end{tcolorbox}}\fi
+\ifdefined\Shaded\renewenvironment{Shaded}{\begin{tcolorbox}[interior hidden, breakable, sharp corners, enhanced, boxrule=0pt, frame hidden, borderline west={3pt}{0pt}{shadecolor}]}{\end{tcolorbox}}\fi
 
 \setstretch{1}
 \hypertarget{sec-intro}{%
