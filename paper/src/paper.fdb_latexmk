@@ -1,13 +1,13 @@
 # Fdb version 4
-["bibtex paper"] 1700223690 "paper.aux" "paper.bbl" "paper" 1700223692 0
+["bibtex paper"] 1700225305 "paper.aux" "paper.bbl" "paper" 1700225307 0
   "./ref.bib" 1700223655 63826 bb023038e35b331df3631a38adb2a740 ""
   "/usr/local/texlive/2023/texmf-dist/bibtex/bst/natbib/plainnat.bst" 1233624470 26816 ffe5423d2019860bad9f54bc402fac15 ""
-  "paper.aux" 1700223692 6279 2f35364018d44fbc11c5022a1efa6526 "pdflatex"
+  "paper.aux" 1700225307 6279 04c5299fb1a8d82673bfe14c96562e30 "pdflatex"
   (generated)
   "paper.bbl"
   "paper.blg"
   (rewritten before read)
-["pdflatex"] 1700223691 "paper.tex" "paper.pdf" "paper" 1700223692 0
+["pdflatex"] 1700225306 "paper.tex" "paper.pdf" "paper" 1700225307 0
   "/usr/local/texlive/2023/texmf-dist/fonts/enc/dvips/cm-super/cm-super-t1.enc" 1136849721 2971 def0b6c1f0b107b3b936def894055589 ""
   "/usr/local/texlive/2023/texmf-dist/fonts/enc/dvips/tex-gyre/q-ec.enc" 1529098226 2457 aaabbccba4df2a7f7371410ee4e075a3 ""
   "/usr/local/texlive/2023/texmf-dist/fonts/map/fontname/texfonts.map" 1577235249 3524 cb3e574dea2d1052e39280babc910dc8 ""
@@ -254,11 +254,11 @@
   "journal_dat.tex" 1700223440 150 4281908cbdc15e71918b51b1dfcd42f9 ""
   "juliacon.cls" 1700223440 30622 c4c9dfa27e0f02b412fe8f4e7b09136f ""
   "logojuliacon.pdf" 1700223440 4937 0cb75c4e65b0cf72a69c7716f140efe5 ""
-  "paper.aux" 1700223692 6279 2f35364018d44fbc11c5022a1efa6526 "pdflatex"
-  "paper.bbl" 1700223691 2351 af36032296ed5645d28fc6cdda4c9f5a "bibtex paper"
-  "paper.tex" 1700223686 15872 9ebaf74f97a0f72f97777efb1fafdbfa ""
-  "www/posterior_predictive_mlp.png" 1700223533 233810 0ea3ab1522655067b37b8a752731b153 ""
-  "www/regression.png" 1700223533 35612 bc26b8c0249e8850408e84726d29c859 ""
+  "paper.aux" 1700225307 6279 04c5299fb1a8d82673bfe14c96562e30 "pdflatex"
+  "paper.bbl" 1700225306 2351 af36032296ed5645d28fc6cdda4c9f5a "bibtex paper"
+  "paper.tex" 1700225302 15823 adb571e9671c6d1410979f46d8ceca8c ""
+  "www/posterior_predictive_mlp.png" 1700224576 233810 0ea3ab1522655067b37b8a752731b153 ""
+  "www/regression.png" 1700224576 35612 bc26b8c0249e8850408e84726d29c859 ""
   (generated)
   "paper.aux"
   "paper.log"

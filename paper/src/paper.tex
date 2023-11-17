@@ -210,7 +210,7 @@ Approximation, Deep Learning, Artificial Intelligence},
 
 \setcounter{page}{1}
 
-\ifdefined\Shaded\renewenvironment{Shaded}{\begin{tcolorbox}[breakable, frame hidden, enhanced, borderline west={3pt}{0pt}{shadecolor}, sharp corners, boxrule=0pt, interior hidden]}{\end{tcolorbox}}\fi
+\ifdefined\Shaded\renewenvironment{Shaded}{\begin{tcolorbox}[frame hidden, enhanced, interior hidden, sharp corners, breakable, boxrule=0pt, borderline west={3pt}{0pt}{shadecolor}]}{\end{tcolorbox}}\fi
 
 \setstretch{1}
 \hypertarget{sec-intro}{%
@@ -221,8 +221,8 @@ dominating subdisciplines of Artificial Intelligence. Despite the
 tremendous success of deep neural networks, practitioners and
 researchers have also pointed to a vast number of pitfalls that have so
 far inhibited the use of DL in safety-critical applications. Among other
-things these pitfalls include a lack of adversarial robustness
-\cite{goodfellow2014explaining} and an inherent opaqueness of deep
+things, these pitfalls include a lack of adversarial robustness
+\citep{goodfellow2014explaining} and an inherent opaqueness of deep
 neural networks, often described as the black-box problem.
 
 In deep learning, the number of parameters relative to the size of the
@@ -232,19 +232,19 @@ available data is generally huge:
 {[}\ldots{]} deep neural networks are typically very underspecified by
 the available data, and {[}\ldots{]} parameters {[}therefore{]}
 correspond to a diverse variety of compelling explanations for the data.
-\cite{wilson2020case}
+\citet{wilson2020case}
 \end{quote}
 
 A scenario like this very much calls for treating model predictions
-probabilistically \cite{wilson2020case}. It is therefore not surprising
+probabilistically \citep{wilson2020case}. It is therefore not surprising
 that interest in Bayesian deep learning has grown in recent years as
 researchers have tackled the problem from a wide range of angles
 including MCMC (see
 \href{https://turing.ml/dev/tutorials/03-bayesian-neural-network/}{\texttt{Turing}}),
-Mean Field Variational Inference \cite{blundell2015weight}, Monte Carlo
-Dropout \cite{gal2016dropout} and Deep Ensembles
-\cite{lakshminarayanan2016simple}. Laplace Redux
-(\cite{immer2020improving},\cite{daxberger2021laplace}) is one of the
+Mean Field Variational Inference \citep{blundell2015weight}, Monte Carlo
+Dropout \citep{gal2016dropout} and Deep Ensembles
+\citep{lakshminarayanan2016simple}. Laplace Redux
+\citep[\citet{daxberger2021laplace}]{immer2020improving} is one of the
 most recent and promising approaches to Bayesian neural networks (BNN).
 
 \hypertarget{sec-body}{%
@@ -284,16 +284,16 @@ computation is prohibitive. One can rely on linearized approximations of
 the Hessian, but those still scale quadratically in the number of
 parameters. Fortunately, recent work has shown that block-diagonal
 factorizations can be successfully applied in this context
-\cite{martens2015optimizing}.
+\citep{martens2015optimizing}.
 
 Another reason why LA may have been neglected in the past is that early
 attempts at using it for deep learning failed: simply sampling from the
 Laplace posterior to compute the exact BNN posterior predictive
 distribution in Equation~\ref{eq-bma} does not work when using
-approximations for the Hessian \cite{lawrence2001variational}. Instead,
+approximations for the Hessian \citep{lawrence2001variational}. Instead,
 we can use a linear expansion of the predictive around the mode as
-demonstrated by Immer et al.~(2020) \cite{immer2020improving}. Formally,
-we locally linearize our network,
+demonstrated by \citet{immer2020improving}. Formally, we locally
+linearize our network,
 
 \begin{equation}\protect\hypertarget{eq-glm}{}{
 f^{\hat{\theta}}_{\mbox{lin}}(x;\theta)=f(x;\hat{\theta}) + \mathcal{J}_{\theta}(\theta-\hat{\theta})
@@ -309,12 +309,11 @@ p(y|x,\mathcal{D}) = \mathbb{E} \left[ p(y|f^{\hat{\theta}}_{\mbox{lin}}(x;\thet
 
 has a closed-form solution for regression problems. For classification
 problems it can be approximated using (extended) probit approximation
-\cite{daxberger2021laplace}.
+\citep{daxberger2021laplace}.
 
-Immer et al.~(2020) \cite{immer2020improving} provide a much more
-detailed exposition of the above with a focus on theoretical
-underpinnings and intuition. Daxberger et el. (2021)
-\cite{daxberger2021laplace} introduce Laplace Redux from more of an
+\citet{immer2020improving} provide a much more detailed exposition of
+the above with a focus on theoretical underpinnings and intuition.
+\citet{daxberger2021laplace} introduce Laplace Redux from more of an
 applied perspective and present a comprehensive Python implementation:
 \href{https://aleximmer.github.io/Laplace/}{laplace}.
 
@@ -333,7 +332,7 @@ example is shown in listing \ref{lst:laplace}: the \texttt{Laplace}
 function simply wraps the Flux neural network \texttt{nn}. The returned
 instance is then fitted to data using the generic \texttt{fit!} method.
 Finally, the prior precision \(\lambda\) is optimized through Empirical
-Bayes \cite{daxberger2021laplace}. Calling the generic \texttt{predict}
+Bayes \citep{daxberger2021laplace}. Calling the generic \texttt{predict}
 method on the fitted instance will generate GLM predictions according to
 Equation~\ref{eq-glm-predictive}.
 
