@@ -1,0 +1,25 @@
+---
+title: "Effortless Bayesian Deep Learning in Julia through Laplace"
+keywords:
+  - Julia
+  - Probabilistic Machine Learning
+  - Laplace Approximation
+  - Deep Learning
+  - Artificial Intelligence
+authors:
+  - name: Patrick Altmeyer
+    orcid: 0000-0003-4726-8613
+    affiliation:
+      - name: Delft University of Technology
+date: 17 November 2023
+bibliography: ref.bib
+format:
+  juliacon-proceedings-pdf:
+    keep-tex: true  
+execute:
+    eval: false
+    echo: false
+jupyter: julia-1.9
+---
+
+{{< include body.qmd >}}
