@@ -48,7 +48,7 @@ In deep learning, the number of parameters relative to the size of the available
 > [...] deep neural networks are typically very underspecified by the available data, and [...] parameters [therefore] correspond to a diverse variety of compelling explanations for the data. 
 > @wilson2020case
 
-A scenario like this very much calls for treating model predictions probabilistically [@wilson2020case]. It is therefore not surprising that interest in Bayesian deep learning has grown in recent years as researchers have tackled the problem from a wide range of angles including MCMC (see [`Turing`](https://turing.ml/dev/tutorials/03-bayesian-neural-network/)), Mean Field Variational Inference [@blundell2015weight], Monte Carlo Dropout [@gal2016dropout] and Deep Ensembles [@lakshminarayanan2016simple]. Laplace Redux [@immer2020improving,@daxberger2021laplace] is one of the most recent and promising approaches to Bayesian neural networks (BNN). 
+A scenario like this very much calls for treating model predictions probabilistically [@wilson2020case]. It is therefore not surprising that interest in Bayesian deep learning has grown in recent years as researchers have tackled the problem from a wide range of angles including MCMC (see [`Turing`](https://turing.ml/dev/tutorials/03-bayesian-neural-network/)), Mean Field Variational Inference [@blundell2015weight], Monte Carlo Dropout [@gal2016dropout] and Deep Ensembles [@lakshminarayanan2016simple]. Laplace Redux [@immer2020improving;@daxberger2021laplace] is one of the most recent and promising approaches to Bayesian neural networks (BNN). 
 
 # Laplace Approximation for Deep Learning {#sec-body}
 
