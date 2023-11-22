@@ -3,21 +3,17 @@
 \bibitem{blundell2015weight}
 Charles Blundell, Julien Cornebise, Koray Kavukcuoglu, and Daan Wierstra.
 Weight uncertainty in neural network.
-In {\em International Conference on Machine Learning}, pages 1613--1622.
-  {PMLR}.
+In {\em International Conference on Machine Learning}, pages 1613--1622. {PMLR}.
 
 \bibitem{daxberger2021laplace}
-Erik Daxberger, Agustinus Kristiadi, Alexander Immer, Runa Eschenhagen,
-  Matthias Bauer, and Philipp Hennig.
+Erik Daxberger, Agustinus Kristiadi, Alexander Immer, Runa Eschenhagen, Matthias Bauer, and Philipp Hennig.
 Laplace {{Redux-Effortless Bayesian Deep Learning}}.
 34.
 
 \bibitem{gal2016dropout}
 Yarin Gal and Zoubin Ghahramani.
-Dropout as a bayesian approximation: {{Representing}} model uncertainty in deep
-  learning.
-In {\em International Conference on Machine Learning}, pages 1050--1059.
-  {PMLR}.
+Dropout as a bayesian approximation: {{Representing}} model uncertainty in deep learning.
+In {\em International Conference on Machine Learning}, pages 1050--1059. {PMLR}.
 
 \bibitem{goodfellow2014explaining}
 Ian~J Goodfellow, Jonathon Shlens, and Christian Szegedy.
@@ -41,8 +37,7 @@ Variational inference in probabilistic models.
 \bibitem{martens2015optimizing}
 James Martens and Roger Grosse.
 Optimizing neural networks with kronecker-factored approximate curvature.
-In {\em International conference on machine learning}, pages 2408--2417. PMLR,
-  2015.
+In {\em International conference on machine learning}, pages 2408--2417. PMLR, 2015.
 
 \bibitem{wilson2020case}
 Andrew~Gordon Wilson.

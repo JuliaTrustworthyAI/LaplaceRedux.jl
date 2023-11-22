@@ -3,13 +3,11 @@
 \PassOptionsToPackage{hyphens}{url}
 \PassOptionsToPackage{dvipsnames,svgnames,x11names}{xcolor}
 %
-\documentclass[
-  letterpaper,
-  DIV=11,
-  numbers=noendperiod]{scrartcl}
+
+\documentclass{juliacon}
 
 \usepackage{amsmath,amssymb}
-\usepackage{lmodern}
+\usepackage{setspace}
 \usepackage{iftex}
 \ifPDFTeX
   \usepackage[T1]{fontenc}
@@ -19,6 +17,10 @@
   \usepackage{unicode-math}
   \defaultfontfeatures{Scale=MatchLowercase}
   \defaultfontfeatures[\rmfamily]{Ligatures=TeX,Scale=1}
+\fi
+\usepackage[]{tgtermes}
+\ifPDFTeX\else  
+    % xetex/luatex font selection
 \fi
 % Use upquote if available, for straight quotes in verbatim environments
 \IfFileExists{upquote.sty}{\usepackage{upquote}}{}
@@ -38,7 +40,7 @@
 \makeatother
 \usepackage{xcolor}
 \setlength{\emergencystretch}{3em} % prevent overfull lines
-\setcounter{secnumdepth}{-\maxdimen} % remove section numbering
+\setcounter{secnumdepth}{5}
 % Make \paragraph and \subparagraph free-standing
 \ifx\paragraph\undefined\else
   \let\oldparagraph\paragraph
@@ -75,7 +77,42 @@
 \def\fps@figure{htbp}
 \makeatother
 
-\KOMAoption{captions}{tableheading}
+% Keywords command
+\providecommand{\JCONkeywords}[1]
+{
+  \small	
+  \section*{Keywords} #1
+}
+
+% Two-column table
+% Lifted from https://github.com/quarto-journals/elsevier/blob/main/_extensions/elsevier/partials/_two-column-longtable.tex.
+\usepackage{float}
+\makeatletter
+\let\oldlt\longtable
+\let\endoldlt\endlongtable
+\def\longtable{\@ifnextchar[\longtable@i \longtable@ii}
+\def\longtable@i[#1]{\begin{figure}[H]
+\onecolumn
+\begin{minipage}{0.5\textwidth}
+\oldlt[#1]
+}
+\def\longtable@ii{\begin{figure}[H]
+\onecolumn
+\begin{minipage}{0.5\textwidth}
+\oldlt
+}
+\def\endlongtable{\endoldlt
+\end{minipage}
+\twocolumn
+\end{figure}}
+\makeatother
+
+% Remove whitespace after paragraphs
+\setlength{\parskip}{0pt}
+
+\bibliographystyle{juliacon}
+\usepackage{orcidlink}
+\definecolor{mypink}{RGB}{219, 48, 122}
 \makeatletter
 \makeatother
 \makeatletter
@@ -120,20 +157,27 @@
 \@ifpackageloaded{subcaption}{}{\usepackage{subcaption}}
 \makeatother
 \makeatletter
-\@ifpackageloaded{tcolorbox}{}{\usepackage[many]{tcolorbox}}
+\@ifpackageloaded{tcolorbox}{}{\usepackage[skins,breakable]{tcolorbox}}
 \makeatother
 \makeatletter
 \@ifundefined{shadecolor}{\definecolor{shadecolor}{rgb}{.97, .97, .97}}
 \makeatother
 \makeatletter
 \makeatother
+\makeatletter
+\makeatother
 \ifLuaTeX
   \usepackage{selnolig}  % disable illegal ligatures
 \fi
+\usepackage[]{biblatex}
+\addbibresource{ref.bib}
 \IfFileExists{bookmark.sty}{\usepackage{bookmark}}{\usepackage{hyperref}}
 \IfFileExists{xurl.sty}{\usepackage{xurl}}{} % add URL line breaks if available
 \urlstyle{same} % disable monospaced font for URLs
 \hypersetup{
+  pdftitle={Effortless Bayesian Deep Learning in Julia through Laplace},
+  pdfkeywords={Julia, Probabilistic Machine Learning, Laplace
+Approximation, Deep Learning, Artificial Intelligence},
   colorlinks=true,
   linkcolor={blue},
   filecolor={Maroon},
@@ -141,12 +185,48 @@
   urlcolor={Blue},
   pdfcreator={LaTeX via pandoc}}
 
-\author{}
-\date{}
 
+\title{Effortless Bayesian Deep Learning in Julia through Laplace}
+
+\author[1]{Patrick Altmeyer}
+\affil[1]{Delft University of Technology}
+\date{2023-11-17}
 \begin{document}
-\ifdefined\Shaded\renewenvironment{Shaded}{\begin{tcolorbox}[enhanced, boxrule=0pt, sharp corners, breakable, borderline west={3pt}{0pt}{shadecolor}, interior hidden, frame hidden]}{\end{tcolorbox}}\fi
+\maketitle
 
+% Abstract
+\begin{abstract}
+
+Treating deep neural networks probabilistically comes with numerous
+advantages including improved robustness and greater interpretability.
+These factors are key to building Artificial Intelligence (AI) that is
+trustworthy. A drawback commonly associated with existing Bayesian
+methods is that they increase computational costs. Recent work has shown
+that Bayesian deep learning can be effortless through Laplace
+approximation. We propose a small Julia package,
+\texttt{LaplaceRedux.jl} that implements this new approach for deep
+neural networks trained in \texttt{Flux.jl}.
+\end{abstract}
+
+% Keywords
+\JCONkeywords{Julia, Probabilistic Machine Learning, Laplace
+Approximation, Deep Learning, Artificial Intelligence}
+
+% Hypersetup
+\hypersetup{
+    pdftitle = {Effortless Bayesian Deep Learning in Julia through
+Laplace},
+    pdfsubject = {JuliaCon \@year Proceedings},
+    pdfauthor = {},
+    pdfkeywords = {Julia, Probabilistic Machine Learning, Laplace
+Approximation, Deep Learning, Artificial Intelligence},
+}
+
+\setcounter{page}{1}
+
+\ifdefined\Shaded\renewenvironment{Shaded}{\begin{tcolorbox}[interior hidden, breakable, sharp corners, enhanced, boxrule=0pt, frame hidden, borderline west={3pt}{0pt}{shadecolor}]}{\end{tcolorbox}}\fi
+
+\setstretch{1}
 \hypertarget{sec-intro}{%
 \section{Background}\label{sec-intro}}
 
@@ -155,8 +235,8 @@ dominating subdisciplines of Artificial Intelligence. Despite the
 tremendous success of deep neural networks, practitioners and
 researchers have also pointed to a vast number of pitfalls that have so
 far inhibited the use of DL in safety-critical applications. Among other
-things these pitfalls include a lack of adversarial robustness
-\cite{goodfellow2014explaining} and an inherent opaqueness of deep
+things, these pitfalls include a lack of adversarial robustness
+\autocite{goodfellow2014explaining} and an inherent opaqueness of deep
 neural networks, often described as the black-box problem.
 
 In deep learning, the number of parameters relative to the size of the
@@ -166,20 +246,20 @@ available data is generally huge:
 {[}\ldots{]} deep neural networks are typically very underspecified by
 the available data, and {[}\ldots{]} parameters {[}therefore{]}
 correspond to a diverse variety of compelling explanations for the data.
-\cite{wilson2020case}
+\textcite{wilson2020case}
 \end{quote}
 
 A scenario like this very much calls for treating model predictions
-probabilistically \cite{wilson2020case}. It is therefore not surprising
-that interest in Bayesian deep learning has grown in recent years as
-researchers have tackled the problem from a wide range of angles
-including MCMC (see
+probabilistically \autocite{wilson2020case}. It is therefore not
+surprising that interest in Bayesian deep learning has grown in recent
+years as researchers have tackled the problem from a wide range of
+angles including MCMC (see
 \href{https://turing.ml/dev/tutorials/03-bayesian-neural-network/}{\texttt{Turing}}),
-Mean Field Variational Inference \cite{blundell2015weight}, Monte Carlo
-Dropout \cite{gal2016dropout} and Deep Ensembles
-\cite{lakshminarayanan2016simple}. Laplace Redux
-(\cite{immer2020improving},\cite{daxberger2021laplace}) is one of the
-most recent and promising approaches to Bayesian neural networks (BNN).
+Mean Field Variational Inference \autocite{blundell2015weight}, Monte
+Carlo Dropout \autocite{gal2016dropout} and Deep Ensembles
+\autocite{lakshminarayanan2016simple}. Laplace Redux
+\autocite{immer2020improving,daxberger2021laplace} is one of the most
+recent and promising approaches to Bayesian neural networks (BNN).
 
 \hypertarget{sec-body}{%
 \section{Laplace Approximation for Deep Learning}\label{sec-body}}
@@ -218,16 +298,16 @@ computation is prohibitive. One can rely on linearized approximations of
 the Hessian, but those still scale quadratically in the number of
 parameters. Fortunately, recent work has shown that block-diagonal
 factorizations can be successfully applied in this context
-\cite{martens2015optimizing}.
+\autocite{martens2015optimizing}.
 
 Another reason why LA may have been neglected in the past is that early
 attempts at using it for deep learning failed: simply sampling from the
 Laplace posterior to compute the exact BNN posterior predictive
 distribution in Equation~\ref{eq-bma} does not work when using
-approximations for the Hessian \cite{lawrence2001variational}. Instead,
-we can use a linear expansion of the predictive around the mode as
-demonstrated by Immer et al.~(2020) \cite{immer2020improving}. Formally,
-we locally linearize our network,
+approximations for the Hessian \autocite{lawrence2001variational}.
+Instead, we can use a linear expansion of the predictive around the mode
+as demonstrated by \textcite{immer2020improving}. Formally, we locally
+linearize our network,
 
 \begin{equation}\protect\hypertarget{eq-glm}{}{
 f^{\hat{\theta}}_{\mbox{lin}}(x;\theta)=f(x;\hat{\theta}) + \mathcal{J}_{\theta}(\theta-\hat{\theta})
@@ -243,12 +323,11 @@ p(y|x,\mathcal{D}) = \mathbb{E} \left[ p(y|f^{\hat{\theta}}_{\mbox{lin}}(x;\thet
 
 has a closed-form solution for regression problems. For classification
 problems it can be approximated using (extended) probit approximation
-\cite{daxberger2021laplace}.
+\autocite{daxberger2021laplace}.
 
-Immer et al.~(2020) \cite{immer2020improving} provide a much more
-detailed exposition of the above with a focus on theoretical
-underpinnings and intuition. Daxberger et el. (2021)
-\cite{daxberger2021laplace} introduce Laplace Redux from more of an
+\textcite{immer2020improving} provide a much more detailed exposition of
+the above with a focus on theoretical underpinnings and intuition.
+\textcite{daxberger2021laplace} introduce Laplace Redux from more of an
 applied perspective and present a comprehensive Python implementation:
 \href{https://aleximmer.github.io/Laplace/}{laplace}.
 
@@ -267,9 +346,9 @@ example is shown in listing \ref{lst:laplace}: the \texttt{Laplace}
 function simply wraps the Flux neural network \texttt{nn}. The returned
 instance is then fitted to data using the generic \texttt{fit!} method.
 Finally, the prior precision \(\lambda\) is optimized through Empirical
-Bayes \cite{daxberger2021laplace}. Calling the generic \texttt{predict}
-method on the fitted instance will generate GLM predictions according to
-Equation~\ref{eq-glm-predictive}.
+Bayes \autocite{daxberger2021laplace}. Calling the generic
+\texttt{predict} method on the fitted instance will generate GLM
+predictions according to Equation~\ref{eq-glm-predictive}.
 
 \begin{lstlisting}[language=Julia, escapechar=@, numbers=left, label={lst:laplace}, caption={}]
 la = Laplace(nn; likelihood=:classification)
@@ -332,10 +411,11 @@ the package architecture were made with these future development
 opportunities in mind. This should hopefully make the package attractive
 to other Julia developers interested in the topic.
 
-Laplace Redux is an exciting and promising recent development in Bayesian deep learning. The goal of this project is to
-bring this framework to the attention of the Julia machine-learning
-community. The package \texttt{LaplaceRedux.jl} offers a starting ground
-for a full-fledged implementation in pure Julia. Future developments are
+Laplace Redux is an exciting and promising recent development in
+Bayesian deep learning. The goal of this project is to bring this
+framework to the attention of the Julia machine-learning community. The
+package \texttt{LaplaceRedux.jl} offers a starting ground for a
+full-fledged implementation in pure Julia. Future developments are
 planned and contributions are very much welcome.
 
 \hypertarget{sec-ack}{%
@@ -346,6 +426,8 @@ Deursen for being so supportive of my work on open-source developments.
 I am also grateful to the Julia community for being so kind, welcoming
 and helpful.
 
+
+\printbibliography
 
 
 \end{document}
