@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.25 (TeX Live 2023) (preloaded format=pdflatex 2023.11.6)  17 NOV 2023 15:14
+This is pdfTeX, Version 3.141592653-2.6-1.40.25 (TeX Live 2023) (preloaded format=pdflatex 2023.11.6)  12 MAR 2024 12:46
 entering extended mode
  restricted \write18 enabled.
  file:line:error style messages enabled.
@@ -355,11 +355,11 @@ LaTeX Font Info:    Font shape `U/lasy/b/n' in size <8> not available
 LaTeX Font Info:    Font shape `U/lasy/b/n' in size <6> not available
 (Font)              Font shape `U/lasy/m/n' tried instead on input line 10.
 LaTeX Font Info:    Font shape `U/lasy/b/n' in size <9> not available
-(Font)              Font shape `U/lasy/m/n' tried instead on input line 55.
+(Font)              Font shape `U/lasy/m/n' tried instead on input line 48.
 LaTeX Font Info:    Font shape `U/lasy/b/n' in size <5> not available
-(Font)              Font shape `U/lasy/m/n' tried instead on input line 55.
+(Font)              Font shape `U/lasy/m/n' tried instead on input line 48.
 LaTeX Font Info:    Font shape `T1/cmtt/bx/n' in size <10> not available
-(Font)              Font shape `T1/cmtt/m/n' tried instead on input line 125.
+(Font)              Font shape `T1/cmtt/m/n' tried instead on input line 116.
 
 Underfull \hbox (badness 10000) has occurred while \output is active
   
@@ -371,27 +371,30 @@ Non-PDF special ignored!
 
 
 {/usr/local/texlive/2023/texmf-dist/fonts/enc/dvips/cm-super/cm-super-t1.enc} <./logojuliacon.pdf>]
-<www/posterior_predictive_mlp.png, id=90, 1204.5pt x 401.5pt>
+<www/posterior_predictive_mlp.png, id=87, 1204.5pt x 401.5pt>
 File: www/posterior_predictive_mlp.png Graphic file (type png)
 <use www/posterior_predictive_mlp.png>
-Package pdftex.def Info: www/posterior_predictive_mlp.png  used on input line 168.
+Package pdftex.def Info: www/posterior_predictive_mlp.png  used on input line 161.
 (pdftex.def)             Requested size: 240.89574pt x 80.70291pt.
 
-Overfull \hbox (0.89574pt too wide) in paragraph at lines 168--169
+Overfull \hbox (0.89574pt too wide) in paragraph at lines 161--162
  [][] 
  []
 
-<www/regression.png, id=91, 803.0pt x 401.5pt>
+<www/regression.png, id=88, 803.0pt x 401.5pt>
 File: www/regression.png Graphic file (type png)
 <use www/regression.png>
-Package pdftex.def Info: www/regression.png  used on input line 182.
+Package pdftex.def Info: www/regression.png  used on input line 177.
 (pdftex.def)             Requested size: 240.90186pt x 120.45091pt.
 
-Overfull \hbox (0.90186pt too wide) in paragraph at lines 182--183
+Overfull \hbox (0.90186pt too wide) in paragraph at lines 177--178
  [][] 
  []
 
-(./bib.tex (./paper.bbl
+
+Underfull \vbox (badness 10000) has occurred while \output is active []
+
+ (./bib.tex (./paper.bbl
 Underfull \hbox (badness 10000) in paragraph at lines 19--22
 []\T1/ptm/m/n/9 Ian J Good-fel-low, Jonathon Shlens, and Chris-tian
  []
@@ -419,18 +422,18 @@ Package rerunfilecheck Info: File `paper.out' has not changed.
 (rerunfilecheck)             Checksum: 7F0B7527DEABF0C683969D37A4AFBB90;976.
  ) 
 Here is how much of TeX's memory you used:
- 12557 strings out of 476025
- 187876 string characters out of 5790017
- 1879388 words of memory out of 5000000
+ 12552 strings out of 476025
+ 187808 string characters out of 5790017
+ 1880388 words of memory out of 5000000
  32767 multiletter control sequences out of 15000+600000
  553858 words of font info for 120 fonts, out of 8000000 for 9000
  1141 hyphenation exceptions out of 8191
- 90i,11n,90p,657b,1828s stack positions out of 10000i,1000n,20000p,200000b,200000s
+ 90i,11n,90p,664b,1828s stack positions out of 10000i,1000n,20000p,200000b,200000s
 </usr/local/texlive/2023/texmf-dist/fonts/type1/public/amsfonts/cmextra/cmex9.pfb></usr/local/texlive/2023/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi6.pfb></usr/local/texlive/2023/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi9.pfb></usr/local/texlive/2023/texmf-dist/fonts/type1/public/amsfonts/cm/cmr6.pfb></usr/local/texlive/2023/texmf-dist/fonts/type1/public/amsfonts/cm/cmr9.pfb></usr/local/texlive/2023/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy10.pfb></usr/local/texlive/2023/texmf-dist/fonts/type1/public/amsfonts/latxfont/lcircle1.pfb></usr/local/texlive/2023/texmf-dist/fonts/type1/public/amsfonts/symbols/msbm10.pfb></usr/local/texlive/2023/texmf-dist/fonts/type1/public/cm-super/sftt0800.pfb></usr/local/texlive/2023/texmf-dist/fonts/type1/public/cm-super/sftt0900.pfb></usr/local/texlive/2023/texmf-dist/fonts/type1/public/cm-super/sftt1000.pfb></usr/local/texlive/2023/texmf-dist/fonts/type1/urw/times/utmb8a.pfb></usr/local/texlive/2023/texmf-dist/fonts/type1/urw/times/utmr8a.pfb></usr/local/texlive/2023/texmf-dist/fonts/type1/urw/times/utmri8a.pfb>
-Output written on paper.pdf (2 pages, 435593 bytes).
+Output written on paper.pdf (2 pages, 436052 bytes).
 PDF statistics:
- 184 PDF objects out of 1000 (max. 8388607)
- 147 compressed objects within 2 object streams
- 37 named destinations out of 1000 (max. 500000)
+ 176 PDF objects out of 1000 (max. 8388607)
+ 139 compressed objects within 2 object streams
+ 32 named destinations out of 1000 (max. 500000)
  64 words of extra memory for PDF output out of 10000 (max. 10000000)
 

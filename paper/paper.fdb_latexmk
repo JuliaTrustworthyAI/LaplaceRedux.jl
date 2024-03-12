@@ -1,14 +1,14 @@
 # Fdb version 4
-["bibtex paper"] 1700230481 "paper.aux" "paper.bbl" "paper" 1700230482 0
+["bibtex paper"] 1710235870 "paper.aux" "paper.bbl" "paper" 1710243979 0
   "./juliacon.bst" 1696660047 20997 2eaa317b2b3889daf19a84ad3db6071a ""
   "./ref.bib" 1696660047 63826 bb023038e35b331df3631a38adb2a740 ""
-  "paper.aux" 1700230481 4073 6afb1eb39e91742382db989b02c7cd6b "pdflatex"
+  "paper.aux" 1710243978 4067 984bdebd547752908d65104ddf083308 "pdflatex"
   (generated)
   "paper.bbl"
   "paper.blg"
   (rewritten before read)
-["pdflatex"] 1700230481 "/Users/paltmeyer/code/LaplaceRedux.jl/paper/paper.tex" "paper.pdf" "paper" 1700230482 0
-  "/Users/paltmeyer/code/LaplaceRedux.jl/paper/paper.tex" 1700230479 10306 811411c6f5efe99ba159c50182bec74a ""
+["pdflatex"] 1710243978 "/Users/paltmeyer/code/LaplaceRedux.jl/paper/paper.tex" "paper.pdf" "paper" 1710243979 0
+  "/Users/paltmeyer/code/LaplaceRedux.jl/paper/paper.tex" 1710243977 9543 3237e65863ab88623b0225f1991bb3c5 ""
   "/usr/local/texlive/2023/texmf-dist/fonts/enc/dvips/base/8r.enc" 1165713224 4850 80dc9bab7f31fb78a000ccfed0e27cab ""
   "/usr/local/texlive/2023/texmf-dist/fonts/enc/dvips/cm-super/cm-super-t1.enc" 1136849721 2971 def0b6c1f0b107b3b936def894055589 ""
   "/usr/local/texlive/2023/texmf-dist/fonts/map/fontname/texfonts.map" 1577235249 3524 cb3e574dea2d1052e39280babc910dc8 ""
@@ -144,18 +144,18 @@
   "/usr/local/texlive/2023/texmf-var/fonts/map/pdftex/updmap/pdftex.map" 1699281469 4623355 b8cad38412faebe1ce5b780a45db67bd ""
   "/usr/local/texlive/2023/texmf-var/web2c/pdftex/pdflatex.fmt" 1699281399 7883454 645cd568e3b21bbbe0357d98f595a09a ""
   "/usr/local/texlive/2023/texmf.cnf" 1678822455 577 1b2b1af17af2508fb20dd85783af4050 ""
-  "bib.tex" 1700230479 111 fb8dcbd9d4481bde59a06a28ec8a83ca ""
-  "header.tex" 1700230479 593 16e18a5a446399b3a75cc6ca1c0bac8e ""
+  "bib.tex" 1710243978 111 fb8dcbd9d4481bde59a06a28ec8a83ca ""
+  "header.tex" 1710243978 593 16e18a5a446399b3a75cc6ca1c0bac8e ""
   "jlcode.sty" 1696660047 18246 d33ccf865c532e11b9480876a6bb58b2 ""
-  "journal_dat.tex" 1700230479 150 e8f5f0ce758e2580b918922de6715366 ""
+  "journal_dat.tex" 1710243978 150 e8f5f0ce758e2580b918922de6715366 ""
   "juliacon.cls" 1696660047 30376 600c1d13c17d8cd54504ceeaf65a3e1c ""
   "logojuliacon.pdf" 1696660047 4937 0cb75c4e65b0cf72a69c7716f140efe5 ""
-  "paper.aux" 1700230481 4073 6afb1eb39e91742382db989b02c7cd6b "pdflatex"
-  "paper.bbl" 1700230481 1826 45407b86a86ddb025f6ef197e5007c4d "bibtex paper"
-  "paper.out" 1700230481 976 7f0b7527deabf0c683969d37a4afbb90 "pdflatex"
-  "paper.tex" 1700230479 10306 811411c6f5efe99ba159c50182bec74a ""
-  "www/posterior_predictive_mlp.png" 1696660047 233810 0ea3ab1522655067b37b8a752731b153 ""
-  "www/regression.png" 1696660047 35612 bc26b8c0249e8850408e84726d29c859 ""
+  "paper.aux" 1710243978 4067 984bdebd547752908d65104ddf083308 "pdflatex"
+  "paper.bbl" 1710235870 1826 45407b86a86ddb025f6ef197e5007c4d "bibtex paper"
+  "paper.out" 1710243978 976 7f0b7527deabf0c683969d37a4afbb90 "pdflatex"
+  "paper.tex" 1710243977 9543 3237e65863ab88623b0225f1991bb3c5 ""
+  "www/posterior_predictive_mlp.png" 1710243886 230141 cda70e94a5f02d578d381f9a7da74588 ""
+  "www/regression.png" 1710243892 36396 f05ecfb954d067227cf350bb93802240 ""
   (generated)
   "paper.aux"
   "paper.log"
