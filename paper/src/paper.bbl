@@ -1,0 +1,426 @@
+% $ biblatex auxiliary file $
+% $ biblatex bbl format version 3.2 $
+% Do not modify the above lines!
+%
+% This is an auxiliary file used by the 'biblatex' package.
+% This file may safely be deleted. It will be recreated by
+% biber as required.
+%
+\begingroup
+\makeatletter
+\@ifundefined{ver@biblatex.sty}
+  {\@latex@error
+     {Missing 'biblatex' package}
+     {The bibliography requires the 'biblatex' package.}
+      \aftergroup\endinput}
+  {}
+\endgroup
+
+
+\refsection{0}
+  \datalist[entry]{nty/global//global/global}
+    \entry{antoran2023samplingbased}{misc}{}
+      \name{author}{6}{}{%
+        {{hash=41075589a9bd70ac2ee70c7b7e462cd4}{%
+           family={Antorán},
+           familyi={A\bibinitperiod},
+           given={Javier},
+           giveni={J\bibinitperiod}}}%
+        {{hash=d0bbf7dc5512b4082e8219318e75cf2f}{%
+           family={Padhy},
+           familyi={P\bibinitperiod},
+           given={Shreyas},
+           giveni={S\bibinitperiod}}}%
+        {{hash=a4d85effc35469be83473a72e4413f59}{%
+           family={Barbano},
+           familyi={B\bibinitperiod},
+           given={Riccardo},
+           giveni={R\bibinitperiod}}}%
+        {{hash=32d37e1a4205d86bb4fd9e9e07b9607d}{%
+           family={Nalisnick},
+           familyi={N\bibinitperiod},
+           given={Eric},
+           giveni={E\bibinitperiod}}}%
+        {{hash=e786e02537bb95e5986dccb1012535f6}{%
+           family={Janz},
+           familyi={J\bibinitperiod},
+           given={David},
+           giveni={D\bibinitperiod}}}%
+        {{hash=48ac403ef8899f30cccb37d29c0c96a7}{%
+           family={Hernández-Lobato},
+           familyi={H\bibinithyphendelim L\bibinitperiod},
+           given={José\bibnamedelima Miguel},
+           giveni={J\bibinitperiod\bibinitdelim M\bibinitperiod}}}%
+      }
+      \strng{namehash}{43f9df7a1e3930bb4752b38ba3d6ae0a}
+      \strng{fullhash}{dc780c50ed2073debca32c16564e3ac3}
+      \strng{bibnamehash}{43f9df7a1e3930bb4752b38ba3d6ae0a}
+      \strng{authorbibnamehash}{43f9df7a1e3930bb4752b38ba3d6ae0a}
+      \strng{authornamehash}{43f9df7a1e3930bb4752b38ba3d6ae0a}
+      \strng{authorfullhash}{dc780c50ed2073debca32c16564e3ac3}
+      \field{sortinit}{A}
+      \field{sortinithash}{2f401846e2029bad6b3ecc16d50031e2}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{eprintclass}{stat.ML}
+      \field{eprinttype}{arXiv}
+      \field{title}{Sampling-based inference for large linear models, with application to linearised Laplace}
+      \field{year}{2023}
+      \verb{eprint}
+      \verb 2210.04994
+      \endverb
+    \endentry
+    \entry{blundell2015weight}{inproceedings}{}
+      \name{author}{4}{}{%
+        {{hash=24fe1af011227491e54e299ba4cb24b5}{%
+           family={Blundell},
+           familyi={B\bibinitperiod},
+           given={Charles},
+           giveni={C\bibinitperiod}}}%
+        {{hash=d0a8c30b8e99bf21bb325b58a360af83}{%
+           family={Cornebise},
+           familyi={C\bibinitperiod},
+           given={Julien},
+           giveni={J\bibinitperiod}}}%
+        {{hash=481308b301166b521c74fde6566e97e6}{%
+           family={Kavukcuoglu},
+           familyi={K\bibinitperiod},
+           given={Koray},
+           giveni={K\bibinitperiod}}}%
+        {{hash=d7805381550fb5f8360345f7f72c0b49}{%
+           family={Wierstra},
+           familyi={W\bibinitperiod},
+           given={Daan},
+           giveni={D\bibinitperiod}}}%
+      }
+      \list{publisher}{1}{%
+        {PMLR}%
+      }
+      \strng{namehash}{9a6dcadb440af6589b9a289585cffa4d}
+      \strng{fullhash}{b6119d9b00bedfaaa2ec5722dbda1b3e}
+      \strng{bibnamehash}{9a6dcadb440af6589b9a289585cffa4d}
+      \strng{authorbibnamehash}{9a6dcadb440af6589b9a289585cffa4d}
+      \strng{authornamehash}{9a6dcadb440af6589b9a289585cffa4d}
+      \strng{authorfullhash}{b6119d9b00bedfaaa2ec5722dbda1b3e}
+      \field{sortinit}{B}
+      \field{sortinithash}{d7095fff47cda75ca2589920aae98399}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{booktitle}{International Conference on Machine Learning}
+      \field{title}{Weight Uncertainty in Neural Network}
+      \field{year}{2015}
+      \field{dateera}{ce}
+      \field{pages}{1613\bibrangedash 1622}
+      \range{pages}{10}
+    \endentry
+    \entry{daxberger2021laplace}{article}{}
+      \name{author}{6}{}{%
+        {{hash=905720122af4f12978fcc39c89389c56}{%
+           family={Daxberger},
+           familyi={D\bibinitperiod},
+           given={Erik},
+           giveni={E\bibinitperiod}}}%
+        {{hash=62f464c50eb59968cf50cd11609f5bb7}{%
+           family={Kristiadi},
+           familyi={K\bibinitperiod},
+           given={Agustinus},
+           giveni={A\bibinitperiod}}}%
+        {{hash=13b52a48158ca5ecaf98ad4e1b1b9c10}{%
+           family={Immer},
+           familyi={I\bibinitperiod},
+           given={Alexander},
+           giveni={A\bibinitperiod}}}%
+        {{hash=a25030e2cd2a39cddcce85cbb93690ce}{%
+           family={Eschenhagen},
+           familyi={E\bibinitperiod},
+           given={Runa},
+           giveni={R\bibinitperiod}}}%
+        {{hash=421f3008dbc4ab2676b8feea419d55eb}{%
+           family={Bauer},
+           familyi={B\bibinitperiod},
+           given={Matthias},
+           giveni={M\bibinitperiod}}}%
+        {{hash=0fc3fa397d36e1fb833fdafa98a2b96f}{%
+           family={Hennig},
+           familyi={H\bibinitperiod},
+           given={Philipp},
+           giveni={P\bibinitperiod}}}%
+      }
+      \strng{namehash}{809179a468557b7bf2e760f41a98a43c}
+      \strng{fullhash}{4cd0ee7cd2ff7539f79b57a85483b5cf}
+      \strng{bibnamehash}{809179a468557b7bf2e760f41a98a43c}
+      \strng{authorbibnamehash}{809179a468557b7bf2e760f41a98a43c}
+      \strng{authornamehash}{809179a468557b7bf2e760f41a98a43c}
+      \strng{authorfullhash}{4cd0ee7cd2ff7539f79b57a85483b5cf}
+      \field{sortinit}{D}
+      \field{sortinithash}{6f385f66841fb5e82009dc833c761848}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{journaltitle}{Advances in Neural Information Processing Systems}
+      \field{title}{Laplace {{Redux-Effortless Bayesian Deep Learning}}}
+      \field{volume}{34}
+      \field{year}{2021}
+      \field{dateera}{ce}
+    \endentry
+    \entry{gal2016dropout}{inproceedings}{}
+      \name{author}{2}{}{%
+        {{hash=d4f394bd4030e20e7b1399e0abe7dc6a}{%
+           family={Gal},
+           familyi={G\bibinitperiod},
+           given={Yarin},
+           giveni={Y\bibinitperiod}}}%
+        {{hash=bf5cf30deddddad00a6341ad7a414445}{%
+           family={Ghahramani},
+           familyi={G\bibinitperiod},
+           given={Zoubin},
+           giveni={Z\bibinitperiod}}}%
+      }
+      \list{publisher}{1}{%
+        {PMLR}%
+      }
+      \strng{namehash}{ea98ec178dc61973ac54967bc78906b7}
+      \strng{fullhash}{ea98ec178dc61973ac54967bc78906b7}
+      \strng{bibnamehash}{ea98ec178dc61973ac54967bc78906b7}
+      \strng{authorbibnamehash}{ea98ec178dc61973ac54967bc78906b7}
+      \strng{authornamehash}{ea98ec178dc61973ac54967bc78906b7}
+      \strng{authorfullhash}{ea98ec178dc61973ac54967bc78906b7}
+      \field{sortinit}{G}
+      \field{sortinithash}{32d67eca0634bf53703493fb1090a2e8}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{booktitle}{International Conference on Machine Learning}
+      \field{title}{Dropout as a Bayesian Approximation: {{Representing}} Model Uncertainty in Deep Learning}
+      \field{year}{2016}
+      \field{dateera}{ce}
+      \field{pages}{1050\bibrangedash 1059}
+      \range{pages}{10}
+    \endentry
+    \entry{goodfellow2014explaining}{unpublished}{}
+      \name{author}{3}{}{%
+        {{hash=d4f74ef4c79f3bb1e51e378184d8850e}{%
+           family={Goodfellow},
+           familyi={G\bibinitperiod},
+           given={Ian\bibnamedelima J},
+           giveni={I\bibinitperiod\bibinitdelim J\bibinitperiod}}}%
+        {{hash=8f128e70084608a2c29c497ebd794f87}{%
+           family={Shlens},
+           familyi={S\bibinitperiod},
+           given={Jonathon},
+           giveni={J\bibinitperiod}}}%
+        {{hash=ed568d9c3bb059e6bf22899fbf170f86}{%
+           family={Szegedy},
+           familyi={S\bibinitperiod},
+           given={Christian},
+           giveni={C\bibinitperiod}}}%
+      }
+      \strng{namehash}{07b2928cf9addb6cf2d09332e9d7ce18}
+      \strng{fullhash}{07b2928cf9addb6cf2d09332e9d7ce18}
+      \strng{bibnamehash}{07b2928cf9addb6cf2d09332e9d7ce18}
+      \strng{authorbibnamehash}{07b2928cf9addb6cf2d09332e9d7ce18}
+      \strng{authornamehash}{07b2928cf9addb6cf2d09332e9d7ce18}
+      \strng{authorfullhash}{07b2928cf9addb6cf2d09332e9d7ce18}
+      \field{sortinit}{G}
+      \field{sortinithash}{32d67eca0634bf53703493fb1090a2e8}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{eprinttype}{arxiv}
+      \field{title}{Explaining and Harnessing Adversarial Examples}
+      \field{year}{2014}
+      \field{dateera}{ce}
+      \verb{eprint}
+      \verb 1412.6572
+      \endverb
+    \endentry
+    \entry{immer2020improving}{unpublished}{}
+      \name{author}{3}{}{%
+        {{hash=13b52a48158ca5ecaf98ad4e1b1b9c10}{%
+           family={Immer},
+           familyi={I\bibinitperiod},
+           given={Alexander},
+           giveni={A\bibinitperiod}}}%
+        {{hash=097a13b2681728be91bf5d23a758944d}{%
+           family={Korzepa},
+           familyi={K\bibinitperiod},
+           given={Maciej},
+           giveni={M\bibinitperiod}}}%
+        {{hash=421f3008dbc4ab2676b8feea419d55eb}{%
+           family={Bauer},
+           familyi={B\bibinitperiod},
+           given={Matthias},
+           giveni={M\bibinitperiod}}}%
+      }
+      \strng{namehash}{01a69f8ecee7bc03b4e1269675fd0e3b}
+      \strng{fullhash}{01a69f8ecee7bc03b4e1269675fd0e3b}
+      \strng{bibnamehash}{01a69f8ecee7bc03b4e1269675fd0e3b}
+      \strng{authorbibnamehash}{01a69f8ecee7bc03b4e1269675fd0e3b}
+      \strng{authornamehash}{01a69f8ecee7bc03b4e1269675fd0e3b}
+      \strng{authorfullhash}{01a69f8ecee7bc03b4e1269675fd0e3b}
+      \field{sortinit}{I}
+      \field{sortinithash}{8d291c51ee89b6cd86bf5379f0b151d8}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{eprinttype}{arxiv}
+      \field{title}{Improving Predictions of Bayesian Neural Networks via Local Linearization}
+      \field{year}{2020}
+      \field{dateera}{ce}
+      \verb{eprint}
+      \verb 2008.08400
+      \endverb
+    \endentry
+    \entry{lakshminarayanan2016simple}{unpublished}{}
+      \name{author}{3}{}{%
+        {{hash=55c0a67ecb602e5a3063393ffee9c7fa}{%
+           family={Lakshminarayanan},
+           familyi={L\bibinitperiod},
+           given={Balaji},
+           giveni={B\bibinitperiod}}}%
+        {{hash=4295e4094c426f01903ac60155866130}{%
+           family={Pritzel},
+           familyi={P\bibinitperiod},
+           given={Alexander},
+           giveni={A\bibinitperiod}}}%
+        {{hash=24fe1af011227491e54e299ba4cb24b5}{%
+           family={Blundell},
+           familyi={B\bibinitperiod},
+           given={Charles},
+           giveni={C\bibinitperiod}}}%
+      }
+      \strng{namehash}{492e4a2fef285d2810dcaea3b37a0a3b}
+      \strng{fullhash}{492e4a2fef285d2810dcaea3b37a0a3b}
+      \strng{bibnamehash}{492e4a2fef285d2810dcaea3b37a0a3b}
+      \strng{authorbibnamehash}{492e4a2fef285d2810dcaea3b37a0a3b}
+      \strng{authornamehash}{492e4a2fef285d2810dcaea3b37a0a3b}
+      \strng{authorfullhash}{492e4a2fef285d2810dcaea3b37a0a3b}
+      \field{sortinit}{L}
+      \field{sortinithash}{7c47d417cecb1f4bd38d1825c427a61a}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{eprinttype}{arxiv}
+      \field{title}{Simple and Scalable Predictive Uncertainty Estimation Using Deep Ensembles}
+      \field{year}{2016}
+      \field{dateera}{ce}
+      \verb{eprint}
+      \verb 1612.01474
+      \endverb
+    \endentry
+    \entry{lawrence2001variational}{thesis}{}
+      \name{author}{1}{}{%
+        {{hash=e0f41c3cd3f91301ad408a083fb19be9}{%
+           family={Lawrence},
+           familyi={L\bibinitperiod},
+           given={Neil\bibnamedelima David},
+           giveni={N\bibinitperiod\bibinitdelim D\bibinitperiod}}}%
+      }
+      \list{institution}{1}{%
+        {University of Cambridge}%
+      }
+      \strng{namehash}{e0f41c3cd3f91301ad408a083fb19be9}
+      \strng{fullhash}{e0f41c3cd3f91301ad408a083fb19be9}
+      \strng{bibnamehash}{e0f41c3cd3f91301ad408a083fb19be9}
+      \strng{authorbibnamehash}{e0f41c3cd3f91301ad408a083fb19be9}
+      \strng{authornamehash}{e0f41c3cd3f91301ad408a083fb19be9}
+      \strng{authorfullhash}{e0f41c3cd3f91301ad408a083fb19be9}
+      \field{sortinit}{L}
+      \field{sortinithash}{7c47d417cecb1f4bd38d1825c427a61a}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{title}{Variational Inference in Probabilistic Models}
+      \field{type}{phdthesis}
+      \field{year}{2001}
+      \field{dateera}{ce}
+    \endentry
+    \entry{martens2020optimizing}{misc}{}
+      \name{author}{2}{}{%
+        {{hash=6811d5cc72244219e1b98cf2bb1b64f1}{%
+           family={Martens},
+           familyi={M\bibinitperiod},
+           given={James},
+           giveni={J\bibinitperiod}}}%
+        {{hash=7bfa5101481b4cfcddf46d2915b6ad49}{%
+           family={Grosse},
+           familyi={G\bibinitperiod},
+           given={Roger},
+           giveni={R\bibinitperiod}}}%
+      }
+      \strng{namehash}{798afb8cf8d9b0191d3dfb64ed49b50e}
+      \strng{fullhash}{798afb8cf8d9b0191d3dfb64ed49b50e}
+      \strng{bibnamehash}{798afb8cf8d9b0191d3dfb64ed49b50e}
+      \strng{authorbibnamehash}{798afb8cf8d9b0191d3dfb64ed49b50e}
+      \strng{authornamehash}{798afb8cf8d9b0191d3dfb64ed49b50e}
+      \strng{authorfullhash}{798afb8cf8d9b0191d3dfb64ed49b50e}
+      \field{extraname}{1}
+      \field{sortinit}{M}
+      \field{sortinithash}{4625c616857f13d17ce56f7d4f97d451}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{eprintclass}{cs.LG}
+      \field{eprinttype}{arXiv}
+      \field{title}{Optimizing Neural Networks with Kronecker-factored Approximate Curvature}
+      \field{year}{2020}
+      \verb{eprint}
+      \verb 1503.05671
+      \endverb
+    \endentry
+    \entry{martens2015optimizing}{inproceedings}{}
+      \name{author}{2}{}{%
+        {{hash=6811d5cc72244219e1b98cf2bb1b64f1}{%
+           family={Martens},
+           familyi={M\bibinitperiod},
+           given={James},
+           giveni={J\bibinitperiod}}}%
+        {{hash=7bfa5101481b4cfcddf46d2915b6ad49}{%
+           family={Grosse},
+           familyi={G\bibinitperiod},
+           given={Roger},
+           giveni={R\bibinitperiod}}}%
+      }
+      \list{organization}{1}{%
+        {PMLR}%
+      }
+      \strng{namehash}{798afb8cf8d9b0191d3dfb64ed49b50e}
+      \strng{fullhash}{798afb8cf8d9b0191d3dfb64ed49b50e}
+      \strng{bibnamehash}{798afb8cf8d9b0191d3dfb64ed49b50e}
+      \strng{authorbibnamehash}{798afb8cf8d9b0191d3dfb64ed49b50e}
+      \strng{authornamehash}{798afb8cf8d9b0191d3dfb64ed49b50e}
+      \strng{authorfullhash}{798afb8cf8d9b0191d3dfb64ed49b50e}
+      \field{extraname}{2}
+      \field{sortinit}{M}
+      \field{sortinithash}{4625c616857f13d17ce56f7d4f97d451}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{booktitle}{International conference on machine learning}
+      \field{title}{Optimizing neural networks with kronecker-factored approximate curvature}
+      \field{year}{2015}
+      \field{pages}{2408\bibrangedash 2417}
+      \range{pages}{10}
+    \endentry
+    \entry{wilson2020case}{unpublished}{}
+      \name{author}{1}{}{%
+        {{hash=f58290185dfd014024f7abaf3fc0d0f2}{%
+           family={Wilson},
+           familyi={W\bibinitperiod},
+           given={Andrew\bibnamedelima Gordon},
+           giveni={A\bibinitperiod\bibinitdelim G\bibinitperiod}}}%
+      }
+      \strng{namehash}{f58290185dfd014024f7abaf3fc0d0f2}
+      \strng{fullhash}{f58290185dfd014024f7abaf3fc0d0f2}
+      \strng{bibnamehash}{f58290185dfd014024f7abaf3fc0d0f2}
+      \strng{authorbibnamehash}{f58290185dfd014024f7abaf3fc0d0f2}
+      \strng{authornamehash}{f58290185dfd014024f7abaf3fc0d0f2}
+      \strng{authorfullhash}{f58290185dfd014024f7abaf3fc0d0f2}
+      \field{sortinit}{W}
+      \field{sortinithash}{4315d78024d0cea9b57a0c6f0e35ed0d}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{eprinttype}{arxiv}
+      \field{title}{The Case for {{Bayesian}} Deep Learning}
+      \field{year}{2020}
+      \field{dateera}{ce}
+      \verb{eprint}
+      \verb 2001.10995
+      \endverb
+    \endentry
+  \enddatalist
+\endrefsection
+\endinput
+

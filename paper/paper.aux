@@ -27,7 +27,6 @@
 \citation{daxberger2021laplace}
 \citation{immer2020improving}
 \citation{daxberger2021laplace}
-\citation{daxberger2021laplace}
 \newlabel{@firstpg}{{}{1}{}{Doc-Start}{}}
 \@writefile{toc}{\contentsline {section}{\numberline {1}Background}{1}{section.1}\protected@file@percent }
 \newlabel{sec-intro}{{1}{1}{Background}{section.1}{}}
@@ -36,27 +35,41 @@
 \newlabel{eq-bma}{{1}{1}{Laplace Approximation for Deep Learning}{section*.3}{}}
 \newlabel{eq-glm}{{2}{1}{Laplace Approximation for Deep Learning}{section*.4}{}}
 \newlabel{eq-glm-predictive}{{3}{1}{Laplace Approximation for Deep Learning}{section*.5}{}}
-\@writefile{toc}{\contentsline {section}{\numberline {3}\texttt  {LaplaceRedux.jl} --- a Julia implementation}{1}{section.3}\protected@file@percent }
-\newlabel{laplaceredux.jl-a-julia-implementation}{{3}{1}{\texorpdfstring {\texttt {LaplaceRedux.jl} --- a Julia implementation}{LaplaceRedux.jl --- a Julia implementation}}{section.3}{}}
+\citation{daxberger2021laplace}
+\citation{daxberger2021laplace}
+\citation{martens2020optimizing}
+\citation{antoran2023samplingbased}
 \bibstyle{juliacon}
 \bibdata{ref.bib}
-\bibcite{blundell2015weight}{1}
-\bibcite{daxberger2021laplace}{2}
-\bibcite{gal2016dropout}{3}
-\bibcite{goodfellow2014explaining}{4}
-\bibcite{immer2020improving}{5}
-\bibcite{lakshminarayanan2016simple}{6}
-\bibcite{lawrence2001variational}{7}
-\bibcite{martens2015optimizing}{8}
-\bibcite{wilson2020case}{9}
-\@writefile{lof}{\contentsline {figure}{\numberline {1}{\ignorespaces Posterior predictive distribution for binary classifier: plugin estimate (left), untuned LA (center) and optimized LA (right). The colour of the contour indicates the predicted class probabilities: the more yellow a region, the more confident the classifier that samples belong to the orange class.}}{2}{figure.1}\protected@file@percent }
-\newlabel{fig-class}{{1}{2}{Posterior predictive distribution for binary classifier: plugin estimate (left), untuned LA (center) and optimized LA (right). The colour of the contour indicates the predicted class probabilities: the more yellow a region, the more confident the classifier that samples belong to the orange class}{figure.1}{}}
-\@writefile{lof}{\contentsline {figure}{\numberline {2}{\ignorespaces Posterior predictive distribution for regressor: wide regions of the confidence interval (shaded area) indicate high predictive uncertainty.}}{2}{figure.2}\protected@file@percent }
-\newlabel{fig-reg}{{2}{2}{Posterior predictive distribution for regressor: wide regions of the confidence interval (shaded area) indicate high predictive uncertainty}{figure.2}{}}
-\newlabel{lst:laplace}{{3}{2}{}{lstlisting.-1}{}}
-\@writefile{toc}{\contentsline {section}{\numberline {4}Discussion and Outlook}{2}{section.4}\protected@file@percent }
-\newlabel{sec-con}{{4}{2}{Discussion and Outlook}{section.4}{}}
-\@writefile{toc}{\contentsline {section}{\numberline {5}Acknowledgements}{2}{section.5}\protected@file@percent }
-\newlabel{sec-ack}{{5}{2}{Acknowledgements}{section.5}{}}
-\@writefile{toc}{\contentsline {section}{\numberline {6}References}{2}{section.6}\protected@file@percent }
-\gdef \@abspage@last{2}
+\@writefile{toc}{\contentsline {section}{\numberline {3}\texttt  {LaplaceRedux.jl} --- a Julia implementation}{2}{section.3}\protected@file@percent }
+\newlabel{laplaceredux.jl-a-julia-implementation}{{3}{2}{\texorpdfstring {\texttt {LaplaceRedux.jl} --- a Julia implementation}{LaplaceRedux.jl --- a Julia implementation}}{section.3}{}}
+\newlabel{lst:fit}{{1}{2}{Fitting a pre-trained neural network to data using Laplace Redux}{lstlisting.1}{}}
+\@writefile{lol}{\contentsline {lstlisting}{\numberline {1}{\ignorespaces Fitting a pre-trained neural network to data using Laplace Redux.}}{2}{lstlisting.1}\protected@file@percent }
+\newlabel{lst:predict}{{2}{2}{Predictions using the fitted Laplace Redux instance}{lstlisting.2}{}}
+\@writefile{lol}{\contentsline {lstlisting}{\numberline {2}{\ignorespaces Predictions using the fitted Laplace Redux instance.}}{2}{lstlisting.2}\protected@file@percent }
+\newlabel{lst:other}{{3}{2}{Prior optimization and visualization of the predictive distribution}{lstlisting.3}{}}
+\@writefile{lol}{\contentsline {lstlisting}{\numberline {3}{\ignorespaces Prior optimization and visualization of the predictive distribution.}}{2}{lstlisting.3}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {1}{\ignorespaces Posterior predictive distribution for binary classifier: plugin estimate (left), untuned LA (center) and optimized LA (right). The colour of the contour indicates the predicted class probabilities: the more yellow a region, the more confident the classifier that samples belong to the orange class.\relax }}{2}{figure.caption.6}\protected@file@percent }
+\providecommand*\caption@xref[2]{\@setref\relax\@undefined{#1}}
+\newlabel{fig-class}{{1}{2}{Posterior predictive distribution for binary classifier: plugin estimate (left), untuned LA (center) and optimized LA (right). The colour of the contour indicates the predicted class probabilities: the more yellow a region, the more confident the classifier that samples belong to the orange class.\relax }{figure.caption.6}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {2}{\ignorespaces Posterior predictive distribution for regressor: wide regions of the confidence interval (shaded area) indicate high predictive uncertainty.\relax }}{2}{figure.caption.7}\protected@file@percent }
+\newlabel{fig-reg}{{2}{2}{Posterior predictive distribution for regressor: wide regions of the confidence interval (shaded area) indicate high predictive uncertainty.\relax }{figure.caption.7}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {4}Scaling Up}{2}{section.4}\protected@file@percent }
+\newlabel{sec-scale}{{4}{2}{Scaling Up}{section.4}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {5}Discussion and Outlook}{2}{section.5}\protected@file@percent }
+\newlabel{sec-con}{{5}{2}{Discussion and Outlook}{section.5}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {6}Acknowledgements}{2}{section.6}\protected@file@percent }
+\newlabel{sec-ack}{{6}{2}{Acknowledgements}{section.6}{}}
+\bibcite{antoran2023samplingbased}{1}
+\bibcite{blundell2015weight}{2}
+\bibcite{daxberger2021laplace}{3}
+\bibcite{gal2016dropout}{4}
+\bibcite{goodfellow2014explaining}{5}
+\bibcite{immer2020improving}{6}
+\bibcite{lakshminarayanan2016simple}{7}
+\bibcite{lawrence2001variational}{8}
+\bibcite{martens2015optimizing}{9}
+\bibcite{martens2020optimizing}{10}
+\bibcite{wilson2020case}{11}
+\@writefile{toc}{\contentsline {section}{\numberline {7}References}{3}{section.7}\protected@file@percent }
+\gdef \@abspage@last{3}
