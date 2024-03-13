@@ -277,7 +277,9 @@ predict(la, hcat(x...))
 ```
 
 """
-function predict(la::BaseLaplace, X::AbstractArray; link_approx=:probit, predict_proba::Bool=true)
+function predict(
+    la::BaseLaplace, X::AbstractArray; link_approx=:probit, predict_proba::Bool=true
+)
     fμ, fvar = glm_predictive_distribution(la, X)
 
     # Regression:
@@ -321,7 +323,8 @@ If the input dimensionality of the model is 1 (a vector), one should still prepa
 """
 function predict(la::BaseLaplace, X::Matrix; link_approx=:probit, predict_proba::Bool=true)
     return stack([
-        predict(la, X[:, i]; link_approx=link_approx, predict_proba=predict_proba) for i in 1:size(X, 2)
+        predict(la, X[:, i]; link_approx=link_approx, predict_proba=predict_proba) for
+        i in 1:size(X, 2)
     ])
 end
 
