@@ -277,7 +277,9 @@ predict(la, hcat(x...))
 ```
 
 """
-function predict(la::BaseLaplace, X::AbstractArray; link_approx=:probit)
+function predict(
+    la::BaseLaplace, X::AbstractArray; link_approx=:probit, predict_proba::Bool=true
+)
     fμ, fvar = glm_predictive_distribution(la, X)
 
     # Regression:
@@ -299,10 +301,14 @@ function predict(la::BaseLaplace, X::AbstractArray; link_approx=:probit)
         end
 
         # Sigmoid/Softmax
-        if outdim(la) == 1
-            p = Flux.sigmoid(z)
+        if predict_proba
+            if outdim(la) == 1
+                p = Flux.sigmoid(z)
+            else
+                p = Flux.softmax(z; dims=1)
+            end
         else
-            p = Flux.softmax(z; dims=1)
+            p = z
         end
 
         return p
@@ -315,8 +321,11 @@ Compute predictive posteriors for a batch of inputs.
 Note, input is assumed to be batched only if it is a matrix.
 If the input dimensionality of the model is 1 (a vector), one should still prepare a 1×B matrix batch as input.
 """
-function predict(la::BaseLaplace, X::Matrix; link_approx=:probit)
-    return stack([predict(la, X[:, i]; link_approx=link_approx) for i in 1:size(X, 2)])
+function predict(la::BaseLaplace, X::Matrix; link_approx=:probit, predict_proba::Bool=true)
+    return stack([
+        predict(la, X[:, i]; link_approx=link_approx, predict_proba=predict_proba) for
+        i in 1:size(X, 2)
+    ])
 end
 
 """

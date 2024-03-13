@@ -1,4 +1,9 @@
-\begin{thebibliography}{1}
+\begin{thebibliography}{10}
+
+\bibitem{antoran2023samplingbased}
+Javier Antorán, Shreyas Padhy, Riccardo Barbano, Eric Nalisnick, David Janz, and José~Miguel Hernández-Lobato.
+Sampling-based inference for large linear models, with application to linearised laplace, 2023.
+2210.04994.
 
 \bibitem{blundell2015weight}
 Charles Blundell, Julien Cornebise, Koray Kavukcuoglu, and Daan Wierstra.
@@ -38,6 +43,11 @@ Variational inference in probabilistic models.
 James Martens and Roger Grosse.
 Optimizing neural networks with kronecker-factored approximate curvature.
 In {\em International conference on machine learning}, pages 2408--2417. PMLR, 2015.
+
+\bibitem{martens2020optimizing}
+James Martens and Roger Grosse.
+Optimizing neural networks with kronecker-factored approximate curvature, 2020.
+1503.05671.
 
 \bibitem{wilson2020case}
 Andrew~Gordon Wilson.

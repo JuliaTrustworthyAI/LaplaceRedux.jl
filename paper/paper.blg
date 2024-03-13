@@ -13,45 +13,45 @@ Warning--empty note in goodfellow2014explaining
 Warning--empty note in immer2020improving
 Warning--empty note in lakshminarayanan2016simple
 Warning--empty note in wilson2020case
-You've used 9 entries,
+You've used 11 entries,
             2314 wiz_defined-function locations,
-            564 strings with 5555 characters,
-and the built_in function-call counts, 3240 in all, are:
-= -- 328
-> -- 150
+            574 strings with 5941 characters,
+and the built_in function-call counts, 3888 in all, are:
+= -- 384
+> -- 196
 < -- 3
-+ -- 60
-- -- 50
-* -- 216
-:= -- 517
-add.period$ -- 29
-call.type$ -- 9
-change.case$ -- 52
++ -- 78
+- -- 66
+* -- 253
+:= -- 627
+add.period$ -- 35
+call.type$ -- 11
+change.case$ -- 66
 chr.to.int$ -- 0
-cite$ -- 17
-duplicate$ -- 125
-empty$ -- 251
-format.name$ -- 50
-if$ -- 702
+cite$ -- 19
+duplicate$ -- 141
+empty$ -- 305
+format.name$ -- 66
+if$ -- 840
 int.to.chr$ -- 0
-int.to.str$ -- 9
+int.to.str$ -- 11
 missing$ -- 4
-newline$ -- 47
-num.names$ -- 18
-pop$ -- 74
+newline$ -- 57
+num.names$ -- 22
+pop$ -- 98
 preamble$ -- 1
-purify$ -- 43
+purify$ -- 55
 quote$ -- 0
-skip$ -- 107
+skip$ -- 125
 stack$ -- 0
-substring$ -- 166
-swap$ -- 40
+substring$ -- 176
+swap$ -- 42
 text.length$ -- 3
 text.prefix$ -- 0
 top$ -- 0
-type$ -- 36
+type$ -- 44
 warning$ -- 8
-while$ -- 27
-width$ -- 10
-write$ -- 88
+while$ -- 31
+width$ -- 13
+write$ -- 108
 (There were 9 warnings)
