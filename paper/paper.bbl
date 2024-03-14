@@ -1,5 +1,10 @@
 \begin{thebibliography}{10}
 
+\bibitem{altmeyer2023faithful}
+Patrick Altmeyer, Mojtaba Farmanbar, Arie van Deursen, and Cynthia C.~S. Liem.
+Faithful model explanations through energy-constrained conformal counterfactuals, 2023.
+2312.10648.
+
 \bibitem{antoran2023samplingbased}
 Javier Antorán, Shreyas Padhy, Riccardo Barbano, Eric Nalisnick, David Janz, and José~Miguel Hernández-Lobato.
 Sampling-based inference for large linear models, with application to linearised laplace, 2023.
@@ -30,6 +35,11 @@ Alexander Immer, Maciej Korzepa, and Matthias Bauer.
 Improving predictions of bayesian neural networks via local linearization.
 arxiv:\href{http://arxiv.org/abs/2008.08400}{2008.08400}.
 
+\bibitem{ish-horowicz2019interpreting}
+Jonathan Ish-Horowicz, Dana Udwin, Seth Flaxman, Sarah Filippi, and Lorin Crawford.
+Interpreting deep neural networks through variable importance.
+arxiv:\href{http://arxiv.org/abs/1901.09839}{1901.09839}.
+
 \bibitem{lakshminarayanan2016simple}
 Balaji Lakshminarayanan, Alexander Pritzel, and Charles Blundell.
 Simple and scalable predictive uncertainty estimation using deep ensembles.
@@ -48,6 +58,11 @@ In {\em International conference on machine learning}, pages 2408--2417. PMLR, 2
 James Martens and Roger Grosse.
 Optimizing neural networks with kronecker-factored approximate curvature, 2020.
 1503.05671.
+
+\bibitem{schut2021generating}
+Lisa Schut, Oscar Key, Rory Mc~Grath, Luca Costabello, Bogdan Sacaleanu, Yarin Gal, et~al.
+Generating {{Interpretable Counterfactual Explanations By Implicit Minimisation}} of {{Epistemic}} and {{Aleatoric Uncertainties}}.
+In {\em International {{Conference}} on {{Artificial Intelligence}} and {{Statistics}}}, pages 1756--1764. {PMLR}.
 
 \bibitem{wilson2020case}
 Andrew~Gordon Wilson.

@@ -1,13 +1,12 @@
 # Fdb version 4
-["biber paper"] 1710253074 "paper.bcf" "paper.bbl" "paper" 1710253081 0
-  "./ref.bib" 1710251639 64449 ba2e29060d33eeda7961257b76de0452 ""
-  "paper.bcf" 1710253080 109045 fcfa2f1fcea85ba25c884639da6be26a "pdflatex"
+["biber paper"] 1710414837 "paper.bcf" "paper.bbl" "paper" 1710414847 0
+  "./ref.bib" 1710413189 64778 e7c6d173e6463b24ed2139f50f8df853 ""
+  "paper.bcf" 1710414846 109430 a6f3309b5d66ca6832afe25f0d567849 "pdflatex"
   (generated)
   "paper.bbl"
   "paper.blg"
   (rewritten before read)
-["pdflatex"] 1710253079 "/Users/paltmeyer/code/LaplaceRedux.jl/paper/src/paper.tex" "paper.pdf" "paper" 1710253081 0
-  "/Users/paltmeyer/code/LaplaceRedux.jl/paper/src/paper.tex" 1710253060 17936 ba8cbcfc4decd671097b0a3c2b233d7b ""
+["pdflatex"] 1710414845 "paper.tex" "paper.pdf" "paper" 1710414847 0
   "/usr/local/texlive/2023/texmf-dist/fonts/enc/dvips/cm-super/cm-super-t1.enc" 1136849721 2971 def0b6c1f0b107b3b936def894055589 ""
   "/usr/local/texlive/2023/texmf-dist/fonts/enc/dvips/tex-gyre/q-ec.enc" 1529098226 2457 aaabbccba4df2a7f7371410ee4e075a3 ""
   "/usr/local/texlive/2023/texmf-dist/fonts/map/fontname/texfonts.map" 1577235249 3524 cb3e574dea2d1052e39280babc910dc8 ""
@@ -261,10 +260,10 @@
   "journal_dat.tex" 1704187301 150 e8f5f0ce758e2580b918922de6715366 ""
   "juliacon.cls" 1704187301 30622 c4c9dfa27e0f02b412fe8f4e7b09136f ""
   "logojuliacon.pdf" 1704187301 4937 0cb75c4e65b0cf72a69c7716f140efe5 ""
-  "paper.aux" 1710253080 8620 436880d499f7572c2efa821ee80ac4ad "pdflatex"
-  "paper.bbl" 1710253077 16596 b448b24bb33b406fb2bae36d4e851daa "biber paper"
-  "paper.run.xml" 1710253080 2305 790763489cdf8976f325748a55d6e69e "pdflatex"
-  "paper.tex" 1710253060 17936 ba8cbcfc4decd671097b0a3c2b233d7b ""
+  "paper.aux" 1710414846 9279 f1251b9cf222b29a918251d2f0329a9c "pdflatex"
+  "paper.bbl" 1710414845 22395 c9066f121503c0bf87c1fe568ab84996 "biber paper"
+  "paper.run.xml" 1710414846 2305 790763489cdf8976f325748a55d6e69e "pdflatex"
+  "paper.tex" 1710414834 18333 aa7a201bc6da76fbbb993d8b41a0f5d4 ""
   "www/posterior_predictive_mlp.png" 1704187301 233810 0ea3ab1522655067b37b8a752731b153 ""
   "www/regression.png" 1704187301 35612 bc26b8c0249e8850408e84726d29c859 ""
   (generated)

@@ -46,7 +46,9 @@ include("utils.jl")
 
 Over the past decade, Deep Learning (DL) has arguably been one of the dominating subdisciplines of Artificial Intelligence. Despite the tremendous success of deep neural networks, practitioners and researchers have also pointed to a vast number of pitfalls that have so far inhibited the use of DL in safety-critical applications. Among other things, these pitfalls include a lack of adversarial robustness \cite{goodfellow2014explaining} and an inherent opaqueness of deep neural networks, often described as the black-box problem. 
 
-In deep learning, the number of parameters relative to the size of the available data is generally huge \cite{wilson2020case}: "[...] deep neural networks are typically very underspecified by the available data, and [...] parameters [therefore] correspond to a diverse variety of compelling explanations for the data." A scenario like this very much calls for treating model predictions probabilistically \cite{wilson2020case}. It is therefore not surprising that interest in Bayesian deep learning has grown in recent years as researchers have tackled the problem from a wide range of angles including MCMC (see [`Turing`](https://turing.ml/dev/tutorials/03-bayesian-neural-network/)), Mean Field Variational Inference \cite{blundell2015weight}, Monte Carlo Dropout \cite{gal2016dropout} and Deep Ensembles \cite{lakshminarayanan2016simple}. Laplace Redux \cite{immer2020improving,daxberger2021laplace} is one of the most recent and promising approaches to Bayesian neural networks (BNN). 
+In deep learning, the number of parameters relative to the size of the available data is generally huge \cite{wilson2020case}: "[...] deep neural networks are typically very underspecified by the available data, and [...] parameters [therefore] correspond to a diverse variety of compelling explanations for the data." A scenario like this very much calls for treating model predictions probabilistically \cite{wilson2020case}, to capture the inherent uncertainty in the model's predictions. This has been shown to improve robustness \cite{daxberger2021laplace}, inherent interpretability \cite{ish-horowicz2019interpreting} and post-hoc explainability \cite{schut2021generating,altmeyer2023faithful}. 
+
+It is therefore not surprising that interest in Bayesian deep learning has grown in recent years as researchers have tackled the problem from a wide range of angles including MCMC (see [Turing.jl](https://turing.ml/dev/tutorials/03-bayesian-neural-network/)), Mean Field Variational Inference \cite{blundell2015weight}, Monte Carlo Dropout \cite{gal2016dropout} and Deep Ensembles \cite{lakshminarayanan2016simple}. Laplace Redux \cite{immer2020improving,daxberger2021laplace} is one of the most recent and promising approaches to Bayesian neural networks (BNN). 
 
 # Laplace Approximation for Deep Learning {#sec-body}
 
@@ -56,20 +58,20 @@ $$
 p(y|x,\mathcal{D}) = \int p(y|x,\theta)p(\theta|\mathcal{D})d\theta
 $$ {#eq-bma}
 
-To do so we first need to compute the weight posterior $p(\theta|\mathcal{D})$. Laplace Approximation (LA) relies on the fact that the second-order Taylor expansion of this posterior amounts to a multivariate Gaussian $q(\theta)=\mathcal{N}(\hat\mu,\hat\Sigma)$ centred around the maximum a posteriori (MAP) estimate $\hat\mu=\hat{\theta}=\arg\max_{\theta}p(\theta|\mathcal{D})$ with covariance equal to the negative inverse Hessian of our loss function evaluated at the mode $\hat{\Sigma}=-(\hat{\mathcal{H}}|_{\hat{\theta}})^{-1}$. 
+To do so we first need to compute the weight posterior $p(\theta|\mathcal{D})$. Laplace approximation (LA) relies on the fact that the second-order Taylor expansion of this posterior amounts to a multivariate Gaussian $q(\theta)=\mathcal{N}(\hat\mu,\hat\Sigma)$ centred around the maximum a posteriori (MAP) estimate $\hat\mu=\hat{\theta}=\arg\max_{\theta}p(\theta|\mathcal{D})$ with covariance equal to the negative inverse Hessian of our loss function evaluated at the mode $\hat{\Sigma}=-(\hat{\mathcal{H}}|_{\hat{\theta}})^{-1}$. 
 
-To apply Laplace in the context of deep learning, we can train our network in the standard way by minimizing the negative log-likelihood $\ell(\theta)=-\log p(y|x,\mathcal{D})$. To obtain Gaussian LA weight posterior we then only need to compute the Hessian evaluated at the obtained MAP estimate. 
+To apply LA in the context of deep learning, we can train our network in the standard way by minimizing the negative log-likelihood $\ell(\theta)=-\log p(y|x,\mathcal{D})$. To obtain the Gaussian LA weight posterior we then only need to compute the Hessian evaluated at the obtained MAP estimate. 
 
-Laplace Approximation itself dates back to the 18th century, but despite its simplicity, it has not been widely used or studied by the deep learning community until recently. One reason for this may be that for large neural networks with many parameters, the exact Hessian computation is prohibitive. One can rely on linearized approximations of the Hessian, but those still scale quadratically in the number of parameters. Fortunately, recent work has shown that block-diagonal factorizations can be successfully applied in this context \cite{martens2015optimizing}. 
+Laplace approximation dates back to the 18th century but despite its simplicity, it has not been widely adopted or studied by the deep learning community until recently. One reason for this may be that for large neural networks with many parameters, the exact Hessian computation is prohibitive. One can rely on linearized approximations of the Hessian but those still scale quadratically in the number of parameters. Recent work has shown that block-diagonal factorizations can help in this context \cite{martens2015optimizing}. 
 
-Another reason why LA may have been neglected in the past is that early attempts at using it for deep learning failed: simply sampling from the Laplace posterior to compute the exact BNN posterior predictive distribution in @eq-bma does not work when using approximations for the Hessian \cite{lawrence2001variational}. Instead, we can use a linear expansion of the predictive around the mode as demonstrated by Immer et al. (2020) \cite{immer2020improving}. Formally, we locally linearize our network,
+Another more compelling reason why LA had been mostly neglected until recently is that early attempts at using it for deep learning failed: simply sampling from the Laplace posterior to compute the exact Bayesian neural network (BNN) posterior predictive distribution in @eq-bma does not work when using approximations for the Hessian \cite{lawrence2001variational}. Instead, we can use a linear expansion of the predictive around the mode as demonstrated by Immer et al. (2020) \cite{immer2020improving}. Formally, we locally linearize our network,
 
 $$
-f^{\hat{\theta}}_{\mbox{lin}}(x;\theta)=f(x;\hat{\theta}) + \mathcal{J}_{\theta}(\theta-\hat{\theta})
+f^{\hat{\theta}}_{\mbox{lin}}(x;\theta)=f(x;\hat{\theta}) + \mathcal{J}_{\hat{\theta}}(\theta-\hat{\theta})
 $$ {#eq-glm}
  
 
-which turns the BNN into a Bayesian generalized linear model (GLM) where $\hat{\theta}$ corresponds to the MAP estimate as before. The corresponding GLM predictive, 
+which turns the BNN into a Bayesian generalized linear model (GLM) where $\hat{\theta}$ corresponds to the MAP estimate as before and $\mathcal{J}_{\hat{\theta}}$ is the network *Jacobian* \cite{immer2020improving} evaluated at the mode. The corresponding GLM predictive, 
 
 $$
 p(y|x,\mathcal{D}) = \mathbb{E} \left[ p(y|f^{\hat{\theta}}_{\mbox{lin}}(x;\theta_n)) \right], \ \ \ \theta_n \sim q(\theta)
@@ -166,7 +168,7 @@ plt_class = plot(p_plugin, p_untuned, p_laplace, layout=(1,3), size=(1200,400))
 savefig(plt_class, joinpath(www_path,"posterior_predictive_mlp.png"))
 ```
 
-@fig-class shows an example involving a synthetic data set consisting of two classes. Contours indicate the predicted probabilities using the plugin estimator (left), untuned Laplace Approximation (center) and finally optimized LA (right). For the latter two, the respective choices for the prior precision parameter $\lambda$ are indicated in the title. Relying solely on the MAP estimate, the plugin estimator produces overly confident predictions. Conversely, the GLM predictions account for predictive uncertainty as captured by the Laplace posterior.
+@fig-class shows an example involving a synthetic data set consisting of two classes. Contours indicate the predicted probabilities using the plugin estimator (left), untuned Laplace approximation (center) and finally optimized LA (right). For the latter two, the respective choices for the prior precision parameter $\lambda$ are indicated in the title. Relying solely on the MAP estimate, the plugin estimator produces overly confident predictions. Conversely, the GLM predictions account for predictive uncertainty as captured by the Laplace posterior.
 
 @fig-reg presents a regression example with optimized LA. Wide regions of the confidence interval (shaded area) indicate high predictive uncertainty. Intuitively, the estimated predictive uncertainty increases significantly in regions characterized by high epistemic uncertainty: epistemic uncertainty arises in regions of the domain that have not been observed by the classifier, so regions that are free of training samples. 
 
