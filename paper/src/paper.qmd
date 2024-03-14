@@ -83,7 +83,7 @@ Immer et al. (2020) \cite{immer2020improving} provide a much more detailed expos
 
 # `LaplaceRedux.jl` --- a Julia implementation
 
-The `LaplaceRedux.jl` package is intended to make this new methodological framework available to the Julia community. It is interfaced with the popular deep learning library, [`Flux.jl`](https://fluxml.ai/). 
+The `LaplaceRedux.jl` package makes this new methodological framework available to the Julia community. It is interfaced with the popular deep learning library, [`Flux.jl`](https://fluxml.ai/). 
 
 ```{julia}
 #| echo: false
@@ -127,7 +127,7 @@ for epoch = 1:epochs
 end
 ```
 
-Using just a few lines of code the package enables users to compute and apply Laplace Redux to their pre-trained neural networks. A basic usage example is shown in Code \ref{lst:fit}: the `Laplace` function simply wraps the Flux neural network `nn`. Since the underlying model is a classifier, we need to specify the likelihood accordingly. The returned instance is then fitted to the data using the generic `fit!` method. Note that the `fit!` method also accepts a `DataLoader` as its second positional argument and mini-batch training is supported.
+Using just a few lines of code the package enables users to compute and apply LA to their pre-trained neural networks. A basic usage example is shown in Code \ref{lst:fit}: the `Laplace` constructor takes a pre-trained Flux neural network `nn` as its only positional argument. Since the underlying model is a classifier, we need to specify the likelihood accordingly using the corresponding keyword argument. Additional keyword arguments can be used to define the Bayesian priors and select the backend used to approximate the Hessian among other things. The returned instance is then fitted to the data using the generic `fit!` method. Note that the `fit!` method also accepts a `Flux.DataLoader` as its second positional argument and mini-batch training is supported.
 
 ```{julia}
 la = Laplace(nn; likelihood=:classification)
@@ -141,7 +141,7 @@ la = Laplace(nn; likelihood=:classification)
 fit!(la, data)
 \end{lstlisting}
 
-The `la` object is a mutable and callable struct that wraps the pre-trained neural networks along with hyperparameters relevant to the Laplace approximation. Simply calling the instance with new data as in Code \ref{lst:predict} will generate GLM predictions according to @eq-glm-predictive. In the classification case, softmax outputs are returned by default following the convention in the Python implementation, but this can be changed using the `predict_proba` keyword argument. It is also possible to recover the original MAP estimate directly by setting the `link_approx` keyword argument to `:plugin`. 
+The `la` object is a mutable and callable struct that wraps the pre-trained neural networks along with hyperparameters relevant to the Laplace approximation. Simply calling the instance with new data as in Code \ref{lst:predict} will generate GLM predictions according to @eq-glm-predictive. In the classification case, softmax outputs are returned by default following the convention in the Python implementation, but this can be changed using the `predict_proba` keyword argument. It is also possible to generate conventional plug-in predictions using the original MAP estimate by setting the `link_approx` keyword argument to `:plugin`. 
 
 \begin{lstlisting}[language=Julia, escapechar=@, numbers=left, label={lst:predict}, caption={Predictions using the fitted Laplace Redux instance.}]
 la(X)                       # GLM predictions
@@ -149,7 +149,7 @@ la(X; predict_proba=false)  # no softmax
 la(X; link_approx=:plugin)  # MAP predictions
 \end{lstlisting}
 
-Additional methods can be used to optimize the prior precision $\lambda$ and to visualize the predictions (Code \ref{lst:other}). The `optimize_prior!` method optimizes the prior precision $\lambda$ through Empirical Bayes \cite{daxberger2021laplace}. The `plot` method visualizes the predictions of the fitted instance. It is provided through the [TaijaPlotting](https://github.com/JuliaTrustworthyAI/TaijaPlotting.jl) meta package.
+Additional methods can be used to optimize the prior precision $\lambda$ and to visualize the predictions (Code \ref{lst:other}). The `optimize_prior!` method optimizes the prior precision $\lambda$ through Empirical Bayes \cite{daxberger2021laplace}. The `plot` method visualizes the predictions of the fitted instance using [Plots.jl](https://docs.juliaplots.org/stable/). The method extension is provided through the [TaijaPlotting.jl](https://github.com/JuliaTrustworthyAI/TaijaPlotting.jl) meta package.
 
 \begin{lstlisting}[language=Julia, escapechar=@, numbers=left, label={lst:other}, caption={Prior optimization and visualization of the predictive distribution.}]
 optimize_prior!(la)         # optimize λ

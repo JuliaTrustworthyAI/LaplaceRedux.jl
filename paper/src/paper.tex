@@ -323,20 +323,23 @@ applied perspective and present a comprehensive Python implementation:
 \section{\texorpdfstring{\texttt{LaplaceRedux.jl} --- a Julia
 implementation}{LaplaceRedux.jl --- a Julia implementation}}\label{laplaceredux.jl-a-julia-implementation}
 
-The \texttt{LaplaceRedux.jl} package is intended to make this new
-methodological framework available to the Julia community. It is
-interfaced with the popular deep learning library,
+The \texttt{LaplaceRedux.jl} package makes this new methodological
+framework available to the Julia community. It is interfaced with the
+popular deep learning library,
 \href{https://fluxml.ai/}{\texttt{Flux.jl}}.
 
 Using just a few lines of code the package enables users to compute and
-apply Laplace Redux to their pre-trained neural networks. A basic usage
-example is shown in Code \ref{lst:fit}: the \texttt{Laplace} function
-simply wraps the Flux neural network \texttt{nn}. Since the underlying
-model is a classifier, we need to specify the likelihood accordingly.
-The returned instance is then fitted to the data using the generic
-\texttt{fit!} method. Note that the \texttt{fit!} method also accepts a
-\texttt{DataLoader} as its second positional argument and mini-batch
-training is supported.
+apply LA to their pre-trained neural networks. A basic usage example is
+shown in Code \ref{lst:fit}: the \texttt{Laplace} constructor takes a
+pre-trained Flux neural network \texttt{nn} as its only positional
+argument. Since the underlying model is a classifier, we need to specify
+the likelihood accordingly using the corresponding keyword argument.
+Additional keyword arguments can be used to define the Bayesian priors
+and select the backend used to approximate the Hessian among other
+things. The returned instance is then fitted to the data using the
+generic \texttt{fit!} method. Note that the \texttt{fit!} method also
+accepts a \texttt{Flux.DataLoader} as its second positional argument and
+mini-batch training is supported.
 
 \begin{lstlisting}[language=Julia, escapechar=@, numbers=left, label={lst:fit}, caption={Fitting a pre-trained neural network to data using Laplace Redux.}]
 la = Laplace(nn; likelihood=:classification)
@@ -350,9 +353,10 @@ Code \ref{lst:predict} will generate GLM predictions according to
 Equation~\ref{eq-glm-predictive}. In the classification case, softmax
 outputs are returned by default following the convention in the Python
 implementation, but this can be changed using the
-\texttt{predict\_proba} keyword argument. It is also possible to recover
-the original MAP estimate directly by setting the \texttt{link\_approx}
-keyword argument to \texttt{:plugin}.
+\texttt{predict\_proba} keyword argument. It is also possible to
+generate conventional plug-in predictions using the original MAP
+estimate by setting the \texttt{link\_approx} keyword argument to
+\texttt{:plugin}.
 
 \begin{lstlisting}[language=Julia, escapechar=@, numbers=left, label={lst:predict}, caption={Predictions using the fitted Laplace Redux instance.}]
 la(X)                       # GLM predictions
@@ -364,9 +368,10 @@ Additional methods can be used to optimize the prior precision
 \(\lambda\) and to visualize the predictions (Code \ref{lst:other}). The
 \texttt{optimize\_prior!} method optimizes the prior precision
 \(\lambda\) through Empirical Bayes \cite{daxberger2021laplace}. The
-\texttt{plot} method visualizes the predictions of the fitted instance.
-It is provided through the
-\href{https://github.com/JuliaTrustworthyAI/TaijaPlotting.jl}{TaijaPlotting}
+\texttt{plot} method visualizes the predictions of the fitted instance
+using \href{https://docs.juliaplots.org/stable/}{Plots.jl}. The method
+extension is provided through the
+\href{https://github.com/JuliaTrustworthyAI/TaijaPlotting.jl}{TaijaPlotting.jl}
 meta package.
 
 \begin{lstlisting}[language=Julia, escapechar=@, numbers=left, label={lst:other}, caption={Prior optimization and visualization of the predictive distribution.}]
