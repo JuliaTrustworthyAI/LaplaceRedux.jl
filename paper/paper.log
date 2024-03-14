@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.25 (TeX Live 2023) (preloaded format=pdflatex 2023.11.6)  12 MAR 2024 15:19
+This is pdfTeX, Version 3.141592653-2.6-1.40.25 (TeX Live 2023) (preloaded format=pdflatex 2023.11.6)  14 MAR 2024 14:27
 entering extended mode
  restricted \write18 enabled.
  file:line:error style messages enabled.
@@ -382,14 +382,11 @@ LaTeX Font Info:    Font shape `U/lasy/b/n' in size <8> not available
 LaTeX Font Info:    Font shape `U/lasy/b/n' in size <6> not available
 (Font)              Font shape `U/lasy/m/n' tried instead on input line 10.
 LaTeX Font Info:    Font shape `U/lasy/b/n' in size <9> not available
-(Font)              Font shape `U/lasy/m/n' tried instead on input line 48.
+(Font)              Font shape `U/lasy/m/n' tried instead on input line 53.
 LaTeX Font Info:    Font shape `U/lasy/b/n' in size <5> not available
-(Font)              Font shape `U/lasy/m/n' tried instead on input line 48.
+(Font)              Font shape `U/lasy/m/n' tried instead on input line 53.
 LaTeX Font Info:    Font shape `T1/cmtt/bx/n' in size <10> not available
-(Font)              Font shape `T1/cmtt/m/n' tried instead on input line 117.
-
-Underfull \vbox (badness 10000) has occurred while \output is active []
-
+(Font)              Font shape `T1/cmtt/m/n' tried instead on input line 124.
 
 Underfull \hbox (badness 10000) has occurred while \output is active
   
@@ -401,32 +398,35 @@ Non-PDF special ignored!
 
 
 {/usr/local/texlive/2023/texmf-dist/fonts/enc/dvips/cm-super/cm-super-t1.enc} <./logojuliacon.pdf>]
-Package hyperref Info: bookmark level for unknown lstlisting defaults to 0 on input line 134.
+Package hyperref Info: bookmark level for unknown lstlisting defaults to 0 on input line 144.
 LaTeX Font Info:    Font shape `U/lasy/b/n' in size <7> not available
-(Font)              Font shape `U/lasy/m/n' tried instead on input line 166.
+(Font)              Font shape `U/lasy/m/n' tried instead on input line 178.
 LaTeX Font Info:    Font shape `T1/cmtt/bx/n' in size <7> not available
-(Font)              Font shape `T1/cmtt/m/n' tried instead on input line 167.
-<www/posterior_predictive_mlp.png, id=94, 1204.5pt x 401.5pt>
+(Font)              Font shape `T1/cmtt/m/n' tried instead on input line 179.
+<www/posterior_predictive_mlp.png, id=103, 1204.5pt x 401.5pt>
 File: www/posterior_predictive_mlp.png Graphic file (type png)
 <use www/posterior_predictive_mlp.png>
-Package pdftex.def Info: www/posterior_predictive_mlp.png  used on input line 193.
+Package pdftex.def Info: www/posterior_predictive_mlp.png  used on input line 205.
 (pdftex.def)             Requested size: 240.89574pt x 80.70291pt.
 
-Overfull \hbox (0.89574pt too wide) in paragraph at lines 193--194
+Overfull \hbox (0.89574pt too wide) in paragraph at lines 205--206
  [][] 
  []
 
-<www/regression.png, id=95, 803.0pt x 401.5pt>
+<www/regression.png, id=104, 803.0pt x 401.5pt>
 File: www/regression.png Graphic file (type png)
 <use www/regression.png>
-Package pdftex.def Info: www/regression.png  used on input line 209.
+Package pdftex.def Info: www/regression.png  used on input line 221.
 (pdftex.def)             Requested size: 240.90186pt x 120.45091pt.
 
-Overfull \hbox (0.90186pt too wide) in paragraph at lines 209--210
+Overfull \hbox (0.90186pt too wide) in paragraph at lines 221--222
  [][] 
  []
 
-(./bib.tex (./paper.bbl
+
+Underfull \vbox (badness 1521) has occurred while \output is active []
+
+
 Overfull \vbox (2.39996pt too high) has occurred while \output is active []
 
 
@@ -434,18 +434,23 @@ Underfull \hbox (badness 10000) has occurred while \output is active
   \T1/ptm/m/n/9 2
  []
 
-[2 <./www/posterior_predictive_mlp.png> <./www/regression.png>]
-Underfull \hbox (badness 1259) in paragraph at lines 4--7
+[2 <./www/posterior_predictive_mlp.png> <./www/regression.png>] (./bib.tex (./paper.bbl
+Underfull \hbox (badness 3240) in paragraph at lines 4--7
+\T1/ptm/m/n/9 and Cyn-thia C. S. Liem. Faith-ful model ex-pla-na-tions
+ []
+
+
+Underfull \hbox (badness 1259) in paragraph at lines 9--12
 \T1/ptm/m/n/9 is-nick, David Janz, and José Miguel Hernández-Lobato.
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 24--27
+Underfull \hbox (badness 10000) in paragraph at lines 29--32
 []\T1/ptm/m/n/9 Ian J Good-fel-low, Jonathon Shlens, and Chris-tian
  []
 
 
-Underfull \hbox (badness 4726) in paragraph at lines 24--27
+Underfull \hbox (badness 4726) in paragraph at lines 29--32
 \T1/ptm/m/n/9 Szegedy. Ex-plain-ing and har-ness-ing ad-ver-sar-ial ex-am-
  []
 
@@ -464,18 +469,18 @@ Package rerunfilecheck Info: File `paper.out' has not changed.
 (rerunfilecheck)             Checksum: CCB893B94E2DAF31A41409AD331A6BFD;1072.
  ) 
 Here is how much of TeX's memory you used:
- 13901 strings out of 476025
- 213952 string characters out of 5790017
+ 13907 strings out of 476025
+ 214107 string characters out of 5790017
  1887388 words of memory out of 5000000
- 34096 multiletter control sequences out of 15000+600000
+ 34099 multiletter control sequences out of 15000+600000
  555786 words of font info for 128 fonts, out of 8000000 for 9000
  1141 hyphenation exceptions out of 8191
- 90i,11n,90p,664b,1832s stack positions out of 10000i,1000n,20000p,200000b,200000s
+ 90i,11n,90p,672b,1832s stack positions out of 10000i,1000n,20000p,200000b,200000s
 </usr/local/texlive/2023/texmf-dist/fonts/type1/public/amsfonts/cmextra/cmex9.pfb></usr/local/texlive/2023/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi6.pfb></usr/local/texlive/2023/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi7.pfb></usr/local/texlive/2023/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi9.pfb></usr/local/texlive/2023/texmf-dist/fonts/type1/public/amsfonts/cm/cmr6.pfb></usr/local/texlive/2023/texmf-dist/fonts/type1/public/amsfonts/cm/cmr9.pfb></usr/local/texlive/2023/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy10.pfb></usr/local/texlive/2023/texmf-dist/fonts/type1/public/amsfonts/latxfont/lcircle1.pfb></usr/local/texlive/2023/texmf-dist/fonts/type1/public/amsfonts/symbols/msbm10.pfb></usr/local/texlive/2023/texmf-dist/fonts/type1/public/cm-super/sftt0800.pfb></usr/local/texlive/2023/texmf-dist/fonts/type1/public/cm-super/sftt0900.pfb></usr/local/texlive/2023/texmf-dist/fonts/type1/public/cm-super/sftt1000.pfb></usr/local/texlive/2023/texmf-dist/fonts/type1/urw/times/utmb8a.pfb></usr/local/texlive/2023/texmf-dist/fonts/type1/urw/times/utmr8a.pfb></usr/local/texlive/2023/texmf-dist/fonts/type1/urw/times/utmri8a.pfb>
-Output written on paper.pdf (3 pages, 458281 bytes).
+Output written on paper.pdf (3 pages, 461202 bytes).
 PDF statistics:
- 210 PDF objects out of 1000 (max. 8388607)
- 170 compressed objects within 2 object streams
- 43 named destinations out of 1000 (max. 500000)
+ 220 PDF objects out of 1000 (max. 8388607)
+ 180 compressed objects within 2 object streams
+ 46 named destinations out of 1000 (max. 500000)
  72 words of extra memory for PDF output out of 10000 (max. 10000000)
 
