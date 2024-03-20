@@ -2,6 +2,10 @@ using LaplaceRedux
 using Test
 
 @testset "LaplaceRedux.jl" begin
+
+    # Quality assurance:
+    include("aqua.jl")
+
     @testset "Data" begin
         include("data.jl")
     end
