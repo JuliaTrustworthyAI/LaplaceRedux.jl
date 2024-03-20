@@ -1,7 +1,7 @@
 name = "LaplaceRedux"
 uuid = "c52c1a26-f7c5-402b-80be-ba1e638ad478"
 authors = ["Patrick Altmeyer"]
-version = "0.1.4"
+version = "0.1.5"
 
 [deps]
 Compat = "34da2185-b29b-5c13-b0c7-acf172513d20"
