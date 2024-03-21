@@ -2,9 +2,9 @@ using CounterfactualExplanations
 using CounterfactualExplanations.Models
 using TaijaData
 
-counterfactual_data = TaijaData.load_linearly_separable() |> 
-    x -> (Float32.(x[1]), x[2]) |>
-    x -> CounterfactualData(x...)
+counterfactual_data =
+    TaijaData.load_linearly_separable() |>
+    x -> (Float32.(x[1]), x[2]) |> x -> CounterfactualData(x...)
 M = Models.fit_model(counterfactual_data, :LaplaceRedux)
 
 # Select a factual instance:
