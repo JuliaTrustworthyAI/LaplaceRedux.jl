@@ -1,0 +1,85 @@
+```@meta
+CurrentModule = LaplaceRedux
+```
+
+```{julia}
+#| echo: false
+using Pkg; Pkg.activate("docs")
+# Import libraries
+using Flux, Plots, TaijaPlotting, Random, Statistics, LaplaceRedux
+theme(:wong)
+```
+
+## Data
+
+We first generate some synthetic data:
+
+```{julia}
+using LaplaceRedux.Data
+n = 300       # number of observations
+σtrue = 0.30  # true observational noise
+x, y = Data.toy_data_regression(n;noise=σtrue)
+xs = [[x] for x in x]
+X = permutedims(x)
+```
+
+## MLP
+
+We set up a model and loss with weight regularization:
+
+```{julia}
+data = zip(xs,y)
+n_hidden = 50
+D = size(X,1)
+nn = Chain(
+    Dense(D, n_hidden, tanh),
+    Dense(n_hidden, 1)
+)  
+loss(x, y) = Flux.Losses.mse(nn(x), y)
+```
+
+We train the model:
+
+```{julia}
+using Flux.Optimise: update!, Adam
+opt = Adam(1e-3)
+epochs = 1000
+avg_loss(data) = mean(map(d -> loss(d[1],d[2]), data))
+show_every = epochs/10
+
+for epoch = 1:epochs
+  for d in data
+    gs = gradient(Flux.params(nn)) do
+      l = loss(d...)
+    end
+    update!(opt, Flux.params(nn), gs)
+  end
+  if epoch % show_every == 0
+    println("Epoch " * string(epoch))
+    @show avg_loss(data)
+  end
+end
+```
+
+## Laplace Approximation
+
+Laplace approximation can be implemented as follows:
+
+```{julia}
+#| output: true
+
+subset_w = :all
+la = Laplace(nn; likelihood=:regression, subset_of_weights=subset_w)
+fit!(la, data)
+plot(la, X, y; zoom=-5, size=(400,400))
+```
+
+Next we optimize the prior precision $P_0$ and and observational noise $\sigma$ using Empirical Bayes:
+
+```{julia}
+#| output: true
+
+optimize_prior!(la; verbose=true)
+plot(la, X, y; zoom=-5, size=(400,400))
+```
+
