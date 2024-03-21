@@ -260,7 +260,7 @@ end
 
 # Posterior predictions:
 """
-    predict(la::BaseLaplace, X::AbstractArray; link_approx=:probit)
+    predict(la::BaseLaplace, X::AbstractArray; link_approx=:probit, predict_proba::Bool=true)
 
 Computes predictions from Bayesian neural network.
 
