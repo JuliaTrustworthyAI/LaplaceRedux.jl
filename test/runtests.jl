@@ -35,4 +35,8 @@ using Test
     @testset "MLJFlux" begin
         include("mlj_flux_interfacing.jl")
     end
+
+    @testset "CounterfactualExplanations" begin
+        include("counterfactual_explanations.jl")
+    end
 end

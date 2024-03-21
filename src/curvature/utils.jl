@@ -1,3 +1,5 @@
+using ChainRulesCore
+
 """
     jacobians(curvature::CurvatureInterface, X::AbstractArray; batched::Bool=false)
 
@@ -25,7 +27,9 @@ function jacobians_unbatched(curvature::CurvatureInterface, X::AbstractArray)
     ŷ = vec(ŷ)
     # Jacobian:
     # Differentiate f with regards to the model parameters
-    𝐉 = jacobian(() -> nn(X), Flux.params(nn))
+    ChainRulesCore.ignore_derivatives() do
+        𝐉 = jacobian(() -> nn(X), Flux.params(nn))
+    end
     # Concatenate Jacobians for the selected parameters, to produce a matrix (K, P), where P is the total number of parameter scalars.                      
     𝐉 = reduce(hcat, [𝐉[θ] for θ in curvature.params])
     if curvature.subset_of_weights == :subnetwork
@@ -46,7 +50,9 @@ function jacobians_batched(curvature::CurvatureInterface, X::AbstractArray)
     batch_size = size(X)[end]
     out_size = outdim(nn)
     # Jacobian:
-    grads = jacobian(() -> nn(X), Flux.params(nn))
+    ChainRulesCore.ignore_derivatives() do
+        grads = jacobian(() -> nn(X), Flux.params(nn))
+    end
     grads_joint = reduce(hcat, [grads[θ] for θ in curvature.params])
     views = [
         @view grads_joint[batch_start:(batch_start + out_size - 1), :] for
