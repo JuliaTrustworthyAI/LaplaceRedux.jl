@@ -1,7 +1,7 @@
 name = "LaplaceRedux"
 uuid = "c52c1a26-f7c5-402b-80be-ba1e638ad478"
 authors = ["Patrick Altmeyer"]
-version = "0.1.6"
+version = "0.1.7"
 
 [deps]
 Aqua = "4c88cf16-eb10-579e-8560-4a9242c79595"
