@@ -1,8 +1,10 @@
-# Bayesian Logistic Regression
+
 
 ``` @meta
 CurrentModule = LaplaceRedux
 ```
+
+# Bayesian Logistic Regression
 
 We will use synthetic data with linearly separable samples:
 

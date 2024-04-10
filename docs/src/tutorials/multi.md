@@ -1,5 +1,6 @@
 # Multi-class problem
 
+
 ``` julia
 using LaplaceRedux.Data
 x, y = Data.toy_data_multi()

@@ -1,4 +1,5 @@
 format: 
   commonmark:
-    variant: -raw_html
-    wrap: none
+    variant: -raw_html+tex_math_dollars
+    wrap: preserve
+    mermaid-format: png

@@ -1,8 +1,10 @@
-# LaplaceRedux
+
 
 ``` @meta
 CurrentModule = LaplaceRedux
 ```
+
+![](assets/wide_logo.png)
 
 Documentation for [LaplaceRedux.jl](https://github.com/JuliaTrustworthyAI/LaplaceRedux.jl).
 
@@ -26,13 +28,17 @@ using Pkg
 Pkg.add("https://github.com/JuliaTrustworthyAI/LaplaceRedux.jl")
 ```
 
+## 🏃 Getting Started
+
+If you are new to Deep Learning in Julia or simply prefer learning through videos, check out this awesome YouTube [tutorial](https://www.youtube.com/channel/UCQwQVlIkbalDzmMnr-0tRhw) by [doggo.jl](https://www.youtube.com/@doggodotjl/about) 🐶. Additionally, you can also find a [video](https://www.youtube.com/watch?v=oWko8FRj_64) of my presentation at JuliaCon 2022 on YouTube.
+
 ## 🖥️ Basic Usage
 
 `LaplaceRedux.jl` can be used for any neural network trained in [`Flux.jl`](https://fluxml.ai/Flux.jl/dev/). Below we show basic usage examples involving two simple models for a regression and a classification task, respectively.
 
 ### Regression
 
-A complete worked example for a regression model can be found in the [docs](https://www.paltmeyer.com/LaplaceRedux.jl/dev/tutorials/regression/). Here we jump straight to Laplace Approximation and take the pre-trained model `nn` as given. Then LA can be implemented as follows, where we specify the model `likelihood`. The plot show the fitted values overlaid with a 95% confidence interval. As expected, predictive uncertainty quickly increases in areas that are not populated by any training data.
+A complete worked example for a regression model can be found in the [docs](https://www.paltmeyer.com/LaplaceRedux.jl/dev/tutorials/regression/). Here we jump straight to Laplace Approximation and take the pre-trained model `nn` as given. Then LA can be implemented as follows, where we specify the model `likelihood`. The plot shows the fitted values overlaid with a 95% confidence interval. As expected, predictive uncertainty quickly increases in areas that are not populated by any training data.
 
 ``` julia
 la = Laplace(nn; likelihood=:regression)
@@ -48,12 +54,10 @@ plot(la, X, y; zoom=-5, size=(500,500))
 Once again we jump straight to LA and refer to the [docs](https://www.paltmeyer.com/LaplaceRedux.jl/dev/tutorials/mlp/) for a complete worked example involving binary classification. In this case we need to specify `likelihood=:classification`. The plot below shows the resulting posterior predictive distributions as contours in the two-dimensional feature space: note how the **Plugin** Approximation on the left compares to the Laplace Approximation on the right.
 
 ``` julia
-theme(:lime)
-
 la = Laplace(nn; likelihood=:classification)
 fit!(la, data)
 la_untuned = deepcopy(la)   # saving for plotting
-optimize_prior!(la; n_steps=500)
+optimize_prior!(la; n_steps=100)
 
 # Plot the posterior predictive distribution:
 zoom=0

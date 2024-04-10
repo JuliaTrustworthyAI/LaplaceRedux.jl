@@ -2,7 +2,7 @@
 CurrentModule = LaplaceRedux
 ```
 
-# LaplaceRedux
+![](assets/wide_logo.png)
 
 Documentation for [LaplaceRedux.jl](https://github.com/JuliaTrustworthyAI/LaplaceRedux.jl).
 
