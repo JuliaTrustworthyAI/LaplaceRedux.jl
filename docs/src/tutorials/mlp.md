@@ -1,8 +1,10 @@
-# Bayesian MLP
+
 
 ``` @meta
 CurrentModule = LaplaceRedux
 ```
+
+# Bayesian MLP
 
 This time we use a synthetic dataset containing samples that are not linearly separable:
 
