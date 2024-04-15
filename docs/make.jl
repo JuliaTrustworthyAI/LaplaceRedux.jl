@@ -22,7 +22,7 @@ makedocs(;
             "MLP Regression" => "tutorials/regression.md",
             "A note on the prior ..." => "tutorials/prior.md",
         ],
-        "Reference" => "_reference.md",
+        "Reference" => "reference.md",
         "Additional Resources" => "resources/_resources.md",
     ],
 )
