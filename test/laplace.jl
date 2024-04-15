@@ -109,7 +109,7 @@ end
     la = Laplace(nn; likelihood=:classification)
 
     function hessian_exact(x, target)
-        return (nn(x) .- target) .* (nn(x) .* (1 .- nn(x)) .* x * x') + la.P₀[1:2, 1:2]
+        return (nn(x) .- target) .* (nn(x) .* (1 .- nn(x)) .* x * x') + la.prior.P₀[1:2, 1:2]
     end
 
     @testset "Empirical Fisher - full" begin

@@ -1,4 +1,5 @@
 using .Curvature: Kron, KronDecomposed, mm
+import Flux
 using LinearAlgebra
 using MLUtils
 
@@ -73,15 +74,13 @@ function EstimationParams(params::LaplaceParams, model::Any, likelihood::Symbol)
 end
 
 """
-    instantiate_curvature!(params::EstimationParams, model::Any, likelihood::Symbol, backend::Symbol)
+    Flux.params(model::Any, params::EstimationParams)
 
-Instantiates the curvature interface for a Laplace approximation. The curvature interface is a concrete subtype of [`CurvatureInterface`](@ref) and is used to compute the Hessian matrix. The curvature interface is stored in the `curvature` field of the `EstimationParams` object.
+Extracts the parameters of a model based on the subset of weights specified in the `EstimationParams` object.
 """
-function instantiate_curvature!(params::EstimationParams, model::Any, likelihood::Symbol, backend::Symbol)
-
+function Flux.params(model::Any, params::EstimationParams)
     model_params = Flux.params(model)
     n_elements = length(model_params)
-    subnetwork_indices = nothing
     if params.subset_of_weights == :all || la.subset_of_weights == :subnetwork
         # get all parameters and constants in logitbinarycrossentropy
         model_params = [θ for θ in model_params]
@@ -90,8 +89,39 @@ function instantiate_curvature!(params::EstimationParams, model::Any, likelihood
         # params[n_elements] is the bias vector of the last layer
         # params[n_elements-1] is the weight matrix of the last layer
         model_params = [model_params[n_elements - 1], model_params[n_elements]]
-    elseif params.subset_of_weights == :subnetwork
+    end
+    return model_params
+end
+
+"""
+    n_params(model::Any, params::EstimationParams)
+
+Helper function to determine the number of parameters of a `Flux.Chain` with Laplace approximation.
+"""
+function n_params(model::Any, est_params::EstimationParams)
+    if est_params.subset_of_weights == :subnetwork
+        n = length(est_params.subnetwork_indices)
+    else
+        n = length(
+            reduce(vcat, [vec(θ) for θ in Flux.params(model, est_params)])
+        )                
+    end
+    return n
+end
+
+"""
+    instantiate_curvature!(params::EstimationParams, model::Any, likelihood::Symbol, backend::Symbol)
+
+Instantiates the curvature interface for a Laplace approximation. The curvature interface is a concrete subtype of [`CurvatureInterface`](@ref) and is used to compute the Hessian matrix. The curvature interface is stored in the `curvature` field of the `EstimationParams` object.
+"""
+function instantiate_curvature!(params::EstimationParams, model::Any, likelihood::Symbol, backend::Symbol)
+
+    model_params = Flux.params(model, params)
+
+    if params.subset_of_weights == :subnetwork
         subnetwork_indices = convert_subnetwork_indices(params.subnetwork_indices, model_params)
+    else
+        subnetwork_indices = nothing
     end
 
     curvature = getfield(Curvature, backend)(
@@ -122,7 +152,20 @@ end
 
 Extracts the prior parameters from a `LaplaceParams` object.
 """
-Prior(params::LaplaceParams) = Prior(params.σ, params.μ₀, params.λ, params.P₀)
+function Prior(params::LaplaceParams, model::Any, likelihood::Symbol)
+    P₀ = params.P₀
+    n = n_params(model, EstimationParams(params, model, likelihood))
+    if typeof(P₀) <: UniformScaling
+        P₀ = P₀(n)
+    elseif isnothing(P₀)
+        P₀ = UniformScaling(params.λ)(n)
+    end
+    # Sanity:
+    if isa(P₀, AbstractMatrix)
+        @assert all(size(P₀) .== n) "Dimensions of prior Hessian $(size(P₀)) do not align with number of parameters ($n)"
+    end
+    return Prior(params.σ, params.μ₀, params.λ, P₀)
+end
 
 """
     Laplace
@@ -140,7 +183,7 @@ mutable struct Laplace <: AbstractLaplace
     model::Flux.Chain
     likelihood::Symbol
     prior::Prior
-    params::EstimationParams
+    est_params::EstimationParams
 end
 
 """
@@ -156,22 +199,40 @@ function Laplace(model::Any; likelihood::Symbol, kwargs...)
 
     # Unpack arguments and wrap in containers:
     est_args = EstimationParams(args, model, likelihood)
-    prior = Prior(args)
+    prior = Prior(args, model, likelihood)
 
     # Instantiate Laplace object:
     la = Laplace(model, likelihood, prior, est_args)
 
-    la.μ = la.μ[(end - la.n_params + 1):end]                                    # adjust weight vector
-    if typeof(la.P₀) <: UniformScaling
-        la.P₀ = la.P₀(la.n_params)
-    end
-
-    # Sanity:
-    if isa(la.P₀, AbstractMatrix)
-        @assert all(size(la.P₀) .== la.n_params) "Dimensions of prior Hessian $(size(la.P₀)) do not align with number of parameters ($(la.n_params))"
-    end
-
     return la
+end
+
+"""
+    get_map_estimate(la::Laplace)
+
+Helper function to extract the MAP estimate of the parameters from a Laplace approximation.
+"""
+function get_map_estimate(la::Laplace)
+    μ = reduce(vcat, [vec(θ) for θ in Flux.params(la.model)])
+    return μ[(end - la.n_params + 1):end]
+end
+
+"""
+    get_prior_mean(la::Laplace)
+
+Helper function to extract the prior mean of the parameters from a Laplace approximation.
+"""
+function get_prior_mean(la::Laplace)
+    return la.prior.μ₀
+end
+
+"""
+    prior_precision(la::Laplace)
+
+Helper function to extract the prior precision matrix from a Laplace approximation.
+"""
+function prior_precision(la::Laplace)
+    return la.prior.P₀
 end
 
 """
@@ -222,7 +283,7 @@ P = \sum_{n=1}^N\nabla_{\theta}^2\log p(\mathcal{D}_n|\theta)|_{\theta}_{MAP} + 
 
 where ``\sum_{n=1}^N\nabla_{\theta}^2\log p(\mathcal{D}_n|\theta)|_{\theta}_{MAP}=H`` and ``\nabla_{\theta}^2 \log p(\theta)|_{\theta}_{MAP}=P_0``.
 """
-function posterior_precision(la::AbstractLaplace, H=la.H, P₀=la.P₀)
+function posterior_precision(la::AbstractLaplace, H=la.H, P₀=la.prior.P₀)
     @assert !isnothing(H) "Hessian not available. Either no value supplied or Laplace Approximation has not yet been estimated."
     return H + P₀
 end
@@ -245,7 +306,7 @@ end
 function log_likelihood(la::AbstractLaplace)
     factor = -_H_factor(la)
     if la.likelihood == :regression
-        c = la.n_data * la.n_out * log(la.σ * sqrt(2 * pi))
+        c = la.n_data * la.n_out * log(la.prior.σ * sqrt(2 * pi))
     else
         c = 0
     end
@@ -257,7 +318,7 @@ end
 
 Returns the factor σ⁻², where σ is used in the zero-centered Gaussian prior p(θ) = N(θ;0,σ²I)
 """
-_H_factor(la::AbstractLaplace) = 1 / (la.σ^2)
+_H_factor(la::AbstractLaplace) = 1 / (la.prior.σ^2)
 
 """
     _init_H(la::AbstractLaplace)
@@ -275,11 +336,12 @@ Smaller weights in a neural network can result in a model that is more stable an
 making a prediction on new data.
 """
 function _weight_penalty(la::AbstractLaplace)
-    μ = la.μ                                                                 # MAP
-    μ₀ = la.μ₀                                                               # prior
+    μ = get_map_estimate(la)                                                 # MAP
+    μ₀ = get_prior_mean(la)                                                  # prior
     Δ = μ .- μ₀
-    return Δ'la.P₀ * Δ                                                       # measure of how far the MAP estimate deviates from the prior mean μ₀
-end                                                                          # used to control the degree of regularization applied to the mode
+    P₀ = prior_precision(la)
+    return Δ'P₀ * Δ                                                          # measure of how far the MAP estimate deviates from the prior mean μ₀
+end                                                                          
 
 """
     log_marginal_likelihood(la::AbstractLaplace; P₀::Union{Nothing,UniformScaling}=nothing, σ::Union{Nothing, Real}=nothing)
@@ -294,13 +356,13 @@ function log_marginal_likelihood(
 
     # update prior precision:
     if !isnothing(P₀)
-        la.P₀ = typeof(P₀) <: AbstractFloat ? UniformScaling(P₀)(la.n_params) : P₀
+        la.prior.P₀ = typeof(P₀) <: AbstractFloat ? UniformScaling(P₀)(la.n_params) : P₀
     end
 
     # update observation noise:
     if !isnothing(σ)
-        @assert (la.likelihood == :regression || la.σ == σ) "Can only change observational noise σ for regression."
-        la.σ = σ
+        @assert (la.likelihood == :regression || la.prior.σ == σ) "Can only change observational noise σ for regression."
+        la.prior.σ = σ
     end
 
     return log_likelihood(la) - 0.5 * (log_det_ratio(la) + _weight_penalty(la))
@@ -320,7 +382,7 @@ end
 
 
 """
-log_det_prior_precision(la::AbstractLaplace) = sum(log.(diag(la.P₀)))
+log_det_prior_precision(la::AbstractLaplace) = sum(log.(diag(la.prior.P₀)))
 
 """
     log_det_posterior_precision(la::AbstractLaplace)
@@ -481,8 +543,8 @@ function optimize_prior!(
 )
 
     # Setup:
-    logP₀ = isnothing(λinit) ? log.(unique(diag(la.P₀))) : log.([λinit])   # prior precision (scalar)
-    logσ = isnothing(σinit) ? log.([la.σ]) : log.([σinit])                 # noise (scalar)
+    logP₀ = isnothing(λinit) ? log.(unique(diag(la.prior.P₀))) : log.([λinit])   # prior precision (scalar)
+    logσ = isnothing(σinit) ? log.([la.prior.σ]) : log.([σinit])                 # noise (scalar)
     opt = Adam(lr)
     show_every = round(n_steps / 10)
     i = 0

@@ -66,7 +66,7 @@ for λ ∈ Λ
     end
     
     _suffix = isnothing(λ) ? " (optimal)" : ""
-    λ = unique(diag(la.P₀))[1]
+    λ = unique(diag(la.prior.P₀))[1]
     title = "λ=$(round(λ,digits=2))$(_suffix)"
 
     # plot 
@@ -113,7 +113,7 @@ for n_hidden ∈ n_hiddens
     fit!(la, data)  
     optimize_prior!(la)
     
-    λ = unique(diag(la.P₀))[1]
+    λ = unique(diag(la.prior.P₀))[1]
     title = "n_params=$(la.n_params),λ=$(round(λ,digits=2))"
 
     # plot 
@@ -160,7 +160,7 @@ for n_hidden ∈ n_hiddens
     fit!(la, data)  
     optimize_prior!(la)
     
-    λ = unique(diag(la.P₀))[1]
+    λ = unique(diag(la.prior.P₀))[1]
     title = "n_params=$(la.n_params),λ=$(round(λ,digits=2))"
 
     # plot 
