@@ -1,4 +1,3 @@
-using .Curvature: Kron, KronDecomposed, mm
 import Flux
 using LinearAlgebra
 using MLUtils
@@ -11,6 +10,9 @@ abstract type HessianStructure end
 
 "Concrete type for full Hessian structure. This is the default structure."
 struct FullHessian <: HessianStructure end
+
+"Abstract type of Hessian decompositions."
+abstract type AbstractDecomposition end
 
 """
     LaplaceParams
@@ -123,6 +125,16 @@ function n_params(model::Any, est_params::EstimationParams)
 end
 
 """
+    get_map_estimate(model::Any, est_params::EstimationParams)
+
+Helper function to extract the MAP estimate of the parameters for the model based on the subset of weights specified in the `EstimationParams` object.
+"""
+function get_map_estimate(model::Any, est_params::EstimationParams)
+    μ = reduce(vcat, [vec(θ) for θ in Flux.params(model, est_params)])
+    return μ[(end - LaplaceRedux.n_params(model, est_params) + 1):end]
+end
+
+"""
     instantiate_curvature!(params::EstimationParams, model::Any, likelihood::Symbol, backend::Symbol)
 
 Instantiates the curvature interface for a Laplace approximation. The curvature interface is a concrete subtype of [`CurvatureInterface`](@ref) and is used to compute the Hessian matrix. The curvature interface is stored in the `curvature` field of the `EstimationParams` object.
@@ -167,7 +179,7 @@ Extracts the prior parameters from a `LaplaceParams` object.
 """
 function Prior(params::LaplaceParams, model::Any, likelihood::Symbol)
     P₀ = params.P₀
-    n = n_params(model, EstimationParams(params, model, likelihood))
+    n = LaplaceRedux.n_params(model, EstimationParams(params, model, likelihood))
     if typeof(P₀) <: UniformScaling
         P₀ = P₀(n)
     elseif isnothing(P₀)
@@ -178,6 +190,51 @@ function Prior(params::LaplaceParams, model::Any, likelihood::Symbol)
         @assert all(size(P₀) .== n) "Dimensions of prior Hessian $(size(P₀)) do not align with number of parameters ($n)"
     end
     return Prior(params.σ, params.μ₀, params.λ, P₀)
+end
+
+"""
+    Posterior
+
+Container for the results of a Laplace approximation.
+
+# Fields
+
+- `μ::AbstractVector`: the MAP estimate of the parameters
+- `H::Union{AbstractArray,AbstractDecomposition,Nothing}`: the Hessian matrix
+- `P::Union{AbstractArray,AbstractDecomposition,Nothing}`: the posterior precision matrix
+- `Σ::Union{AbstractArray,Nothing}`: the posterior covariance matrix
+- `n_data::Union{Int,Nothing}`: the number of data points
+- `n_params::Union{Int,Nothing}`: the number of parameters
+- `n_out::Union{Int,Nothing}`: the number of outputs
+- `loss::Real`: the loss value
+"""
+mutable struct Posterior
+    μ::AbstractVector
+    H::Union{AbstractArray,AbstractDecomposition,Nothing}
+    P::Union{AbstractArray,AbstractDecomposition,Nothing}
+    Σ::Union{AbstractArray,Nothing}
+    n_data::Union{Int,Nothing}
+    n_params::Union{Int,Nothing}
+    n_out::Union{Int,Nothing}
+    loss::Real
+end
+
+"""
+    Posterior()
+
+Outer constructor for `Posterior` object.
+"""
+function Posterior(model::Any, est_params::EstimationParams, )
+    return Posterior(
+        get_map_estimate(model, est_params),
+        nothing,
+        nothing,
+        nothing,
+        nothing,
+        n_params(model, est_params),
+        outdim(model),
+        0.0,
+    )
 end
 
 """
@@ -195,8 +252,9 @@ Concrete type for Laplace approximation. This type is a subtype of `AbstractLapl
 mutable struct Laplace <: AbstractLaplace
     model::Flux.Chain
     likelihood::Symbol
-    prior::Prior
     est_params::EstimationParams
+    prior::Prior
+    posterior::Posterior
 end
 
 """
@@ -214,29 +272,27 @@ function Laplace(
     # Unpack arguments and wrap in containers:
     est_args = EstimationParams(args, model, likelihood)
     prior = Prior(args, model, likelihood)
+    posterior = Posterior(model, est_args)
 
     # Instantiate Laplace object:
-    la = Laplace(model, likelihood, prior, est_args)
+    la = Laplace(model, likelihood, est_args, prior, posterior)
 
     return la
 end
 
 """
-    n_params(la::Laplace)
+    Flux.params(la::Laplace)
+
+Overloads the `params` function for a `Laplace` object.
+"""
+Flux.params(la::Laplace) = Flux.params(la.model, la.est_params)
+
+"""
+    LaplaceRedux.n_params(la::Laplace)
 
 Overloads the `n_params` function for a `Laplace` object.
 """
-n_params(la::Laplace) = n_params(la.model, la.est_params)
-
-"""
-    get_map_estimate(la::Laplace)
-
-Helper function to extract the MAP estimate of the parameters from a Laplace approximation.
-"""
-function get_map_estimate(la::Laplace)
-    μ = reduce(vcat, [vec(θ) for θ in Flux.params(la.model)])
-    return μ[(end - n_params(la) + 1):end]
-end
+LaplaceRedux.n_params(la::Laplace) = LaplaceRedux.n_params(la.model, la.est_params)
 
 """
     get_prior_mean(la::Laplace)
@@ -254,35 +310,6 @@ Helper function to extract the prior precision matrix from a Laplace approximati
 """
 function prior_precision(la::Laplace)
     return la.prior.P₀
-end
-
-"""
-    Fitresult
-
-Container for the results of a Laplace approximation.
-
-# Fields
-
-- `la::AbstractLaplace`: the Laplace approximation object
-- `μ::AbstractVector`: the MAP estimate of the parameters
-- `H::Union{AbstractArray,KronDecomposed,Nothing}`: the Hessian matrix
-- `P::Union{AbstractArray,KronDecomposed,Nothing}`: the posterior precision matrix
-- `Σ::Union{AbstractArray,Nothing}`: the posterior covariance matrix
-- `n_params::Union{Int,Nothing}`: the number of parameters
-- `n_data::Union{Int,Nothing}`: the number of data points
-- `n_out::Union{Int,Nothing}`: the number of outputs
-- `loss::Real`: the loss value
-"""
-mutable struct Fitresult
-    la::AbstractLaplace
-    μ::AbstractVector
-    H::Union{AbstractArray,KronDecomposed,Nothing}
-    P::Union{AbstractArray,KronDecomposed,Nothing}
-    Σ::Union{AbstractArray,Nothing}
-    n_params::Union{Int,Nothing}
-    n_data::Union{Int,Nothing}
-    n_out::Union{Int,Nothing}
-    loss::Real 
 end
 
 """
@@ -304,7 +331,7 @@ P = \sum_{n=1}^N\nabla_{\theta}^2\log p(\mathcal{D}_n|\theta)|_{\theta}_{MAP} + 
 
 where ``\sum_{n=1}^N\nabla_{\theta}^2\log p(\mathcal{D}_n|\theta)|_{\theta}_{MAP}=H`` and ``\nabla_{\theta}^2 \log p(\theta)|_{\theta}_{MAP}=P_0``.
 """
-function posterior_precision(la::AbstractLaplace, H=la.H, P₀=la.prior.P₀)
+function posterior_precision(la::AbstractLaplace, H=la.posterior.H, P₀=la.prior.P₀)
     @assert !isnothing(H) "Hessian not available. Either no value supplied or Laplace Approximation has not yet been estimated."
     return H + P₀
 end
@@ -327,11 +354,11 @@ end
 function log_likelihood(la::AbstractLaplace)
     factor = -_H_factor(la)
     if la.likelihood == :regression
-        c = la.n_data * la.n_out * log(la.prior.σ * sqrt(2 * pi))
+        c = la.posterior.n_data * la.posterior.n_out * log(la.prior.σ * sqrt(2 * pi))
     else
         c = 0
     end
-    return factor * la.loss - c
+    return factor * la.posterior.loss - c
 end
 
 """
@@ -346,7 +373,7 @@ _H_factor(la::AbstractLaplace) = 1 / (la.prior.σ^2)
 
 
 """
-_init_H(la::AbstractLaplace) = zeros(n_params(la), n_params(la))
+_init_H(la::AbstractLaplace) = zeros(la.posterior.n_params, la.posterior.n_params)
 
 """
     _weight_penalty(la::AbstractLaplace)
@@ -357,11 +384,11 @@ Smaller weights in a neural network can result in a model that is more stable an
 making a prediction on new data.
 """
 function _weight_penalty(la::AbstractLaplace)
-    μ = get_map_estimate(la)                                                 # MAP
-    μ₀ = get_prior_mean(la)                                                  # prior
+    μ = la.posterior.μ
+    μ₀ = get_prior_mean(la)                                                  
     Δ = μ .- μ₀
     P₀ = prior_precision(la)
-    return Δ'P₀ * Δ                                                          # measure of how far the MAP estimate deviates from the prior mean μ₀
+    return Δ'P₀ * Δ                                                          
 end                                                                          
 
 """
@@ -377,7 +404,7 @@ function log_marginal_likelihood(
 
     # update prior precision:
     if !isnothing(P₀)
-        la.prior.P₀ = typeof(P₀) <: AbstractFloat ? UniformScaling(P₀)(n_params(la)) : P₀
+        la.prior.P₀ = typeof(P₀) <: AbstractFloat ? UniformScaling(P₀)(la.posterior.n_params) : P₀
     end
 
     # update observation noise:
@@ -418,7 +445,7 @@ log_det_posterior_precision(la::AbstractLaplace) = logdet(posterior_precision(la
 Computes the local Hessian approximation at a single datapoint `d`.
 """
 function hessian_approximation(la::AbstractLaplace, d; batched::Bool=false)
-    loss, H = getfield(Curvature, la.est_params.hessian_structure)(la.curvature, d; batched=batched)
+    loss, H = approximate(la.est_params.curvature, la.est_params.hessian_structure, d; batched=batched)
     return loss, H
 end
 
@@ -467,7 +494,7 @@ end
 Computes the linearized GLM predictive.
 """
 function glm_predictive_distribution(la::AbstractLaplace, X::AbstractArray)
-    𝐉, fμ = Curvature.jacobians(la.curvature, X)
+    𝐉, fμ = Curvature.jacobians(la.est_params.curvature, X)
     fvar = functional_variance(la, 𝐉)
     fvar = reshape(fvar, size(fμ)...)
     return fμ, fvar
@@ -517,7 +544,7 @@ function predict(
 
         # Sigmoid/Softmax
         if predict_proba
-            if outdim(la) == 1
+            if la.posterior.n_out == 1
                 p = Flux.sigmoid(z)
             else
                 p = Flux.softmax(z; dims=1)
@@ -594,7 +621,7 @@ function optimize_prior!(
         gs = gradient(ps) do
             loss(exp.(logP₀), exp.(logσ))
         end
-        update!(opt, ps, gs)
+        Flux.Optimise.update!(opt, ps, gs)
         i += 1
         if verbose
             if i % show_every == 0

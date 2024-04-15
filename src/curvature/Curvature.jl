@@ -1,14 +1,13 @@
 module Curvature
 
+using Compat
 using Flux
 using ..LaplaceRedux: get_loss_fun, outdim
 using LinearAlgebra
-using Zygote
 using Tullio
-using Compat
+using Zygote
 
-import Base: +, *, ==, length, getindex
-import LinearAlgebra: det, logdet
+export CurvatureInterface
 
 "Base type for any curvature interface."
 abstract type CurvatureInterface end
@@ -16,6 +15,5 @@ abstract type CurvatureInterface end
 include("utils.jl")
 include("ggn.jl")
 include("fisher.jl")
-include("approximations/approximations.jl")
 
 end

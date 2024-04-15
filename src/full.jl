@@ -1,4 +1,22 @@
 """
+    approximate(curvature::CurvatureInterface, hessian_structure::FullHessian, d::Tuple; batched::Bool=false)
+
+Compute the full approximation, for either a single input-output datapoint or a batch of such. 
+"""
+function approximate(
+    curvature::CurvatureInterface,
+    hessian_structure::FullHessian,
+    d::Tuple;
+    batched::Bool=false,
+)
+    if batched
+        Curvature.full_batched(curvature, d)
+    else
+        Curvature.full_unbatched(curvature, d)
+    end
+end
+
+"""
     _fit!(la::Laplace, hessian_structure::FullHessian, data; batched::Bool=false, batchsize::Int, override::Bool=true)
 
 Fit a Laplace approximation to the posterior distribution of a model using the full Hessian.
@@ -18,16 +36,11 @@ function _fit!(la::Laplace, hessian_structure::FullHessian, data; batched::Bool=
     end
 
     # Store output:
-    la.loss = loss
-    # Hessian
-    la.H = H
-    # Posterior precision
-    la.P = posterior_precision(la)
-    # Posterior covariance
-    la.Σ = posterior_covariance(la, la.P)
-    la.curvature.params = get_params(la)
-    # Number of observations
-    return la.n_data = n_data
+    la.posterior.H = H
+    la.posterior.loss = loss
+    la.posterior.P = posterior_precision(la)
+    la.posterior.Σ = posterior_covariance(la, la.posterior.P)
+    la.posterior.n_data = n_data
 end
 
 """

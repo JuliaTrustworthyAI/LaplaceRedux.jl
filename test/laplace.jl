@@ -20,14 +20,14 @@ using LinearAlgebra
 
     # Correct:
     la = Laplace(nn; likelihood=:classification)
-    @test n_params(la) == 3
+    @test LaplaceRedux.n_params(la) == 3
 
     # Multi-layer:
     nn = Chain(Dense(2, 2, σ), Dense(2, 1))
     la = Laplace(nn; likelihood=:regression, subset_of_weights=:last_layer)
-    @test n_params(la) == 3
+    @test LaplaceRedux.n_params(la) == 3
     la = Laplace(nn; likelihood=:classification, subset_of_weights=:all)
-    @test n_params(la) == 9
+    @test LaplaceRedux.n_params(la) == 9
     @test_throws AssertionError Laplace(
         nn; likelihood=:classification, subset_of_weights=:subnetwork
     )
@@ -40,10 +40,10 @@ end
 @testset "Parameters" begin
     nn = Chain(Dense(2, 2, σ), Dense(2, 1))
     la = Laplace(nn; likelihood=:classification, subset_of_weights=:last_layer)
-    @test LaplaceRedux.get_params(la) == collect(Flux.params(nn))[(end - 1):end]
+    @test Flux.params(la) == collect(Flux.params(nn))[(end - 1):end]
 
     la = Laplace(nn; likelihood=:classification, subset_of_weights=:all)
-    @test LaplaceRedux.get_params(la) == collect(Flux.params(nn))
+    @test Flux.params(la) == collect(Flux.params(nn))
 end
 
 # We know the analytical expression for the gradient of logit binary cross entropy loss for a single-layer neural net with sigmoid activation just corresponds to the gradient in logistic regression (see for example: https://www.paltmeyer.com/blog/posts/bayesian-logit/): ∇ℓ=(μ-y)x. We can use this analytical expression to see if we get the expected results.
@@ -116,7 +116,7 @@ end
         target = [1]
         x = [[0, 0]]
         fit!(la, zip(x, target))
-        @test la.P[1:2, 1:2] == hessian_exact(x[1], target[1])
+        @test la.posterior.P[1:2, 1:2] == hessian_exact(x[1], target[1])
     end
 end
 
@@ -209,7 +209,7 @@ function run_workflow(
         predict(la, X)
     end
 
-    return la.H
+    return la.posterior.H
 end
 
 @testset "Complete Workflows" begin
