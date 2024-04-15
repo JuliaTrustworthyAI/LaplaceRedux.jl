@@ -22,7 +22,7 @@ mutable struct LaplaceApproximation{B,F,O,L} <: MLJFlux.MLJFluxProbabilistic
     likelihood::Symbol
     subset_of_weights::Symbol
     subnetwork_indices::Vector{Vector{Int}}
-    hessian_structure::Symbol
+    hessian_structure::HessianStructure
     backend::Symbol
     σ::Real
     μ₀::Real
@@ -48,7 +48,7 @@ acceleration::AbstractResource,
 likelihood::Symbol,
 subset_of_weights::Symbol,
 subnetwork_indices::Vector{Vector{Int}},
-hessian_structure::Symbol,
+hessian_structure::HessianStructure,
 backend::Symbol,
 σ::Float64,
 μ₀::Float64,
@@ -74,7 +74,7 @@ function LaplaceApproximation(;
     likelihood::Symbol=:classification,
     subset_of_weights::Symbol=:all,
     subnetwork_indices::Vector{Vector{Int}}=Vector{Vector{Int}}([]),
-    hessian_structure::Symbol=:full,
+    hessian_structure::HessianStructure=:full,
     backend::Symbol=:GGN,
     σ::Float64=1.0,
     μ₀::Float64=0.0,

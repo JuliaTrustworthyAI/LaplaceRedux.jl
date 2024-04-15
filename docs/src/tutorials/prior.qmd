@@ -114,7 +114,7 @@ for n_hidden ∈ n_hiddens
     optimize_prior!(la)
     
     λ = unique(diag(la.prior.P₀))[1]
-    title = "n_params=$(la.n_params),λ=$(round(λ,digits=2))"
+    title = "n_params=$(n_params(la)),λ=$(round(λ,digits=2))"
 
     # plot 
     plt = plot(la, X, y; title=title, zoom=-5)
@@ -161,7 +161,7 @@ for n_hidden ∈ n_hiddens
     optimize_prior!(la)
     
     λ = unique(diag(la.prior.P₀))[1]
-    title = "n_params=$(la.n_params),λ=$(round(λ,digits=2))"
+    title = "n_params=$(n_params(la)),λ=$(round(λ,digits=2))"
 
     # plot 
     plt = plot(la, X, ys; title=title, zoom=-1, clim=(0,1))

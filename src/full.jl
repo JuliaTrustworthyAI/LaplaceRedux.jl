@@ -1,12 +1,9 @@
-using .Curvature: Kron, KronDecomposed, mm
-using Flux
-using Flux.Optimise: Adam, update!
-using Flux.Optimisers: destructure
-using LinearAlgebra
-using MLUtils
-using Parameters
+"""
+    _fit!(la::Laplace, hessian_structure::FullHessian, data; batched::Bool=false, batchsize::Int, override::Bool=true)
 
-function _fit!(la::Laplace, data; batched::Bool=false, batchsize::Int, override::Bool=true)
+Fit a Laplace approximation to the posterior distribution of a model using the full Hessian.
+"""
+function _fit!(la::Laplace, hessian_structure::FullHessian, data; batched::Bool=false, batchsize::Int, override::Bool=true)
     if override
         H = _init_H(la)
         loss = 0.0
@@ -38,8 +35,9 @@ functional_variance(la::Laplace,𝐉)
 
 Compute the linearized GLM predictive variance as `𝐉ₙΣ𝐉ₙ'` where `𝐉=∇f(x;θ)|θ̂` is the Jacobian evaluated at the MAP estimate and `Σ = P⁻¹`.
 """
-function functional_variance(la::Laplace, 𝐉)
+function functional_variance(la::Laplace, hessian_structure::FullHessian, 𝐉)
     Σ = posterior_covariance(la)
     fvar = map(j -> (j' * Σ * j), eachrow(𝐉))
     return fvar
 end
+

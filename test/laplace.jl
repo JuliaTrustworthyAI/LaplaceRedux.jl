@@ -20,14 +20,14 @@ using LinearAlgebra
 
     # Correct:
     la = Laplace(nn; likelihood=:classification)
-    @test la.n_params == 3
+    @test n_params(la) == 3
 
     # Multi-layer:
     nn = Chain(Dense(2, 2, σ), Dense(2, 1))
     la = Laplace(nn; likelihood=:regression, subset_of_weights=:last_layer)
-    @test la.n_params == 3
+    @test n_params(la) == 3
     la = Laplace(nn; likelihood=:classification, subset_of_weights=:all)
-    @test la.n_params == 9
+    @test n_params(la) == 9
     @test_throws AssertionError Laplace(
         nn; likelihood=:classification, subset_of_weights=:subnetwork
     )

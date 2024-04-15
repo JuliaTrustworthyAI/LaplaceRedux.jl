@@ -30,7 +30,7 @@ using Flux
             subset_of_weights=:subnetwork,
             subnetwork_indices=[[1, 1, 1], [3, 1, 1], [4, 1]],
         )
-        @test la.n_params == 3
+        @test n_params(la) == 3
         @test la.curvature.subnetwork_indices == [1, 7, 9]
     end
 
@@ -84,7 +84,7 @@ using Flux
                 [4, 1],
             ],
         )
-        @test la.n_params == 41
+        @test n_params(la) == 41
         @test la.curvature.subnetwork_indices == collect(1:41)
     end
 end

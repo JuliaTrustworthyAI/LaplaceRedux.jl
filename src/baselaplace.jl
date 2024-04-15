@@ -6,6 +6,12 @@ using MLUtils
 "Abstract base type for all Laplace approximations in this library. All subclasses implemented are parametric."
 abstract type AbstractLaplace end
 
+"Abstract type for Hessian structure."
+abstract type HessianStructure end
+
+"Concrete type for full Hessian structure. This is the default structure."
+struct FullHessian <: HessianStructure end
+
 """
     LaplaceParams
 
@@ -15,7 +21,7 @@ Container for the parameters of a Laplace approximation.
 
 - `subset_of_weights::Symbol`: the subset of weights to consider. Possible values are `:all`, `:last_layer`, and `:subnetwork`.
 - `subnetwork_indices::Union{Nothing,Vector{Vector{Int}}}`: the indices of the subnetwork. Possible values are `nothing` or a vector of vectors of integers.
-- `hessian_structure::Symbol`: the structure of the Hessian. Possible values are `:full` and `:kron`.
+- `hessian_structure::HessianStructure`: the structure of the Hessian. Possible values are `:full` and `:kron`.
 - `backend::Symbol`: the backend to use. Possible values are `:GGN` and `:Fisher`.
 - `curvature::Union{Curvature.CurvatureInterface,Nothing}`: the curvature interface. Possible values are `nothing` or a concrete subtype of `CurvatureInterface`.
 - `σ::Real`: the observation noise
@@ -26,7 +32,7 @@ Container for the parameters of a Laplace approximation.
 Base.@kwdef struct LaplaceParams
     subset_of_weights::Symbol = :all
     subnetwork_indices::Union{Nothing,Vector{Vector{Int}}} = nothing
-    hessian_structure::Symbol = :full
+    hessian_structure::Union{HessianStructure,Symbol,String} = FullHessian()
     backend::Symbol = :GGN
     curvature::Union{Curvature.CurvatureInterface,Nothing} = nothing
     σ::Real = 1.0
@@ -43,7 +49,7 @@ Container for the parameters of a Laplace approximation.
 mutable struct EstimationParams
     subset_of_weights::Symbol 
     subnetwork_indices::Union{Nothing,Vector{Vector{Int}}} 
-    hessian_structure::Symbol 
+    hessian_structure::HessianStructure 
     curvature::Union{Curvature.CurvatureInterface,Nothing} 
 end
 
@@ -54,6 +60,13 @@ Extracts the estimation parameters from a `LaplaceParams` object.
 """
 function EstimationParams(params::LaplaceParams, model::Any, likelihood::Symbol)
 
+    # Hessian structure:
+    hessian_structure = params.hessian_structure
+    if !(typeof(hessian_structure) <: HessianStructure)
+        hessian_structure =
+            String(hessian_structure) == "full" ? FullHessian() : KronHessian()
+    end
+
     # Asserts:
     @assert params.subset_of_weights ∈ [:all, :last_layer, :subnetwork] "`subset_of_weights` of weights should be one of the following: `[:all, :last_layer, :subnetwork]`"
     if (params.subset_of_weights == :subnetwork)
@@ -63,7 +76,7 @@ function EstimationParams(params::LaplaceParams, model::Any, likelihood::Symbol)
     est_params = EstimationParams(
         params.subset_of_weights,
         params.subnetwork_indices,
-        params.hessian_structure,
+        hessian_structure,
         params.curvature,
     )
 
@@ -81,7 +94,7 @@ Extracts the parameters of a model based on the subset of weights specified in t
 function Flux.params(model::Any, params::EstimationParams)
     model_params = Flux.params(model)
     n_elements = length(model_params)
-    if params.subset_of_weights == :all || la.subset_of_weights == :subnetwork
+    if params.subset_of_weights == :all || params.subset_of_weights == :subnetwork
         # get all parameters and constants in logitbinarycrossentropy
         model_params = [θ for θ in model_params]
     elseif params.subset_of_weights == :last_layer
@@ -191,9 +204,10 @@ Laplace(model::Any; loss_fun::Union{Symbol, Function}, kwargs...)
 
 Outer constructor for Laplace approximation. This function is a wrapper around the [`EstimationParams`](@ref) constructor and the [`Laplace`](@ref) constructor.
 """
-function Laplace(model::Any; likelihood::Symbol, kwargs...)
+function Laplace(
+    model::Any; likelihood::Symbol, kwargs...
+)
 
-    # Load hyperparameters:
     args = LaplaceParams(; kwargs...)
     @assert !(args.σ != 1.0 && likelihood != :regression) "Observation noise σ ≠ 1 only available for regression."
 
@@ -208,13 +222,20 @@ function Laplace(model::Any; likelihood::Symbol, kwargs...)
 end
 
 """
+    n_params(la::Laplace)
+
+Overloads the `n_params` function for a `Laplace` object.
+"""
+n_params(la::Laplace) = n_params(la.model, la.est_params)
+
+"""
     get_map_estimate(la::Laplace)
 
 Helper function to extract the MAP estimate of the parameters from a Laplace approximation.
 """
 function get_map_estimate(la::Laplace)
     μ = reduce(vcat, [vec(θ) for θ in Flux.params(la.model)])
-    return μ[(end - la.n_params + 1):end]
+    return μ[(end - n_params(la) + 1):end]
 end
 
 """
@@ -325,7 +346,7 @@ _H_factor(la::AbstractLaplace) = 1 / (la.prior.σ^2)
 
 
 """
-_init_H(la::AbstractLaplace) = zeros(la.n_params, la.n_params)
+_init_H(la::AbstractLaplace) = zeros(n_params(la), n_params(la))
 
 """
     _weight_penalty(la::AbstractLaplace)
@@ -356,7 +377,7 @@ function log_marginal_likelihood(
 
     # update prior precision:
     if !isnothing(P₀)
-        la.prior.P₀ = typeof(P₀) <: AbstractFloat ? UniformScaling(P₀)(la.n_params) : P₀
+        la.prior.P₀ = typeof(P₀) <: AbstractFloat ? UniformScaling(P₀)(n_params(la)) : P₀
     end
 
     # update observation noise:
@@ -397,7 +418,7 @@ log_det_posterior_precision(la::AbstractLaplace) = logdet(posterior_precision(la
 Computes the local Hessian approximation at a single datapoint `d`.
 """
 function hessian_approximation(la::AbstractLaplace, d; batched::Bool=false)
-    loss, H = getfield(Curvature, la.hessian_structure)(la.curvature, d; batched=batched)
+    loss, H = getfield(Curvature, la.est_params.hessian_structure)(la.curvature, d; batched=batched)
     return loss, H
 end
 
@@ -421,14 +442,23 @@ fit!(la, data)
 
 """
 function fit!(la::AbstractLaplace, data; override::Bool=true)
-    return _fit!(la, data; batched=false, batchsize=1, override=override)
+    return _fit!(la, la.est_params.hessian_structure, data; batched=false, batchsize=1, override=override)
 end
 
 """
 Fit the Laplace approximation, with batched data.
 """
 function fit!(la::AbstractLaplace, data::DataLoader; override::Bool=true)
-    return _fit!(la, data; batched=true, batchsize=data.batchsize, override=override)
+    return _fit!(la, la.est_params.hessian_structure, data; batched=true, batchsize=data.batchsize, override=override)
+end
+
+"""
+    functional_variance(la::AbstractLaplace, 𝐉::AbstractArray)
+
+Compute the functional variance for the GLM predictive. Dispatches to the appropriate method based on the Hessian structure.
+"""
+function functional_variance(la, 𝐉)
+    return functional_variance(la, la.est_params.hessian_structure, 𝐉)    
 end
 
 """
