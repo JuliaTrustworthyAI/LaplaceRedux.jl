@@ -10,7 +10,7 @@ using Compat
 import Base: +, *, ==, length, getindex
 import LinearAlgebra: det, logdet
 
-"Basetype for any curvature interface."
+"Base type for any curvature interface."
 abstract type CurvatureInterface end
 
 include("utils.jl")

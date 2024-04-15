@@ -1,5 +1,21 @@
-mutable struct KronLaplace <: BaseLaplace
-    @fields_baselaplace
+mutable struct KronLaplace <: AbstractLaplace
+    model::Flux.Chain
+    likelihood::Symbol
+    subset_of_weights::Symbol
+    subnetwork_indices::Union{Nothing,Vector{Vector{Int}}}
+    hessian_structure::Symbol
+    curvature::Union{Curvature.CurvatureInterface,Nothing}
+    σ::Real
+    μ₀::Real
+    μ::AbstractVector
+    P₀::Union{AbstractMatrix,UniformScaling}
+    H::Union{AbstractArray,KronDecomposed,Nothing}
+    P::Union{AbstractArray,KronDecomposed,Nothing}
+    Σ::Union{AbstractArray,Nothing}
+    n_params::Union{Int,Nothing}
+    n_data::Union{Int,Nothing}
+    n_out::Union{Int,Nothing}
+    loss::Real
 end
 
 function _fit!(

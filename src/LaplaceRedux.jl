@@ -8,7 +8,7 @@ using .Data
 include("curvature/Curvature.jl")
 using .Curvature
 
-include("baselaplace.jl")       # abstract base type and methods
+include("AbstractLaplace.jl")       # abstract base type and methods
 include("laplace.jl")           # full Laplace
 include("kron.jl")              # Kronecker-factored Laplace
 

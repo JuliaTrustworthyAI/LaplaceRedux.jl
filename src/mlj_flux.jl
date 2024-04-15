@@ -29,7 +29,7 @@ mutable struct LaplaceApproximation{B,F,O,L} <: MLJFlux.MLJFluxProbabilistic
     P₀::Union{AbstractMatrix,UniformScaling,Nothing}
     link_approx::Symbol
     fit_params::Dict{Symbol,Any}
-    la::Union{Nothing,BaseLaplace}
+    la::Union{Nothing,AbstractLaplace}
 end
 
 """
