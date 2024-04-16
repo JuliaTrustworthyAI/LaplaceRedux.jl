@@ -1,4 +1,4 @@
-using LaplaceRedux.Curvature: Kron, KronDecomposed, decompose, logdetblock, logdet, det
+using LaplaceRedux: Kron, KronDecomposed, decompose, logdetblock, logdet, det
 using LinearAlgebra
 
 @testset "Decomposition, scaling" begin

@@ -67,8 +67,8 @@ The plot below shows the resulting posterior predictive surface for the plugin e
 # Plot the posterior distribution with a contour plot.
 zoom=0
 p_plugin = plot(la, X, ys; title="Plugin", link_approx=:plugin, clim=(0,1))
-p_untuned = plot(la_untuned, X, ys; title="LA - raw (λ=$(unique(diag(la_untuned.P₀))[1]))", clim=(0,1), zoom=zoom)
-p_laplace = plot(la, X, ys; title="LA - tuned (λ=$(round(unique(diag(la.P₀))[1],digits=2)))", clim=(0,1), zoom=zoom)
+p_untuned = plot(la_untuned, X, ys; title="LA - raw (λ=$(unique(diag(la_untuned.prior.P₀))[1]))", clim=(0,1), zoom=zoom)
+p_laplace = plot(la, X, ys; title="LA - tuned (λ=$(round(unique(diag(la.prior.P₀))[1],digits=2)))", clim=(0,1), zoom=zoom)
 plot(p_plugin, p_untuned, p_laplace, layout=(1,3), size=(1700,400))
 ```
 
@@ -79,8 +79,8 @@ Zooming out we can note that the plugin estimator produces high-confidence estim
 ``` julia
 zoom=-50
 p_plugin = plot(la, X, ys; title="Plugin", link_approx=:plugin, clim=(0,1))
-p_untuned = plot(la_untuned, X, ys; title="LA - raw (λ=$(unique(diag(la_untuned.P₀))[1]))", clim=(0,1), zoom=zoom)
-p_laplace = plot(la, X, ys; title="LA - tuned (λ=$(round(unique(diag(la.P₀))[1],digits=2)))", clim=(0,1), zoom=zoom)
+p_untuned = plot(la_untuned, X, ys; title="LA - raw (λ=$(unique(diag(la_untuned.prior.P₀))[1]))", clim=(0,1), zoom=zoom)
+p_laplace = plot(la, X, ys; title="LA - tuned (λ=$(round(unique(diag(la.prior.P₀))[1],digits=2)))", clim=(0,1), zoom=zoom)
 plot(p_plugin, p_untuned, p_laplace, layout=(1,3), size=(1700,400))
 ```
 

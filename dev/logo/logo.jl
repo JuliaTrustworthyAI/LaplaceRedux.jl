@@ -96,7 +96,7 @@ function logo_picture(;
     fμ, fvar = la(permutedims(x_range))
     fμ = vec(fμ)
     fσ = vec(sqrt.(fvar))
-    pred_std = sqrt.(fσ .^ 2 .+ la.σ^2)
+    pred_std = sqrt.(fσ .^ 2 .+ la.prior.σ^2)
     y_lb = fμ .- 1.96 * pred_std
     y_ub = fμ .+ 1.96 * pred_std
 
