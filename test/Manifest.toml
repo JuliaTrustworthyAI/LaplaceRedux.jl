@@ -347,9 +347,9 @@ version = "0.6.3"
 
 [[deps.CounterfactualExplanations]]
 deps = ["CUDA", "CategoricalArrays", "ChainRulesCore", "DataFrames", "DecisionTree", "Distributions", "Flux", "LazyArtifacts", "LinearAlgebra", "Logging", "MLJBase", "MLJDecisionTreeInterface", "MLUtils", "MultivariateStats", "PackageExtensionCompat", "Parameters", "ProgressMeter", "Random", "Serialization", "Statistics", "StatsBase", "Tables", "TaijaBase", "UUIDs"]
-git-tree-sha1 = "bc266bfcad331f7fd27b831011574e8e8ee351e4"
+git-tree-sha1 = "651bb986e1676a84770ea69af8e6beb08791bb31"
 uuid = "2f13d31b-18db-44c1-bc43-ebaf2cff0be0"
-version = "1.1.0"
+version = "1.1.1"
 
     [deps.CounterfactualExplanations.extensions]
     EvoTreesExt = "EvoTrees"
@@ -1069,9 +1069,9 @@ version = "0.7.14"
 
 [[deps.MLFlowClient]]
 deps = ["Dates", "FilePathsBase", "HTTP", "JSON", "ShowCases", "URIs", "UUIDs"]
-git-tree-sha1 = "049b39a208b052d020e18a0850ca9d228a11ef16"
+git-tree-sha1 = "5cc2a5453856e79f4772269fbe6b19fcdcba391a"
 uuid = "64a0f543-368b-4a9a-827a-e71edb2a0b83"
-version = "0.4.6"
+version = "0.4.7"
 
 [[deps.MLJ]]
 deps = ["CategoricalArrays", "ComputationalResources", "Distributed", "Distributions", "LinearAlgebra", "MLJBalancing", "MLJBase", "MLJEnsembles", "MLJFlow", "MLJIteration", "MLJModels", "MLJTuning", "OpenML", "Pkg", "ProgressMeter", "Random", "Reexport", "ScientificTypes", "StatisticalMeasures", "Statistics", "StatsBase", "Tables"]

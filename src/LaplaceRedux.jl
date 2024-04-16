@@ -8,7 +8,7 @@ using .Data
 include("curvature/Curvature.jl")
 using .Curvature
 
-include("baselaplace.jl")
+include("baselaplace/core_struct.jl")
 include("full.jl")
 include("kronecker/kron.jl")
 

@@ -11,7 +11,7 @@ CurrentModule = LaplaceRedux
 
 ### General Effect
 
-High prior precision → only observation noise. Low prior precision → high posterior uncertainty.
+High prior precision $\rightarrow$ only observation noise. Low prior precision $\rightarrow$ high posterior uncertainty.
 
 ``` julia
 using LaplaceRedux.Data
@@ -26,7 +26,7 @@ X = permutedims(x)
 
 ### Effect of Model Size on Optimal Choice
 
-For larger models, the optimal prior precision *λ* as evaluated through Empirical Bayes tends to be smaller.
+For larger models, the optimal prior precision $\lambda$ as evaluated through Empirical Bayes tends to be smaller.
 
 ![](prior_files/figure-commonmark/cell-5-output-1.svg)
 
