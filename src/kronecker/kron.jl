@@ -105,22 +105,30 @@ end
 Fit a Laplace approximation to the posterior distribution of a model using the Kronecker-factored Hessian.
 """
 function _fit!(
-    la::Laplace, hessian_structure::KronHessian, data; batched::Bool=false, batchsize::Int, override::Bool=true
+    la::Laplace,
+    hessian_structure::KronHessian,
+    data;
+    batched::Bool=false,
+    batchsize::Int,
+    override::Bool=true,
 )
     @assert !batched "Batched Kronecker-factored Laplace approximations not supported"
     @assert la.likelihood == :classification &&
-        get_loss_type(la.likelihood, la.est_params.curvature.model) == :logitcrossentropy "Only multi-class classification supported"
+        get_loss_type(la.likelihood, la.est_params.curvature.model) ==
+            :logitcrossentropy "Only multi-class classification supported"
 
     # NOTE: the fitting process is structured differently for Kronecker-factored methods
     # to avoid allocation, initialisation & interleaving overhead
     # Thus the loss, Hessian, and data size is computed not in a loop but in a separate function.
-    loss, H, n_data = approximate(la.est_params.curvature, hessian_structure, data; batched=batched)
+    loss, H, n_data = approximate(
+        la.est_params.curvature, hessian_structure, data; batched=batched
+    )
 
     # Store output:
     la.posterior.H = H
     la.posterior.loss = loss
     la.posterior.P = posterior_precision(la)
-    la.posterior.n_data = n_data
+    return la.posterior.n_data = n_data
     # NOTE: like in laplace-torch, post covariance is not defined for KronLaplace
 end
 

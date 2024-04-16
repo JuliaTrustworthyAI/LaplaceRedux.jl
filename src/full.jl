@@ -21,7 +21,14 @@ end
 
 Fit a Laplace approximation to the posterior distribution of a model using the full Hessian.
 """
-function _fit!(la::Laplace, hessian_structure::FullHessian, data; batched::Bool=false, batchsize::Int, override::Bool=true)
+function _fit!(
+    la::Laplace,
+    hessian_structure::FullHessian,
+    data;
+    batched::Bool=false,
+    batchsize::Int,
+    override::Bool=true,
+)
     if override
         H = _init_H(la)
         loss = 0.0
@@ -40,7 +47,7 @@ function _fit!(la::Laplace, hessian_structure::FullHessian, data; batched::Bool=
     la.posterior.loss = loss
     la.posterior.P = posterior_precision(la)
     la.posterior.Σ = posterior_covariance(la, la.posterior.P)
-    la.posterior.n_data = n_data
+    return la.posterior.n_data = n_data
 end
 
 """
@@ -53,4 +60,3 @@ function functional_variance(la::Laplace, hessian_structure::FullHessian, 𝐉)
     fvar = map(j -> (j' * Σ * j), eachrow(𝐉))
     return fvar
 end
-

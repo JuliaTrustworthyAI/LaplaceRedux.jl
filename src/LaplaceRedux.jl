@@ -8,8 +8,8 @@ using .Data
 include("curvature/Curvature.jl")
 using .Curvature
 
-include("baselaplace.jl")      
-include("full.jl")           
+include("baselaplace.jl")
+include("full.jl")
 include("kronecker/kron.jl")
 
 include("subnet.jl")

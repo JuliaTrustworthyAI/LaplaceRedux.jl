@@ -1,4 +1,4 @@
-import Flux
+using Flux: Flux
 using LinearAlgebra
 using MLUtils
 
@@ -49,10 +49,10 @@ end
 Container for the parameters of a Laplace approximation.
 """
 mutable struct EstimationParams
-    subset_of_weights::Symbol 
-    subnetwork_indices::Union{Nothing,Vector{Vector{Int}}} 
-    hessian_structure::HessianStructure 
-    curvature::Union{Curvature.CurvatureInterface,Nothing} 
+    subset_of_weights::Symbol
+    subnetwork_indices::Union{Nothing,Vector{Vector{Int}}}
+    hessian_structure::HessianStructure
+    curvature::Union{Curvature.CurvatureInterface,Nothing}
 end
 
 """
@@ -117,9 +117,7 @@ function n_params(model::Any, est_params::EstimationParams)
     if est_params.subset_of_weights == :subnetwork
         n = length(est_params.subnetwork_indices)
     else
-        n = length(
-            reduce(vcat, [vec(θ) for θ in Flux.params(model, est_params)])
-        )                
+        n = length(reduce(vcat, [vec(θ) for θ in Flux.params(model, est_params)]))
     end
     return n
 end
@@ -139,25 +137,24 @@ end
 
 Instantiates the curvature interface for a Laplace approximation. The curvature interface is a concrete subtype of [`CurvatureInterface`](@ref) and is used to compute the Hessian matrix. The curvature interface is stored in the `curvature` field of the `EstimationParams` object.
 """
-function instantiate_curvature!(params::EstimationParams, model::Any, likelihood::Symbol, backend::Symbol)
-
+function instantiate_curvature!(
+    params::EstimationParams, model::Any, likelihood::Symbol, backend::Symbol
+)
     model_params = Flux.params(model, params)
 
     if params.subset_of_weights == :subnetwork
-        subnetwork_indices = convert_subnetwork_indices(params.subnetwork_indices, model_params)
+        subnetwork_indices = convert_subnetwork_indices(
+            params.subnetwork_indices, model_params
+        )
     else
         subnetwork_indices = nothing
     end
 
     curvature = getfield(Curvature, backend)(
-        model,
-        likelihood,
-        model_params,
-        params.subset_of_weights,
-        subnetwork_indices,
+        model, likelihood, model_params, params.subset_of_weights, subnetwork_indices
     )
 
-    params.curvature = curvature
+    return params.curvature = curvature
 end
 
 """
@@ -166,9 +163,9 @@ end
 Container for the prior parameters of a Laplace approximation.
 """
 mutable struct Prior
-    σ::Real 
-    μ₀::Real 
-    λ::Real 
+    σ::Real
+    μ₀::Real
+    λ::Real
     P₀::Union{Nothing,AbstractMatrix,UniformScaling}
 end
 
@@ -224,7 +221,7 @@ end
 
 Outer constructor for `Posterior` object.
 """
-function Posterior(model::Any, est_params::EstimationParams, )
+function Posterior(model::Any, est_params::EstimationParams)
     return Posterior(
         get_map_estimate(model, est_params),
         nothing,
@@ -262,10 +259,7 @@ Laplace(model::Any; loss_fun::Union{Symbol, Function}, kwargs...)
 
 Outer constructor for Laplace approximation. This function is a wrapper around the [`EstimationParams`](@ref) constructor and the [`Laplace`](@ref) constructor.
 """
-function Laplace(
-    model::Any; likelihood::Symbol, kwargs...
-)
-
+function Laplace(model::Any; likelihood::Symbol, kwargs...)
     args = LaplaceParams(; kwargs...)
     @assert !(args.σ != 1.0 && likelihood != :regression) "Observation noise σ ≠ 1 only available for regression."
 
@@ -385,11 +379,11 @@ making a prediction on new data.
 """
 function _weight_penalty(la::AbstractLaplace)
     μ = la.posterior.μ
-    μ₀ = get_prior_mean(la)                                                  
+    μ₀ = get_prior_mean(la)
     Δ = μ .- μ₀
     P₀ = prior_precision(la)
-    return Δ'P₀ * Δ                                                          
-end                                                                          
+    return Δ'P₀ * Δ
+end
 
 """
     log_marginal_likelihood(la::AbstractLaplace; P₀::Union{Nothing,UniformScaling}=nothing, σ::Union{Nothing, Real}=nothing)
@@ -404,7 +398,8 @@ function log_marginal_likelihood(
 
     # update prior precision:
     if !isnothing(P₀)
-        la.prior.P₀ = typeof(P₀) <: AbstractFloat ? UniformScaling(P₀)(la.posterior.n_params) : P₀
+        la.prior.P₀ =
+            typeof(P₀) <: AbstractFloat ? UniformScaling(P₀)(la.posterior.n_params) : P₀
     end
 
     # update observation noise:
@@ -445,7 +440,9 @@ log_det_posterior_precision(la::AbstractLaplace) = logdet(posterior_precision(la
 Computes the local Hessian approximation at a single datapoint `d`.
 """
 function hessian_approximation(la::AbstractLaplace, d; batched::Bool=false)
-    loss, H = approximate(la.est_params.curvature, la.est_params.hessian_structure, d; batched=batched)
+    loss, H = approximate(
+        la.est_params.curvature, la.est_params.hessian_structure, d; batched=batched
+    )
     return loss, H
 end
 
@@ -469,14 +466,28 @@ fit!(la, data)
 
 """
 function fit!(la::AbstractLaplace, data; override::Bool=true)
-    return _fit!(la, la.est_params.hessian_structure, data; batched=false, batchsize=1, override=override)
+    return _fit!(
+        la,
+        la.est_params.hessian_structure,
+        data;
+        batched=false,
+        batchsize=1,
+        override=override,
+    )
 end
 
 """
 Fit the Laplace approximation, with batched data.
 """
 function fit!(la::AbstractLaplace, data::DataLoader; override::Bool=true)
-    return _fit!(la, la.est_params.hessian_structure, data; batched=true, batchsize=data.batchsize, override=override)
+    return _fit!(
+        la,
+        la.est_params.hessian_structure,
+        data;
+        batched=true,
+        batchsize=data.batchsize,
+        override=override,
+    )
 end
 
 """
@@ -485,7 +496,7 @@ end
 Compute the functional variance for the GLM predictive. Dispatches to the appropriate method based on the Hessian structure.
 """
 function functional_variance(la, 𝐉)
-    return functional_variance(la, la.est_params.hessian_structure, 𝐉)    
+    return functional_variance(la, la.est_params.hessian_structure, 𝐉)
 end
 
 """
@@ -563,7 +574,9 @@ Compute predictive posteriors for a batch of inputs.
 Note, input is assumed to be batched only if it is a matrix.
 If the input dimensionality of the model is 1 (a vector), one should still prepare a 1×B matrix batch as input.
 """
-function predict(la::AbstractLaplace, X::Matrix; link_approx=:probit, predict_proba::Bool=true)
+function predict(
+    la::AbstractLaplace, X::Matrix; link_approx=:probit, predict_proba::Bool=true
+)
     return stack([
         predict(la, X[:, i]; link_approx=link_approx, predict_proba=predict_proba) for
         i in 1:size(X, 2)

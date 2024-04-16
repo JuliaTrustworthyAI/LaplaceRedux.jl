@@ -22,7 +22,7 @@ mutable struct LaplaceApproximation{B,F,O,L} <: MLJFlux.MLJFluxProbabilistic
     likelihood::Symbol
     subset_of_weights::Symbol
     subnetwork_indices::Vector{Vector{Int}}
-    hessian_structure::HessianStructure
+    hessian_structure::Union{HessianStructure,Symbol,String}
     backend::Symbol
     σ::Real
     μ₀::Real
@@ -33,31 +33,34 @@ mutable struct LaplaceApproximation{B,F,O,L} <: MLJFlux.MLJFluxProbabilistic
 end
 
 """
-LaplaceApproximation(;
-builder::B,
-finaliser::F,
-optimiser::O,
-loss::L,
-epochs::Int,
-batch_size::Int,
-lambda::Float64,
-alpha::Float64,
-rng::Union{AbstractRNG,Int64},
-optimiser_changes_trigger_retraining::Bool,
-acceleration::AbstractResource,
-likelihood::Symbol,
-subset_of_weights::Symbol,
-subnetwork_indices::Vector{Vector{Int}},
-hessian_structure::HessianStructure,
-backend::Symbol,
-σ::Float64,
-μ₀::Float64,
-P₀::Union{AbstractMatrix,UniformScaling},
-link_approx::Symbol,
-fit_params::Dict{Symbol,Any},
-) where {B,F,O,L}
+    LaplaceApproximation(; builder, finaliser, optimiser, loss, epochs, batch_size, lambda, alpha, rng, optimiser_changes_trigger_retraining, acceleration, likelihood, subset_of_weights, subnetwork_indices, hessian_structure, backend, σ, μ₀, P₀, link_approx, fit_params)
 
-Constructor for LaplaceApproximation, a wrapper for Laplace, a bayesian deep learning model.
+A probabilistic model that uses Laplace approximation to estimate the posterior distribution of the weights of a neural network. The model is trained using the `fit!` method. The model is defined by the following default parameters for all `MLJFlux` models:
+
+- `builder`: a Flux model that constructs the neural network.
+- `finaliser`: a Flux model that processes the output of the neural network.
+- `optimiser`: a Flux optimiser.
+- `loss`: a loss function that takes the predicted output and the true output as arguments.
+- `epochs`: the number of epochs to train the model.
+- `batch_size`: the size of a batch.
+- `lambda`: the regularization strength.
+- `alpha`: the regularization mix (0 for all l2, 1 for all l1).
+- `rng`: a random number generator.
+- `optimiser_changes_trigger_retraining`: a boolean indicating whether changes in the optimiser trigger retraining.
+- `acceleration`: the computational resource to use.
+
+The model also has the following parameters, which are specific to the Laplace approximation:
+
+- `likelihood`: the likelihood of the model, either `:classification` or `:regression`.
+- `subset_of_weights`: the subset of weights to use, either `:all`, `:last_layer`, or `:subnetwork`.
+- `subnetwork_indices`: the indices of the subnetworks.
+- `hessian_structure`: the structure of the Hessian matrix, either `:full` or `:diagonal`.
+- `backend`: the backend to use, either `:GGN` or `:EmpiricalFisher`.
+- `σ`: the standard deviation of the prior distribution.
+- `μ₀`: the mean of the prior distribution.
+- `P₀`: the covariance matrix of the prior distribution.
+- `link_approx`: the link approximation to use, either `:probit` or `:plugin`.
+- `fit_params`: additional parameters to pass to the `fit!` method.
 """
 function LaplaceApproximation(;
     builder::B=MLJFlux.MLP(; hidden=(32, 32, 32), σ=Flux.swish),
@@ -74,7 +77,7 @@ function LaplaceApproximation(;
     likelihood::Symbol=:classification,
     subset_of_weights::Symbol=:all,
     subnetwork_indices::Vector{Vector{Int}}=Vector{Vector{Int}}([]),
-    hessian_structure::HessianStructure=:full,
+    hessian_structure::Union{HessianStructure,Symbol,String}=:full,
     backend::Symbol=:GGN,
     σ::Float64=1.0,
     μ₀::Float64=0.0,
@@ -245,9 +248,10 @@ function MMI.clean!(model::LaplaceApproximation)
             "Resetting `subset_of_weights = :all`. "
         model.subset_of_weights = :all
     end
-    if model.hessian_structure ∉ (:full, :diagonal)
+    if String(model.hessian_structure) ∉ ("full", "diagonal") &&
+        !(typeof(model.hessian_structure) <: HessianStructure)
         warning *=
-            "Need `hessian_structure ∈ (:full, :diagonal)`. " *
+            "Need `hessian_structure ∈ (:full, :diagonal)` or `hessian_structure ∈ (:full, :diagonal)` or typeof(model.hessian_structure) <: HessianStructure." *
             "Resetting `hessian_structure = :full`. "
         model.hessian_structure = :full
     end
