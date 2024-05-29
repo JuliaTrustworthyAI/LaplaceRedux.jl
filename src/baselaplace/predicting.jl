@@ -11,9 +11,32 @@ end
     glm_predictive_distribution(la::AbstractLaplace, X::AbstractArray)
 
 Computes the linearized GLM predictive.
+
+# Arguments
+
+- `la::AbstractLaplace`: A Laplace object.
+- `X::AbstractArray`: Input data.
+
+# Returns
+
+- `fμ::AbstractArray`: Mean of the predictive distribution. The output shape is column-major as in Flux.
+- `fvar::AbstractArray`: Variance of the predictive distribution. The output shape is column-major as in Flux.
+
+# Examples
+
+```julia-repl
+using Flux, LaplaceRedux
+using LaplaceRedux.Data: toy_data_linear
+x, y = toy_data_linear()
+data = zip(x,y)
+nn = Chain(Dense(2,1))
+la = Laplace(nn; likelihood=:classification)
+fit!(la, data)
+glm_predictive_distribution(la, hcat(x...))
 """
 function glm_predictive_distribution(la::AbstractLaplace, X::AbstractArray)
     𝐉, fμ = Curvature.jacobians(la.est_params.curvature, X)
+    fμ = reshape(fμ, Flux.outputsize(la.model, size(X)))
     fvar = functional_variance(la, 𝐉)
     fvar = reshape(fvar, size(fμ)...)
     return fμ, fvar
@@ -24,14 +47,27 @@ end
 
 Computes predictions from Bayesian neural network.
 
+# Arguments
+
+- `la::AbstractLaplace`: A Laplace object.
+- `X::AbstractArray`: Input data.
+- `link_approx::Symbol=:probit`: Link function approximation. Options are `:probit` and `:plugin`.
+- `predict_proba::Bool=true`: If `true` (default), returns probabilities for classification tasks.
+
+# Returns
+
+- `fμ::AbstractArray`: Mean of the predictive distribution if link function is set to `:plugin`, otherwise the probit approximation. The output shape is column-major as in Flux.
+- `fvar::AbstractArray`: If regression, it also returns the variance of the predictive distribution. The output shape is column-major as in Flux.
+
 # Examples
 
 ```julia-repl
 using Flux, LaplaceRedux
+using LaplaceRedux.Data: toy_data_linear
 x, y = toy_data_linear()
 data = zip(x,y)
 nn = Chain(Dense(2,1))
-la = Laplace(nn)
+la = Laplace(nn; likelihood=:classification)
 fit!(la, data)
 predict(la, hcat(x...))
 ```
@@ -51,8 +87,7 @@ function predict(
 
         # Probit approximation
         if link_approx == :probit
-            κ = 1 ./ sqrt.(1 .+ π / 8 .* fvar)
-            z = κ .* fμ
+            z = probit(fμ, fvar)
         end
 
         if link_approx == :plugin
@@ -75,20 +110,14 @@ function predict(
 end
 
 """
-    predict(la::AbstractLaplace, X::Matrix; link_approx=:probit, predict_proba::Bool=true)
+    probit(fμ::AbstractArray, fvar::AbstractArray)
 
-Compute predictive posteriors for a batch of inputs.
-
-Predicts on a matrix of inputs. Note, input is assumed to be batched only if it is a matrix.
-If the input dimensionality of the model is 1 (a vector), one should still prepare a 1×B matrix batch as input.
+Compute the probit approximation of the predictive distribution.
 """
-function predict(
-    la::AbstractLaplace, X::Matrix; link_approx=:probit, predict_proba::Bool=true
-)
-    return stack([
-        predict(la, X[:, i]; link_approx=link_approx, predict_proba=predict_proba) for
-        i in 1:size(X, 2)
-    ])
+function probit(fμ::AbstractArray, fvar::AbstractArray)
+    κ = 1 ./ sqrt.(1 .+ π / 8 .* fvar)
+    z = κ .* fμ
+    return z
 end
 
 """
