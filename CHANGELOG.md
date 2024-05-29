@@ -9,3 +9,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 ## Version [0.2.1] - 2024-05-29
 
 ### Changed
+
+- Improved the docstring for the `predict` method. [#88]
+
+### Added
+
+- Added `probit` helper function to compute probit approximation for classification. [#88]
