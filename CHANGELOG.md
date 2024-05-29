@@ -10,7 +10,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ### Changed
 
-- Improved the docstring for the `predict` method. [#88]
+- Improved the docstring for the `predict` and `glm_predictive_distribution` methods. [#88]
 
 ### Added
 

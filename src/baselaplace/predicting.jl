@@ -11,6 +11,28 @@ end
     glm_predictive_distribution(la::AbstractLaplace, X::AbstractArray)
 
 Computes the linearized GLM predictive.
+
+# Arguments
+
+- `la::AbstractLaplace`: A Laplace object.
+- `X::AbstractArray`: Input data.
+
+# Returns
+
+- `fμ::AbstractArray`: Mean of the predictive distribution. The format is column-major as in Flux.
+- `fvar::AbstractArray`: Variance of the predictive distribution. The format is column-major as in Flux.
+
+# Examples
+
+```julia-repl
+using Flux, LaplaceRedux
+using LaplaceRedux.Data: toy_data_linear
+x, y = toy_data_linear()
+data = zip(x,y)
+nn = Chain(Dense(2,1))
+la = Laplace(nn; likelihood=:classification)
+fit!(la, data)
+glm_predictive_distribution(la, hcat(x...))
 """
 function glm_predictive_distribution(la::AbstractLaplace, X::AbstractArray)
     𝐉, fμ = Curvature.jacobians(la.est_params.curvature, X)
