@@ -76,7 +76,6 @@ function LaplaceClassification(;
     rng::Union{AbstractRNG,Int64}=Random.GLOBAL_RNG,
     optimiser_changes_trigger_retraining::Bool=false,
     acceleration::AbstractResource=CPU1(),
-    likelihood::Symbol=:classification,
     subset_of_weights::Symbol=:all,
     subnetwork_indices::Vector{Vector{Int}}=Vector{Vector{Int}}([]),
     hessian_structure::Union{HessianStructure,Symbol,String}=:full,
@@ -87,6 +86,7 @@ function LaplaceClassification(;
     link_approx::Symbol=:probit,
     fit_params::Dict{Symbol,Any}=Dict{Symbol,Any}(:override => true),
 ) where {B,F,O,L}
+    likelihood = :classification
     model = LaplaceClassification(
         builder,
         finaliser,
@@ -138,7 +138,6 @@ mutable struct LaplaceRegression{B,F,O,L} <: MLJFlux.MLJFluxProbabilistic
     σ::Real
     μ₀::Real
     P₀::Union{AbstractMatrix,UniformScaling,Nothing}
-    link_approx::Symbol
     fit_params::Dict{Symbol,Any}
     la::Union{Nothing,AbstractLaplace}
 end
@@ -170,7 +169,6 @@ The model also has the following parameters, which are specific to the Laplace a
 - `σ`: the standard deviation of the prior distribution.
 - `μ₀`: the mean of the prior distribution.
 - `P₀`: the covariance matrix of the prior distribution.
-- `link_approx`: the link approximation to use, either `:probit` or `:plugin`.
 - `fit_params`: additional parameters to pass to the `fit!` method.
 """
 function LaplaceRegression(;
@@ -185,7 +183,6 @@ function LaplaceRegression(;
     rng::Union{AbstractRNG,Int64}=Random.GLOBAL_RNG,
     optimiser_changes_trigger_retraining::Bool=false,
     acceleration::AbstractResource=CPU1(),
-    likelihood::Symbol=:regression,
     subset_of_weights::Symbol=:all,
     subnetwork_indices::Vector{Vector{Int}}=Vector{Vector{Int}}([]),
     hessian_structure::Union{HessianStructure,Symbol,String}=:full,
@@ -193,9 +190,9 @@ function LaplaceRegression(;
     σ::Float64=1.0,
     μ₀::Float64=0.0,
     P₀::Union{AbstractMatrix,UniformScaling,Nothing}=nothing,
-    link_approx::Symbol=:probit,
     fit_params::Dict{Symbol,Any}=Dict{Symbol,Any}(:override => true),
 ) where {B,F,O,L}
+    likelihood=:regression
     model = LaplaceRegression(
         builder,
         finaliser,
@@ -216,7 +213,6 @@ function LaplaceRegression(;
         σ,
         μ₀,
         P₀,
-        link_approx,
         fit_params,
         nothing,
     )
@@ -330,7 +326,7 @@ function MMI.clean!(model::Union{LaplaceClassification,LaplaceRegression})
             "Need `backend ∈ (:GGN, :EmpiricalFisher)`. " * "Resetting `backend = :GGN`. "
         model.backend = :GGN
     end
-    if model.link_approx ∉ (:probit, :plugin)
+    if model.likelihood == :classification &&  model.link_approx ∉ (:probit, :plugin)
         warning *=
             "Need `link_approx ∈ (:probit, :plugin)`. " *
             "Resetting `link_approx = :probit`. "
@@ -501,7 +497,7 @@ function MMI.predict(model::LaplaceRegression, fitresult, Xnew)
     # predict using Laplace:
     yhat = vcat(
         [
-            glm_predictive_distribution(la, MLJFlux.tomat(X[:, i]); link_approx=model.link_approx)' for
+            glm_predictive_distribution(la, MLJFlux.tomat(X[:, i]))' for
             i in 1:size(X, 2)
         ]...,
     )
