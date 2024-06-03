@@ -8,6 +8,7 @@ using ComputationalResources
 using Statistics
 using Distributions
 using LinearAlgebra
+using LaplaceRedux
 
 mutable struct LaplaceClassification{B,F,O,L} <: MLJFlux.MLJFluxProbabilistic
     builder::B
@@ -35,9 +36,9 @@ mutable struct LaplaceClassification{B,F,O,L} <: MLJFlux.MLJFluxProbabilistic
 end
 
 """
-    LaplaceApproximation(; builder, finaliser, optimiser, loss, epochs, batch_size, lambda, alpha, rng, optimiser_changes_trigger_retraining, acceleration, likelihood, subset_of_weights, subnetwork_indices, hessian_structure, backend, σ, μ₀, P₀, link_approx, fit_params)
+    LaplaceClassification(; builder, finaliser, optimiser, loss, epochs, batch_size, lambda, alpha, rng, optimiser_changes_trigger_retraining, acceleration, likelihood, subset_of_weights, subnetwork_indices, hessian_structure, backend, σ, μ₀, P₀, link_approx, fit_params)
 
-A probabilistic model that uses Laplace approximation to estimate the posterior distribution of the weights of a neural network. The model is trained using the `fit!` method. The model is defined by the following default parameters for all `MLJFlux` models:
+A probabilistic classification model that uses Laplace approximation to estimate the posterior distribution of the weights of a neural network. The model is trained using the `fit!` method. The model is defined by the following default parameters for all `MLJFlux` models:
 
 - `builder`: a Flux model that constructs the neural network.
 - `finaliser`: a Flux model that processes the output of the neural network.
@@ -53,7 +54,6 @@ A probabilistic model that uses Laplace approximation to estimate the posterior 
 
 The model also has the following parameters, which are specific to the Laplace approximation:
 
-- `likelihood`: the likelihood of the model, either `:classification` or `:regression`.
 - `subset_of_weights`: the subset of weights to use, either `:all`, `:last_layer`, or `:subnetwork`.
 - `subnetwork_indices`: the indices of the subnetworks.
 - `hessian_structure`: the structure of the Hessian matrix, either `:full` or `:diagonal`.
@@ -87,6 +87,7 @@ function LaplaceClassification(;
     fit_params::Dict{Symbol,Any}=Dict{Symbol,Any}(:override => true),
 ) where {B,F,O,L}
     likelihood = :classification
+    la= :classification
     model = LaplaceClassification(
         builder,
         finaliser,
@@ -109,7 +110,7 @@ function LaplaceClassification(;
         P₀,
         link_approx,
         fit_params,
-        nothing,
+        la,
     )
 
     message = MMI.clean!(model)
@@ -132,7 +133,7 @@ mutable struct LaplaceRegression{B,F,O,L} <: MLJFlux.MLJFluxProbabilistic
     acceleration::AbstractResource  # eg, `CPU1()` or `CUDALibs()`
     likelihood::Symbol
     subset_of_weights::Symbol
-    subnetwork_indices::Vector{Vector{Int}}
+    subnetwork_indices::Union{Nothing,Vector{Vector{Int}}}
     hessian_structure::Union{HessianStructure,Symbol,String}
     backend::Symbol
     σ::Real
@@ -175,7 +176,7 @@ function LaplaceRegression(;
     builder::B=MLJFlux.MLP(; hidden=(32, 32, 32), σ=Flux.swish),
     finaliser::F=x->x,
     optimiser::O=Flux.Optimise.Adam(),
-    loss::L=Flux.mse,
+    loss::L=Flux.Losses.mse,
     epochs::Int=10,
     batch_size::Int=1,
     lambda::Float64=1.0,
@@ -184,7 +185,7 @@ function LaplaceRegression(;
     optimiser_changes_trigger_retraining::Bool=false,
     acceleration::AbstractResource=CPU1(),
     subset_of_weights::Symbol=:all,
-    subnetwork_indices::Vector{Vector{Int}}=Vector{Vector{Int}}([]),
+    subnetwork_indices=nothing,
     hessian_structure::Union{HessianStructure,Symbol,String}=:full,
     backend::Symbol=:GGN,
     σ::Float64=1.0,
@@ -193,6 +194,7 @@ function LaplaceRegression(;
     fit_params::Dict{Symbol,Any}=Dict{Symbol,Any}(:override => true),
 ) where {B,F,O,L}
     likelihood=:regression
+    la= nothing
     model = LaplaceRegression(
         builder,
         finaliser,
@@ -214,7 +216,7 @@ function LaplaceRegression(;
         μ₀,
         P₀,
         fit_params,
-        nothing,
+        la,
     )
 
     message = MMI.clean!(model)
@@ -251,8 +253,8 @@ end
 
 
 function MLJFlux.build(model::Union{LaplaceClassification,LaplaceRegression}, rng, shape)
-    # Construct the chain
-    chain = Flux.Chain(MLJFlux.build(model.builder, rng, shape...), model.finaliser)
+    # Construct the initial chain
+    chain = MLJFlux.build(model.builder, rng, shape...)
     # Construct Laplace model and store it in the model object
     model.la = Laplace(
         chain;
@@ -334,30 +336,33 @@ function MMI.clean!(model::Union{LaplaceClassification,LaplaceRegression})
     end
     return warning
 end
-######################################### train , fit and predict for classification
 
-function MLJFlux.train!(model::LaplaceClassification, penalty, chain, optimiser, X, y)
-    loss = model.loss
-    n_batches = length(y)
-    training_loss = zero(Float32)
-    for i in 1:n_batches
-        parameters = Flux.params(chain)
-        gs = Flux.gradient(parameters) do
-            yhat = chain(X[i])
-            batch_loss = loss(yhat, y[i]) + penalty(parameters) / n_batches
-            training_loss += batch_loss
-            return batch_loss
-        end
-        Flux.update!(optimiser, parameters, gs)
+######################################################## fit and predict for regression
+
+function MLJFlux.fit!(model::LaplaceRegression, penalty,  verbosity, X, y)
+
+    epochs= model.epochs
+    n_samples= size(X, 1)
+    
+    # Determine the shape of the model
+    shape = MLJFlux.shape(model, X, y)
+
+    # Build the chain
+    chain = MLJFlux.build(model, model.rng, shape)
+    la= model.la
+
+    optimiser= model.optimiser
+
+    # Initialize history:
+    n_samples = size(X, 1)
+    history = []
+    # Define the loss function for Laplace Regression with a custom penalty
+    function custom_loss( X_batch, y_batch)
+        preds = chain(X_batch)
+        data_loss = model.loss(y_batch, preds)
+        penalty_term = penalty(params(chain))
+        return data_loss + penalty_term
     end
-    return training_loss / n_batches
-end
-
-function MLJFlux.fit!(
-    model::LaplaceClassification, penalty, chain, optimiser, epochs, verbosity, X, y
-)
-    loss = model.loss
-
     # intitialize and start progress meter:
     meter = Progress(
         epochs + 1;
@@ -367,124 +372,40 @@ function MLJFlux.fit!(
         barlen=25,
         color=:yellow,
     )
-    verbosity != 1 || next!(meter)
-
-    # initiate history:
-    n_batches = length(y)
-
+    # Create a data loader
+    loader = Flux.Data.DataLoader((data=X', label=y), batchsize=model.batch_size, shuffle=true)
     parameters = Flux.params(chain)
-
-    # initial loss:
-    losses = (
-        loss(chain(X[i]), y[i]) + penalty(parameters) / n_batches for i in 1:n_batches
-    )
-    history = [mean(losses)]
-
     for i in 1:epochs
-        current_loss = MLJFlux.train!(
-            model::MLJFlux.MLJFluxModel, penalty, chain, optimiser, X, y
-        )
-        verbosity < 2 || @info "Loss is $(round(current_loss; sigdigits=4))"
-        verbosity != 1 || next!(meter)
-        push!(history, current_loss)
-    end
+        epoch_loss = 0.0
+        # train the model
+        for (X_batch, y_batch) in loader
+            y_batch = reshape(y_batch,1,:)
 
-    la = model.la
-
-    # fit the Laplace model:
-    fit!(la, zip(X, y); model.fit_params...)
-    optimize_prior!(la; verbose=false, n_steps=100)
-
-    model.la = la
-
-    return chain, history
-end
-
-
-
-function MMI.predict(model::LaplaceClassification, fitresult, Xnew)
-    chain, la, levels = fitresult
-    # re-format Xnew into acceptable input for Laplace:
-    X = MLJFlux.reformat(Xnew)
-    # predict using Laplace:
-    yhat = vcat(
-        [
-            predict(la, MLJFlux.tomat(X[:, i]); link_approx=model.link_approx)' for
-            i in 1:size(X, 2)
-        ]...,
-    )
-
-    return MMI.UnivariateFinite(levels, yhat)
-
-
-end
-
-
-######################################################## train ,fit and predict for regression
-
-
-
-
-function MLJFlux.train!(model::LaplaceRegression, penalty, chain, optimiser, X, y)
-    loss = model.loss
-    n_batches = length(y)
-    training_loss = zero(Float32)
-    for i in 1:n_batches
-        parameters = Flux.params(chain)
-        gs = Flux.gradient(parameters) do
-            yhat = chain(X[i])
-            batch_loss = loss(yhat, y[i]) + penalty(parameters) / n_batches
-            training_loss += batch_loss
-            return batch_loss
+            # Backward pass
+            gs = Flux.gradient(parameters) do
+                batch_loss =  Flux.Losses.mse(chain(X_batch), y_batch)
+                epoch_loss += batch_loss
+            end
+            # Update parameters
+            Flux.update!(optimiser, parameters,gs)
         end
-        Flux.update!(optimiser, parameters, gs)
-    end
-    return training_loss / n_batches
-end
-
-function MLJFlux.fit!(
-    model::LaplaceRegression, penalty, chain, optimiser, epochs, verbosity, X, y
-)
-    loss = model.loss
-
-    # intitialize and start progress meter:
-    meter = Progress(
-        epochs + 1;
-        dt=0,
-        desc="Optimising neural net:",
-        barglyphs=BarGlyphs("[=> ]"),
-        barlen=25,
-        color=:yellow,
-    )
-    verbosity != 1 || next!(meter)
-
-    # initiate history:
-    n_batches = length(y)
-
-    parameters = Flux.params(chain)
-
-    # initial loss:
-    losses = (
-        loss(chain(X[i]), y[i]) + penalty(parameters) / n_batches for i in 1:n_batches
-    )
-    history = [mean(losses)]
-
-    for i in 1:epochs
-        current_loss = MLJFlux.train!(
-            model::MLJFlux.MLJFluxModel, penalty, chain, optimiser, X, y
-        )
-        verbosity < 2 || @info "Loss is $(round(current_loss; sigdigits=4))"
-        verbosity != 1 || next!(meter)
-        push!(history, current_loss)
+        epoch_loss /= n_samples
+        push!(history, epoch_loss)
+        #verbosity
+        if verbosity == 1
+            next!(meter)
+        elseif  verbosity ==2
+            next!(meter)
+            println( "Loss is $(round(epoch_loss; sigdigits=4))")
+        end
     end
 
-    la = model.la
+ 
 
     # fit the Laplace model:
-    fit!(la, zip(X, y); model.fit_params...)
-    optimize_prior!(la; verbose=false, n_steps=100)
+    LaplaceRedux.fit!(model.la,zip(eachrow(X),y))
+    optimize_prior!(model.la; verbose=false, n_steps=100)
 
-    model.la = la
 
     return chain, history
 end
@@ -512,5 +433,111 @@ function MMI.predict(model::LaplaceRegression, fitresult, Xnew)
     end
     
     return predictions
+
+end
+
+
+
+
+
+#########################################  fit and predict for classification
+
+
+function MLJFlux.fit!(
+    model::LaplaceClassification, penalty, chain, optimiser, epochs, verbosity, X, y
+)
+epochs= model.epochs
+n_samples= size(X, 1)
+#y encode
+y_encoded= unique(y) .== permutedims(y)
+
+#todo
+
+
+
+
+
+# Determine the shape of the model
+shape = MLJFlux.shape(model, X, y_encoded)
+
+# Build the chain
+chain = MLJFlux.build(model, model.rng, shape)
+la= model.la
+
+optimiser= model.optimiser
+
+# Initialize history:
+n_samples = size(X, 1)
+history = []
+# Define the loss function for Laplace Regression with a custom penalty
+function custom_loss( X_batch, y_batch)
+    preds = chain(X_batch)
+    data_loss = model.loss(y_batch, preds)
+    penalty_term = penalty(params(chain))
+    return data_loss + penalty_term
+end
+# intitialize and start progress meter:
+meter = Progress(
+    epochs + 1;
+    dt=0,
+    desc="Optimising neural net:",
+    barglyphs=BarGlyphs("[=> ]"),
+    barlen=25,
+    color=:yellow,
+)
+# Create a data loader
+loader = Flux.Data.DataLoader((data=X', label=y), batchsize=model.batch_size, shuffle=true)
+parameters = Flux.params(chain)
+for i in 1:epochs
+    epoch_loss = 0.0
+    # train the model
+    for (X_batch, y_batch) in loader
+        y_batch = reshape(y_batch,1,:)
+
+        # Backward pass
+        gs = Flux.gradient(parameters) do
+            batch_loss =  Flux.Losses.mse(chain(X_batch), y_batch)
+            epoch_loss += batch_loss
+        end
+        # Update parameters
+        Flux.update!(optimiser, parameters,gs)
+    end
+    epoch_loss /= n_samples
+    push!(history, epoch_loss)
+    #verbosity
+    if verbosity == 1
+        next!(meter)
+    elseif  verbosity ==2
+        next!(meter)
+        println( "Loss is $(round(epoch_loss; sigdigits=4))")
+    end
+end
+
+
+
+# fit the Laplace model:
+LaplaceRedux.fit!(model.la,zip(eachrow(X),y))
+optimize_prior!(model.la; verbose=false, n_steps=100)
+
+
+return chain, history
+end
+
+
+
+function MMI.predict(model::LaplaceClassification, fitresult, Xnew)
+    chain, la, levels = fitresult
+    # re-format Xnew into acceptable input for Laplace:
+    X = MLJFlux.reformat(Xnew)
+    # predict using Laplace:
+    yhat = vcat(
+        [
+            predict(la, MLJFlux.tomat(X[:, i]); link_approx=model.link_approx)' for
+            i in 1:size(X, 2)
+        ]...,
+    )
+
+    return MMI.UnivariateFinite(levels, yhat)
+
 
 end
