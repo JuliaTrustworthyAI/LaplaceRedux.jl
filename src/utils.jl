@@ -42,8 +42,9 @@ function outdim(model::Chain)::Number
 end
 
 """ 
-    count_fractions(Y_val,array)
+    empirical_frequency(Y_val,array)
 
+FOR REGRESSION MODELS.
 Given a calibration dataset (x_t, y_t) for i ∈ {1,...,T} and an array of predicted distributions, the function calculates the empirical frequency
 phat_j = {y_t|F_t(y_t)<= p_j, t= 1,....,T}/T, where T is the number of calibration points, p_j is the confidence level and F_t is the 
 cumulative density function of the predicted distribution targeting y_t. The function was  suggested by Kuleshov(2018) in https://arxiv.org/abs/1807.00263
