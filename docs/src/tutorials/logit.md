@@ -9,6 +9,7 @@ CurrentModule = LaplaceRedux
 We will use synthetic data with linearly separable samples:
 
 ``` julia
+using LaplaceRedux.Data
 # Number of points to generate.
 xs, ys = LaplaceRedux.Data.toy_data_linear(100)
 X = hcat(xs...) # bring into tabular format
@@ -18,6 +19,7 @@ data = zip(xs,ys)
 Logistic regression with weight decay can be implemented in Flux.jl as a single dense (linear) layer with binary logit crossentropy loss:
 
 ``` julia
+using Flux
 nn = Chain(Dense(2,1))
 λ = 0.5
 sqnorm(x) = sum(abs2, x)
@@ -29,6 +31,7 @@ The code below simply trains the model. After about 50 training epochs training 
 
 ``` julia
 using Flux.Optimise: update!, Adam
+using Statistics
 opt = Adam()
 epochs = 50
 avg_loss(data) = mean(map(d -> loss(d[1],d[2]), data))
@@ -60,3 +63,16 @@ optimize_prior!(la; verbose=true, n_steps=500)
 ```
 
 The plot below shows the resulting posterior predictive surface for the plugin estimator (left) and the Laplace approximation (right).
+``` julia
+using Plots
+using TaijaPlotting
+using LinearAlgebra
+# Plot the posterior distribution with a contour plot.
+zoom=0
+p_plugin = plot(la, X, ys; title="Plugin", link_approx=:plugin, clim=(0,1))
+p_untuned = plot(la_untuned, X, ys; title="LA - raw (λ=$(unique(diag(la_untuned.prior.P₀))[1]))", clim=(0,1), zoom=zoom)
+p_laplace = plot(la, X, ys; title="LA - tuned (λ=$(round(unique(diag(la.prior.P₀))[1],digits=2)))", clim=(0,1), zoom=zoom)
+plot(p_plugin, p_untuned, p_laplace, layout=(1,3), size=(1700,400))
+```
+
+![](logit_files/figure-commonmark/cell-output-1.svg)

@@ -10,6 +10,7 @@ y_train = Flux.unstack(y_train',1)
 ```
 
 ``` julia
+using Flux
 data = zip(x,y_train)
 n_hidden = 3
 D = size(X,1)
@@ -23,6 +24,7 @@ loss(x, y) = Flux.Losses.logitcrossentropy(nn(x), y)
 
 ``` julia
 using Flux.Optimise: update!, Adam
+using Statistics
 opt = Adam()
 epochs = 100
 avg_loss(data) = mean(map(d -> loss(d[1],d[2]), data))
@@ -51,6 +53,8 @@ optimize_prior!(la; verbose=true, n_steps=100)
 ```
 
 ``` julia
+using Plots
+using TaijaPlotting
 _labels = sort(unique(y))
 plt_list = []
 for target in _labels

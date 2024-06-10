@@ -22,6 +22,7 @@ X = permutedims(x)
 We set up a model and loss with weight regularization:
 
 ``` julia
+using Flux
 data = zip(xs,y)
 n_hidden = 50
 D = size(X,1)
@@ -36,6 +37,7 @@ We train the model:
 
 ``` julia
 using Flux.Optimise: update!, Adam
+using Statistics
 opt = Adam(1e-3)
 epochs = 1000
 avg_loss(data) = mean(map(d -> loss(d[1],d[2]), data))
@@ -60,6 +62,8 @@ end
 Laplace approximation can be implemented as follows:
 
 ``` julia
+using Plots
+using TaijaPlotting
 subset_w = :all
 la = Laplace(nn; likelihood=:regression, subset_of_weights=subset_w)
 fit!(la, data)
