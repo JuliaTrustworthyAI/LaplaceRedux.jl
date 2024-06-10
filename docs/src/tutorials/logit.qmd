@@ -5,7 +5,6 @@ CurrentModule = LaplaceRedux
 # Bayesian Logistic Regression
 
 ```{julia}
-#| echo: false
 using Pkg; Pkg.activate("docs")
 # Import libraries
 using Flux, Plots, TaijaPlotting, Random, Statistics, LaplaceRedux, LinearAlgebra
@@ -68,8 +67,6 @@ optimize_prior!(la; verbose=true, n_steps=500)
 The plot below shows the resulting posterior predictive surface for the plugin estimator (left) and the Laplace approximation (right).
 
 ```{julia}
-#| echo: false
-
 zoom = 0
 p_plugin = plot(la, X, ys; title="Plugin", link_approx=:plugin, clim=(0,1))
 p_untuned = plot(la_untuned, X, ys; title="LA - raw (λ=$(unique(diag(la_untuned.prior.P₀))[1]))", clim=(0,1), zoom=zoom)
