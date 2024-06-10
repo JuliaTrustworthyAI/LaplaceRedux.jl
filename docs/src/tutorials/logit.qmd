@@ -4,12 +4,16 @@ CurrentModule = LaplaceRedux
 
 # Bayesian Logistic Regression
 
+## Libraries
+
 ```{julia}
 using Pkg; Pkg.activate("docs")
 # Import libraries
 using Flux, Plots, TaijaPlotting, Random, Statistics, LaplaceRedux, LinearAlgebra
 theme(:lime)
 ```
+
+## Data
 
 We will use synthetic data with linearly separable samples:
 
@@ -19,6 +23,9 @@ xs, ys = LaplaceRedux.Data.toy_data_linear(100)
 X = hcat(xs...) # bring into tabular format
 data = zip(xs,ys)
 ```
+
+
+## Model
 
 Logistic regression with weight decay can be implemented in Flux.jl as a single dense (linear) layer with binary logit crossentropy loss:
 

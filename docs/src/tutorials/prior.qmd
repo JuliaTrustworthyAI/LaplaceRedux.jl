@@ -1,9 +1,10 @@
 ```@meta
 CurrentModule = LaplaceRedux
 ```
+## Libraries
 
 ```{julia}
-#| echo: false
+
 using Pkg; Pkg.activate("docs")
 # Import libraries
 using Flux, Plots, TaijaPlotting, Random, Statistics, LaplaceRedux, LinearAlgebra
@@ -29,7 +30,6 @@ X = permutedims(x)
 
 
 ```{julia}
-#| echo: false
 #| output: true
 
 data = zip(xs,y)
@@ -83,7 +83,6 @@ plot(plts..., layout=(1,3), size=(1200,300))
 For larger models, the optimal prior precision $\lambda$ as evaluated through Empirical Bayes tends to be smaller.
 
 ```{julia}
-#| echo: false
 #| output: true
 
 data = zip(xs,y)
@@ -126,7 +125,6 @@ plot(plts..., layout=(1,3), size=(1200,300))
 
 
 ```{julia}
-#| echo: false
 #| output: true
 
 # Number of points to generate.

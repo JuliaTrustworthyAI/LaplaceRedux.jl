@@ -6,20 +6,31 @@ CurrentModule = LaplaceRedux
 
 # Bayesian MLP
 
+## Libraries
+
+``` julia
+using Pkg; Pkg.activate("docs")
+# Import libraries
+using Flux, Plots, TaijaPlotting, Random, Statistics, LaplaceRedux, LinearAlgebra
+theme(:lime)
+```
+
+## Data
+
 This time we use a synthetic dataset containing samples that are not linearly separable:
 
 ``` julia
-using LaplaceRedux.Data
 # Number of points to generate.
 xs, ys = LaplaceRedux.Data.toy_data_non_linear(200)
 X = hcat(xs...) # bring into tabular format
 data = zip(xs,ys)
 ```
 
+## Model
+
 For the classification task we build a neural network with weight decay composed of a single hidden layer.
 
 ``` julia
-using Flux
 n_hidden = 10
 D = size(X,1)
 nn = Chain(
@@ -33,7 +44,6 @@ The model is trained until training loss stagnates.
 
 ``` julia
 using Flux.Optimise: update!, Adam
-using Statistics
 opt = Adam(1e-3)
 epochs = 100
 avg_loss(data) = mean(map(d -> loss(d[1],d[2]), data))
@@ -67,9 +77,6 @@ optimize_prior!(la; verbose=true, n_steps=500)
 The plot below shows the resulting posterior predictive surface for the plugin estimator (left) and the Laplace approximation (right).
 
 ``` julia
-using Plots
-using TaijaPlotting
-using LinearAlgebra
 # Plot the posterior distribution with a contour plot.
 zoom=0
 p_plugin = plot(la, X, ys; title="Plugin", link_approx=:plugin, clim=(0,1))
