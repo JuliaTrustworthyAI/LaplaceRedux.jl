@@ -6,51 +6,9 @@ using Tables
 using Distributions
 using LinearAlgebra
 using LaplaceRedux
-import MLJBase
+using MLJBase
 import MLJBase: @mlj_model, metadata_model, metadata_pkg
 
-"""
-    @mlj_model mutable struct LaplaceClassification <: MLJFlux.MLJFluxProbabilistic
-
-A mutable struct representing a Laplace Classification model that extends the MLJFluxProbabilistic abstract type.
-    It uses Laplace approximation to estimate the posterior distribution of the weights of a neural network. 
-    The model is trained using the `fit!` method. The model is defined by the following default parameters:
-- `loss`: a loss function that takes the predicted output and the true output as arguments.
-- `optimiser`: a Flux optimiser,default is Flux.Optimise.Adam().
-- `epochs`: the number of epochs to train the model,default is 10.
-- `batch_size`: the size of a batch,default is 1.
-- `rng`: a random number generator.
-- `subset_of_weights`: the subset of weights to use, either `:all`, `:last_layer`, or `:subnetwork`.
-- `subnetwork_indices`: the indices of the subnetworks.
-- `hessian_structure`: the structure of the Hessian matrix, either `:full` or `:diagonal`.
-- `backend`: the backend to use, either `:GGN` or `:EmpiricalFisher`.
-- `σ`: the standard deviation of the prior distribution.
-- `μ₀`: the mean of the prior distribution.
-- `P₀`: the covariance matrix of the prior distribution.
-- `link_approx`: the link approximation to use, either `:probit` or `:plugin`.
-- `predict_proba`:whether to compute the probabilities or not, either true or false.
-- `fit_prior_nsteps`: the number of steps used to fit the priors.
-- `la`: The fitted Laplace object will be saved here once the model is fitted. It has to be left to nothing, the fit! function will automatically save the Laplace model here.
-"""
-@mlj_model mutable struct LaplaceClassification <: MLJFlux.MLJFluxProbabilistic
-    loss=Flux.crossentropy 
-    optimiser=Flux.Optimise.Adam()
-    epochs::Int=10::(_ > 0)
-    batch_size::Int=1::(_ > 0)
-    rng::Union{AbstractRNG,Int64}=Random.GLOBAL_RNG 
-    subset_of_weights::Symbol=:all::(_ in (:all, :last_layer, :subnetwork))
-    subnetwork_indices::Vector{Vector{Int}}=Vector{Vector{Int}}([]) 
-    hessian_structure::Union{HessianStructure,Symbol,String}=:full::(_ in ("full", "diagonal"))
-    backend::Symbol=:GGN::(_ in (:GGN, :EmpiricalFisher))
-    σ::Float64=1.0 
-    μ₀::Float64=0.0 
-    P₀::Union{AbstractMatrix,UniformScaling,Nothing}=nothing
-    link_approx::Symbol=:probit::(_ in (:probit,:plugin)) 
-    predict_proba::Bool= true::(_ in (true,false)) 
-    fit_prior_nsteps::Int=100::(_ > 0)
-    la::Union{Nothing,AbstractLaplace}= nothing
-    
-end
 
 """
     @mlj_model mutable struct LaplaceRegression <: MLJFlux.MLJFluxProbabilistic
@@ -59,11 +17,15 @@ A mutable struct representing a Laplace regression model that extends the `MLJFl
 It uses Laplace approximation to estimate the posterior distribution of the weights of a neural network. 
 The model is trained using the `fit!` method. The model is defined by the following default parameters:
 
-- `loss`: a loss function that takes the predicted output and the true output as arguments.
+- `builder`: a Flux model that constructs the neural network.
 - `optimiser`: a Flux optimiser.
-- `epochs`: the number of epochs to train the model.
+- `loss`: a loss function that takes the predicted output and the true output as arguments.
 - `batch_size`: the size of a batch.
+- `lambda`: the regularization strength.
+- `alpha`: the regularization mix (0 for all l2, 1 for all l1).
 - `rng`: a random number generator.
+- `optimiser_changes_trigger_retraining`: a boolean indicating whether changes in the optimiser trigger retraining.
+- `acceleration`: the computational resource to use.
 - `subset_of_weights`: the subset of weights to use, either `:all`, `:last_layer`, or `:subnetwork`.
 - `subnetwork_indices`: the indices of the subnetworks.
 - `hessian_structure`: the structure of the Hessian matrix, either `:full` or `:diagonal`.
@@ -72,27 +34,238 @@ The model is trained using the `fit!` method. The model is defined by the follow
 - `μ₀`: the mean of the prior distribution.
 - `P₀`: the covariance matrix of the prior distribution.
 - `fit_prior_nsteps`: the number of steps used to fit the priors.
-- `la`: The fitted Laplace object will be saved here once the model is fitted. It has to be left to nothing, the fit! function will automatically save the Laplace model here.
 """
 @mlj_model mutable struct LaplaceRegression <: MLJFlux.MLJFluxProbabilistic
+    builder=MLJFlux.MLP(; hidden=(32, 32, 32), σ=Flux.swish)
+    optimiser= Flux.Optimise.Adam()
     loss=Flux.Losses.mse 
-    optimiser=Flux.Optimise.Adam()
-    epochs::Int=10::(_ > 0)
     batch_size::Int=1::(_ > 0)
+    lambda::Float64=1.0
+    alpha::Float64=0.0
     rng::Union{AbstractRNG,Int64}=Random.GLOBAL_RNG
+    optimiser_changes_trigger_retraining::Bool=false::(_ in (true, false))
+    acceleration::AbstractResource=CPU1()
     subset_of_weights::Symbol=:all::(_ in (:all, :last_layer, :subnetwork))
     subnetwork_indices=nothing
-    hessian_structure::Union{HessianStructure,Symbol,String}=:full::(_ in ("full", "diagonal"))
+    hessian_structure::Union{HessianStructure,Symbol,String}=:full::(_ in (":full", ":diagonal"))
     backend::Symbol=:GGN::(_ in (:GGN, :EmpiricalFisher))
     σ::Float64=1.0
     μ₀::Float64=0.0 
     P₀::Union{AbstractMatrix,UniformScaling,Nothing}=nothing
     fit_prior_nsteps::Int=100::(_ > 0)
-    la::Union{Nothing,AbstractLaplace}= nothing
 end
+
+
+
+"""
+    @mlj_model mutable struct LaplaceClassification <: MLJFlux.MLJFluxProbabilistic
+
+A mutable struct representing a Laplace Classification model that extends the MLJFluxProbabilistic abstract type.
+    It uses Laplace approximation to estimate the posterior distribution of the weights of a neural network. 
+    The model is trained using the `fit!` method. The model is defined by the following default parameters:
+
+- `builder`: a Flux model that constructs the neural network.
+- `finaliser`: a Flux model that processes the output of the neural network.
+- `optimiser`: a Flux optimiser.
+- `loss`: a loss function that takes the predicted output and the true output as arguments.
+- `batch_size`: the size of a batch.
+- `lambda`: the regularization strength.
+- `alpha`: the regularization mix (0 for all l2, 1 for all l1).
+- `rng`: a random number generator.
+- `optimiser_changes_trigger_retraining`: a boolean indicating whether changes in the optimiser trigger retraining.
+- `acceleration`: the computational resource to use.
+- `subset_of_weights`: the subset of weights to use, either `:all`, `:last_layer`, or `:subnetwork`.
+- `subnetwork_indices`: the indices of the subnetworks.
+- `hessian_structure`: the structure of the Hessian matrix, either `:full` or `:diagonal`.
+- `backend`: the backend to use, either `:GGN` or `:EmpiricalFisher`.
+- `σ`: the standard deviation of the prior distribution.
+- `μ₀`: the mean of the prior distribution.
+- `P₀`: the covariance matrix of the prior distribution.
+- `fit_prior_nsteps`: the number of steps used to fit the priors.
+"""
+@mlj_model mutable struct LaplaceClassification <: MLJFlux.MLJFluxProbabilistic
+    builder=MLJFlux.MLP(; hidden=(32, 32, 32), σ=Flux.swish)
+    finaliser=Flux.softmax
+    optimiser= Flux.Optimise.Adam()
+    loss=Flux.crossentropy 
+    epochs::Int=10
+    batch_size::Int=1::(_ > 0)
+    lambda::Float64=1.0
+    alpha::Float64=0.0
+    rng::Union{AbstractRNG,Int64}=Random.GLOBAL_RNG 
+    optimiser_changes_trigger_retraining::Bool=false
+    acceleration::AbstractResource=CPU1()
+    subset_of_weights::Symbol=:all::(_ in (:all, :last_layer, :subnetwork))
+    subnetwork_indices::Vector{Vector{Int}}=Vector{Vector{Int}}([]) 
+    hessian_structure::Union{HessianStructure,Symbol,String}=:full::(_ in (":full", ":diagonal"))
+    backend::Symbol=:GGN::(_ in (:GGN, :EmpiricalFisher))
+    σ::Float64=1.0 
+    μ₀::Float64=0.0 
+    P₀::Union{AbstractMatrix,UniformScaling,Nothing}=nothing
+    link_approx::Symbol=:probit::(_ in (:probit,:plugin)) 
+    predict_proba::Bool= true::(_ in (true,false)) 
+    fit_prior_nsteps::Int=100::(_ > 0)
+    
+end
+###############
 const MLJ_Laplace= Union{LaplaceClassification,LaplaceRegression}
 
- 
+################################ functions shape and build 
+
+function MLJFlux.shape(model::LaplaceClassification, X, y)
+    n_input =  size(X,2)
+    levels = unique(y)
+    n_output = length(levels)
+    return (n_input, n_output)
+    
+end
+
+function MLJFlux.shape(model::LaplaceRegression, X, y)
+    n_input =  size(X,2)
+    dims = size(y)
+        if length(dims) == 1
+            n_output= 1
+        else
+            n_output= dims[1]
+        end
+        return (n_input, n_output)
+end
+
+
+function MLJFlux.build(model::MLJ_Laplace, shape)
+    #chain
+    chain = Flux.Chain(MLJFlux.build(model.builder, rng, shape...), model.finaliser)
+    
+    return chain
+end
+
+function MLJFlux.fitresult(model::LaplaceClassification, chain, y)
+    return (chain,  length(unique(y_cl)))
+end
+
+function MLJFlux.fitresult(model::LaplaceRegression, chain, y)
+    return (chain, size(y)  )
+end
+
+
+
+
+
+
+#########################################  fit and predict for classification
+
+
+"""
+    MLJFlux.fit!(model::LaplaceClassification, chain,penalty,optimiser,epochs, verbosity, X, y)
+
+Fit the LaplaceClassification model using MLJFlux.
+
+# Arguments
+- `model::LaplaceClassification`: The LaplaceClassification object to fit.
+- `chain`: The chain to use during training.
+- `penalty`: a penalty function to add to the loss function during training.
+- `optimiser`: the optimiser to use during training.
+- `epochs`: the number of epochs use for training.
+- `verbosity`: The verbosity level for training.
+- `X`: The input data for training.
+- `y`: The target labels for training.
+
+# Returns
+- `model::LaplaceClassification`: The fitted LaplaceClassification model.
+"""
+function MLJFlux.fit!(model::LaplaceClassification, chain,penalty,optimiser,epochs, verbosity, X, y)
+    X = MLJBase.matrix(X, transpose=true) 
+
+    # Integer encode the target variable y
+    #y_onehot = unique(y) .== permutedims(y)
+
+    la = LaplaceRedux.Laplace(
+        chain;
+        likelihood=:classification,
+        subset_of_weights=model.subset_of_weights,
+        subnetwork_indices=model.subnetwork_indices,
+        hessian_structure=model.hessian_structure,
+        backend=model.backend,
+        σ=model.σ,
+        μ₀=model.μ₀,
+        P₀=model.P₀)
+    n_samples= size(X,1)
+    verbose_laplace=false
+
+   # Initialize history:
+   history = []
+   # intitialize and start progress meter:
+   meter = Progress(
+       epochs + 1;
+       dt=0,
+       desc="Optimising neural net:",
+       barglyphs=BarGlyphs("[=> ]"),
+       barlen=25,
+       color=:yellow,
+   )
+   # Create a data loader
+   loader = Flux.Data.DataLoader((data=X, label=y), batchsize=model.batch_size, shuffle=true)
+   parameters = Flux.params(chain)
+   for i in 1:epochs
+       epoch_loss = 0.0
+       # train the model
+       for (X_batch, y_batch) in loader
+
+           # Backward pass
+           gs = Flux.gradient(parameters) do
+            batch_loss =  (model.loss(chain(X_batch), y_batch) + penalty(Flux.params(chain))  )
+            epoch_loss += batch_loss
+            end
+           # Update parameters
+           Flux.update!(optimiser, parameters,gs)
+        end
+       epoch_loss /= n_samples
+       push!(history, epoch_loss)
+       #verbosity
+       if verbosity == 1
+            next!(meter)
+        elseif  verbosity ==2
+            next!(meter)
+            verbose_laplace=true
+            println( "Loss is $(round(epoch_loss; sigdigits=4))")
+        end
+   end
+
+   # fit the Laplace model:
+   LaplaceRedux.fit!(la,zip(eachcol(X),y))
+   optimize_prior!(la; verbose=verbose_laplace, n_steps=model.fit_prior_nsteps)
+   report=[]
+
+   return (la, history, report)
+end
+
+
+"""
+    predict(model::LaplaceClassification, Xnew)
+
+Predicts the class labels for new data using the LaplaceClassification model.
+
+# Arguments
+- `model::LaplaceClassification`: The trained LaplaceClassification model.
+- `Xnew`: The new data to make predictions on.
+
+# Returns
+An array of predicted class labels.
+
+"""
+function MLJFlux.predict(model::LaplaceClassification, Xnew)
+    Xnew = MLJBase.matrix(Xnew) 
+    #convert in a vector of vectors because Laplace ask to do so
+    X_vec= X_vec= [Xnew[i,:] for i in 1:size(Xnew, 1)]
+
+    # Predict using Laplace and collect the predictions
+    predictions = [LaplaceRedux.predict(model.la, x;link_approx= model.link_approx,predict_proba=model.predict_proba) for x in X_vec]
+    
+    return predictions
+
+end
+
+
 
 """
     MLJFlux.fit!(model::LaplaceRegression, penalty, chain, epochs, batch_size, optimiser, verbosity, X, y)
@@ -100,19 +273,22 @@ const MLJ_Laplace= Union{LaplaceClassification,LaplaceRegression}
 Fit the LaplaceRegression model using Flux.jl.
 
 # Arguments
-- `model::LaplaceRegression`: The LaplaceRegression object.
-- `chain`: The chain of layers for the model.
-- `verbosity`: The level of verbosity during training.
-- `X`: The input data.
-- `y`: The target data.
+- `model::LaplaceRegression`: The LaplaceRegression model.
+- `chain`: The chain to use during training.
+- `penalty`: a penalty function to add to the loss function during training.
+- `optimiser`: the optimiser to use during training.
+- `epochs`: the number of epochs use for training.
+- `verbosity`: The verbosity level for training.
+- `X`: The input data for training.
+- `y`: The target labels for training.
 
 # Returns
 - `model::LaplaceRegression`: The fitted LaplaceRegression model.
 """
-function MLJFlux.fit!(model::LaplaceRegression, chain, verbosity, X, y)
+function MLJFlux.fit!(model::LaplaceRegression, chain,penalty,optimiser,epochs, verbosity, X, y)
 
     X = MLJBase.matrix(X, transpose=true) 
-    model.la = Laplace(
+    la = LaplaceRedux.Laplace(
         chain;
         likelihood=:regression,
         subset_of_weights=model.subset_of_weights,
@@ -128,7 +304,7 @@ function MLJFlux.fit!(model::LaplaceRegression, chain, verbosity, X, y)
     verbose_laplace=false
     # intitialize and start progress meter:
     meter = Progress(
-        model.epochs + 1;
+        epochs + 1;
         dt=1.0,
         desc="Optimising neural net:",
         barglyphs=BarGlyphs("[=> ]"),
@@ -138,7 +314,7 @@ function MLJFlux.fit!(model::LaplaceRegression, chain, verbosity, X, y)
     # Create a data loader
     loader = Flux.Data.DataLoader((data=X, label=y), batchsize=model.batch_size, shuffle=true)
     parameters = Flux.params(chain)
-    for i in 1:model.epochs
+    for i in 1:epochs
         epoch_loss = 0.0
         # train the model
         for (X_batch, y_batch) in loader
@@ -146,11 +322,11 @@ function MLJFlux.fit!(model::LaplaceRegression, chain, verbosity, X, y)
         
             # Backward pass
             gs = Flux.gradient(parameters) do
-                batch_loss =  model.loss(chain(X_batch), y_batch)
+                batch_loss =  (model.loss(chain(X_batch), y_batch) + penalty(Flux.params(chain))  )
                 epoch_loss += batch_loss
             end
             # Update parameters
-            Flux.update!(model.optimiser, parameters,gs)
+            Flux.update!(optimiser, parameters,gs)
         end
         epoch_loss /= n_samples
         push!(history, epoch_loss)
@@ -167,12 +343,11 @@ function MLJFlux.fit!(model::LaplaceRegression, chain, verbosity, X, y)
  
 
     # fit the Laplace model:
-    LaplaceRedux.fit!(model.la,zip(eachcol(X),y))
-    optimize_prior!(model.la; verbose=verbose_laplace, n_steps=model.fit_prior_nsteps)
-    cache= nothing
+    LaplaceRedux.fit!(la,zip(eachcol(X),y))
+    optimize_prior!(la; verbose=verbose_laplace, n_steps=model.fit_prior_nsteps)
     report=[]
 
-    return (model, cache, report)
+    return (la, history, report)
 end
 
 
@@ -213,132 +388,20 @@ end
 
 
 
-
-
-#########################################  fit and predict for classification
-
-
-"""
-    MLJFlux.fit!(model::LaplaceClassification, chain, epochs, batch_size, optimiser, verbosity, X, y)
-
-Fit the LaplaceClassification model using MLJFlux.
-
-# Arguments
-- `model::LaplaceClassification`: The LaplaceClassification object to fit.
-- `chain`: The chain to use during training.
-- `verbosity`: The verbosity level for training.
-- `X`: The input data for training.
-- `y`: The target labels for training.
-
-# Returns
-- `model::LaplaceClassification`: The fitted LaplaceClassification model.
-"""
-function MLJFlux.fit!(model::LaplaceClassification, chain, verbosity, X, y)
-    X = MLJBase.matrix(X, transpose=true) 
-
-    # Integer encode the target variable y
-    #y_onehot = unique(y) .== permutedims(y)
-
-    model.la = Laplace(
-        chain;
-        likelihood=:classification,
-        subset_of_weights=model.subset_of_weights,
-        subnetwork_indices=model.subnetwork_indices,
-        hessian_structure=model.hessian_structure,
-        backend=model.backend,
-        σ=model.σ,
-        μ₀=model.μ₀,
-        P₀=model.P₀)
-    n_samples= size(X,1)
-    verbose_laplace=false
-
-   # Initialize history:
-   history = []
-   # intitialize and start progress meter:
-   meter = Progress(
-       model.epochs + 1;
-       dt=0,
-       desc="Optimising neural net:",
-       barglyphs=BarGlyphs("[=> ]"),
-       barlen=25,
-       color=:yellow,
-   )
-   # Create a data loader
-   loader = Flux.Data.DataLoader((data=X, label=y), batchsize=model.batch_size, shuffle=true)
-   parameters = Flux.params(chain)
-   for i in 1:model.epochs
-       epoch_loss = 0.0
-       # train the model
-       for (X_batch, y_batch) in loader
-
-           # Backward pass
-           gs = Flux.gradient(parameters) do
-            batch_loss =  model.loss(chain(X_batch), y_batch)
-            epoch_loss += batch_loss
-            end
-           # Update parameters
-           Flux.update!(model.optimiser, parameters,gs)
-        end
-       epoch_loss /= n_samples
-       push!(history, epoch_loss)
-       #verbosity
-       if verbosity == 1
-            next!(meter)
-        elseif  verbosity ==2
-            next!(meter)
-            verbose_laplace=true
-            println( "Loss is $(round(epoch_loss; sigdigits=4))")
-        end
-   end
-
-   # fit the Laplace model:
-   LaplaceRedux.fit!(model.la,zip(eachcol(X),y))
-   optimize_prior!(model.la; verbose=verbose_laplace, n_steps=model.fit_prior_nsteps)
-   cache= nothing
-   report=[]
-
-   return (model, cache, report)
-end
-
-
-"""
-    predict(model::LaplaceClassification, Xnew)
-
-Predicts the class labels for new data using the LaplaceClassification model.
-
-# Arguments
-- `model::LaplaceClassification`: The trained LaplaceClassification model.
-- `Xnew`: The new data to make predictions on.
-
-# Returns
-An array of predicted class labels.
-
-"""
-function MLJFlux.predict(model::LaplaceClassification, Xnew)
-    Xnew = MLJBase.matrix(Xnew) 
-    #convert in a vector of vectors because Laplace ask to do so
-    X_vec= X_vec= [Xnew[i,:] for i in 1:size(Xnew, 1)]
-
-    # Predict using Laplace and collect the predictions
-    predictions = [LaplaceRedux.predict(model.la, x;link_approx= model.link_approx,predict_proba=model.predict_proba) for x in X_vec]
-    
-    return predictions
-
-end
-
 # Then for each model,
 MLJBase.metadata_model(
     LaplaceClassification;
-    input=Union{
+    input=Union{        
+        AbstractMatrix{MLJBase.Finite},
+        MLJBase.Table(MLJBase.Finite),
         AbstractMatrix{MLJBase.Continuous},
         MLJBase.Table(MLJBase.Continuous),
         MLJBase.Table{AbstractVector{MLJBase.Continuous}},
+        MLJBase.Table{AbstractVector{MLJBase.Finite}}
     },
     target=Union{
         AbstractArray{MLJBase.Finite},
         AbstractArray{MLJBase.Continuous},
-        AbstractVector{MLJBase.Finite},
-        AbstractVector{MLJBase.Continuous},
     },
     path="MLJFlux.LaplaceClassification",
 )
@@ -348,13 +411,14 @@ MLJBase.metadata_model(
     input=Union{
         AbstractMatrix{MLJBase.Continuous},
         MLJBase.Table(MLJBase.Continuous),
+        AbstractMatrix{MLJBase.Finite},
+        MLJBase.Table(MLJBase.Finite),
         MLJBase.Table{AbstractVector{MLJBase.Continuous}},
+        MLJBase.Table{AbstractVector{MLJBase.Finite}}
     },
     target=Union{
         AbstractArray{MLJBase.Finite},
         AbstractArray{MLJBase.Continuous},
-        AbstractVector{MLJBase.Finite},
-        AbstractVector{MLJBase.Continuous},
     },
     path="MLJFlux.LaplaceRegression",
 )
