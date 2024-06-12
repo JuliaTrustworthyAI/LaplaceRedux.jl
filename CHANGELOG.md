@@ -9,9 +9,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 ## Version [0.3.0] - 2024-06-8
 
 ### Changed
-
+- fixed test functions
 - adapted the LaplaceClassification and the LaplaceRegression struct to use the new @mlj_model macro from MLJBase.
-- Changed the fit! method arguments. Now it also accept a Flux chain model instead of retrieving it from the structs. this is due to the fact that MLJ wants only hyperparameters in the struct https://juliaai.github.io/MLJModelInterface.jl/dev/quick_start_guide/
+- Changed the fit! method arguments. 
 - Changed the predict functions for both LaplaceClassification and  LaplaceRegression.
 
 ### Removed
