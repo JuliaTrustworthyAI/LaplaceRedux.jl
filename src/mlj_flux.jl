@@ -6,6 +6,7 @@ using Tables
 using Distributions
 using LinearAlgebra
 using LaplaceRedux
+using ComputationalResources
 using MLJBase
 import MLJBase: @mlj_model, metadata_model, metadata_pkg
 
@@ -38,13 +39,14 @@ The model is trained using the `fit!` method. The model is defined by the follow
 @mlj_model mutable struct LaplaceRegression <: MLJFlux.MLJFluxProbabilistic
     builder=MLJFlux.MLP(; hidden=(32, 32, 32), σ=Flux.swish)
     optimiser= Flux.Optimise.Adam()
-    loss=Flux.Losses.mse 
+    loss=Flux.Losses.mse
+    epochs::Int=10::(_ > 0) 
     batch_size::Int=1::(_ > 0)
     lambda::Float64=1.0
     alpha::Float64=0.0
     rng::Union{AbstractRNG,Int64}=Random.GLOBAL_RNG
     optimiser_changes_trigger_retraining::Bool=false::(_ in (true, false))
-    acceleration::AbstractResource=CPU1()
+    acceleration=CPU1()::(_ in (CPU1(), CUDALibs()))
     subset_of_weights::Symbol=:all::(_ in (:all, :last_layer, :subnetwork))
     subnetwork_indices=nothing
     hessian_structure::Union{HessianStructure,Symbol,String}=:full::(_ in (":full", ":diagonal"))
@@ -88,13 +90,13 @@ A mutable struct representing a Laplace Classification model that extends the ML
     finaliser=Flux.softmax
     optimiser= Flux.Optimise.Adam()
     loss=Flux.crossentropy 
-    epochs::Int=10
+    epochs::Int=10::(_ > 0)
     batch_size::Int=1::(_ > 0)
     lambda::Float64=1.0
     alpha::Float64=0.0
     rng::Union{AbstractRNG,Int64}=Random.GLOBAL_RNG 
     optimiser_changes_trigger_retraining::Bool=false
-    acceleration::AbstractResource=CPU1()
+    acceleration=CPU1()::(_ in (CPU1(), CUDALibs()))
     subset_of_weights::Symbol=:all::(_ in (:all, :last_layer, :subnetwork))
     subnetwork_indices::Vector{Vector{Int}}=Vector{Vector{Int}}([]) 
     hessian_structure::Union{HessianStructure,Symbol,String}=:full::(_ in (":full", ":diagonal"))
@@ -113,6 +115,7 @@ const MLJ_Laplace= Union{LaplaceClassification,LaplaceRegression}
 ################################ functions shape and build 
 
 function MLJFlux.shape(model::LaplaceClassification, X, y)
+    X = X isa Tables.MatrixTable ? MLJBase.matrix(X) : X
     n_input =  size(X,2)
     levels = unique(y)
     n_output = length(levels)
@@ -121,6 +124,7 @@ function MLJFlux.shape(model::LaplaceClassification, X, y)
 end
 
 function MLJFlux.shape(model::LaplaceRegression, X, y)
+    X = X isa Tables.MatrixTable ? MLJBase.matrix(X) : X
     n_input =  size(X,2)
     dims = size(y)
         if length(dims) == 1
@@ -132,15 +136,23 @@ function MLJFlux.shape(model::LaplaceRegression, X, y)
 end
 
 
-function MLJFlux.build(model::MLJ_Laplace, shape)
+function MLJFlux.build(model::LaplaceClassification,rng, shape)
     #chain
-    chain = Flux.Chain(MLJFlux.build(model.builder, rng, shape...), model.finaliser)
+    chain = Flux.Chain(MLJFlux.build(model.builder, rng,shape...), model.finaliser)
+    
+    return chain
+end
+
+
+function MLJFlux.build(model::LaplaceRegression,rng,shape)
+    #chain
+    chain = MLJFlux.build(model.builder,rng , shape...)
     
     return chain
 end
 
 function MLJFlux.fitresult(model::LaplaceClassification, chain, y)
-    return (chain,  length(unique(y_cl)))
+    return (chain,  length(unique(y)))
 end
 
 function MLJFlux.fitresult(model::LaplaceRegression, chain, y)
@@ -174,7 +186,8 @@ Fit the LaplaceClassification model using MLJFlux.
 - `model::LaplaceClassification`: The fitted LaplaceClassification model.
 """
 function MLJFlux.fit!(model::LaplaceClassification, chain,penalty,optimiser,epochs, verbosity, X, y)
-    X = MLJBase.matrix(X, transpose=true) 
+    X = X isa Tables.MatrixTable ? MLJBase.matrix(X) : X
+    X = X'
 
     # Integer encode the target variable y
     #y_onehot = unique(y) .== permutedims(y)
@@ -286,8 +299,8 @@ Fit the LaplaceRegression model using Flux.jl.
 - `model::LaplaceRegression`: The fitted LaplaceRegression model.
 """
 function MLJFlux.fit!(model::LaplaceRegression, chain,penalty,optimiser,epochs, verbosity, X, y)
-
-    X = MLJBase.matrix(X, transpose=true) 
+    X = X isa Tables.MatrixTable ? MLJBase.matrix(X) : X
+    X = X'
     la = LaplaceRedux.Laplace(
         chain;
         likelihood=:regression,
@@ -373,16 +386,16 @@ function MLJFlux.predict(model::LaplaceRegression, Xnew)
     # Predict using Laplace and collect the predictions
     yhat = [glm_predictive_distribution(model.la, x_vec) for x_vec in X_vec]
 
-    predictions = []
-    for row in eachrow(yhat)
+    #predictions = []
+    #for row in eachrow(yhat)
 
-        mean_val = Float64(row[1][1][1])
-        std_val = sqrt(Float64(row[1][2][1]))
+        #mean_val = Float64(row[1][1][1])
+        #std_val = sqrt(Float64(row[1][2][1]))
         # Append a Normal distribution:
-        push!(predictions, Normal(mean_val, std_val))
-    end
+        #push!(predictions, Normal(mean_val, std_val))
+    #end
     
-    return predictions
+    return yhat
 
 end
 

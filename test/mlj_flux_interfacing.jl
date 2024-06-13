@@ -15,16 +15,15 @@ function basictest_regression(X, y, builder, optimiser, threshold)
         builder=builder,
         optimiser=optimiser,
         acceleration=CPUThreads(),
+        loss= Flux.Losses.mse,
         rng=stable_rng,
         lambda=-1.0,
         alpha=-1.0,
         epochs=-1,
         batch_size=-1,
-        likelihood=:incorrect,
         subset_of_weights=:incorrect,
         hessian_structure=:incorrect,
-        backend=:incorrect,
-        link_approx=:incorrect,
+        backend=:incorrect
     )
 
     fitresult, cache, _report = MLJBase.fit(model, 0, X, y)
@@ -92,7 +91,7 @@ ycont = 2 * X.x1 - X.x3 + 0.1 * rand(N)
 builder = MLJFlux.MLP(; hidden=(16, 8), σ=Flux.relu)
 optimizer = Flux.Optimise.Adam(0.03)
 
-@test basictest_regression(X, y, builder, optimizer, 0.9)
+@test basictest_regression(X, ycont, builder, optimizer, 0.9)
 
 
 
@@ -103,16 +102,16 @@ function basictest_classification(X, y, builder, optimiser, threshold)
 
     stable_rng = StableRNGs.StableRNG(123)
 
-    model = LaplaceRegression(;
+    model = LaplaceClassification(;
         builder=builder,
         optimiser=optimiser,
-        acceleration=CPUThreads(),
-        rng=stable_rng,
-        lambda=-1.0,
-        alpha=-1.0,
+        loss= Flux.crossentropy,
         epochs=-1,
         batch_size=-1,
-        likelihood=:incorrect,
+        lambda=-1.0,
+        alpha=-1.0,
+        rng=stable_rng,
+        acceleration=CPUThreads(),
         subset_of_weights=:incorrect,
         hessian_structure=:incorrect,
         backend=:incorrect,
