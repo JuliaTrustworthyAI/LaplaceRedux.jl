@@ -47,16 +47,16 @@ end
 FOR REGRESSION MODELS.
 Given a calibration dataset (x_t, y_t) for i ∈ {1,...,T} and an array of predicted distributions, the function calculates the empirical frequency
 phat_j = {y_t|F_t(y_t)<= p_j, t= 1,....,T}/T, where T is the number of calibration points, p_j is the confidence level and F_t is the 
-cumulative density function of the predicted distribution targeting y_t. The function was  suggested by Kuleshov(2018) in https://arxiv.org/abs/1807.00263
+cumulative distribution function of the predicted distribution targeting y_t. The function was  suggested by Kuleshov(2018) in https://arxiv.org/abs/1807.00263
     Arguments:
-    Y_val: a vector of values
-    array: an array of sampled distributions stacked column-wise.
+    Y_val: a vector of values y_t
+    array: an array of sampled distributions F(x_t) stacked column-wise.
 """
-function empirical_frequency(Y_cal,array)
+function empirical_frequency(Y_cal,sampled_distributions)
 
 
     quantiles= collect(0:0.05:1)
-    quantiles_matrix = hcat([quantile(samples, quantiles) for samples in array]...)
+    quantiles_matrix = hcat([quantile(samples, quantiles) for samples in sampled_distributions]...)
     n_rows  = size(bounds_quantiles_matrix,1)
     counts = []
 
@@ -65,3 +65,72 @@ function empirical_frequency(Y_cal,array)
     end
     return counts
 end
+
+""" 
+    sharpness(Y_val,array)
+
+FOR REGRESSION MODELS.
+Given a calibration dataset (x_t, y_t) for i ∈ {1,...,T} and an array of predicted distributions, the function calculates the 
+sharpness of the predicted distributions, i.e., the average of the variances var(F_t) predicted by the forecaster for each x_t
+The function was  suggested by Kuleshov(2018) in https://arxiv.org/abs/1807.00263
+    Arguments:
+    sampled_distributions: an array of sampled distributions F(x_t) stacked column-wise.
+"""
+function sharpness(sampled_distributions)
+    sharpness=  mean(var.(sampled_distributions))
+    return sharpness
+
+end
+
+
+
+
+""" 
+    empirical_frequency-classification(Y_val,array)
+
+FOR BINARY CLASSIFICATION MODELS.
+Given a calibration dataset (x_t, y_t) for i ∈ {1,...,T} let p_t= H(x_t)∈[0,1] be the forecasted probability. 
+We group the p_t into intervals I-j for j= 1,2,...,m that form a partition of [0,1]. The function computes
+the observed average p_j= T^-1_j ∑_{t:p_t ∈ I_j} y_j in each interval I_j. 
+The function was  suggested by Kuleshov(2018) in https://arxiv.org/abs/1807.00263
+    Arguments:
+    Y_val: the array of outputs y_t numerically coded . 1 for the target class, 0 for the negative result.
+    sampled_distributions: an array of sampled distributions stacked column-wise where in the first row 
+    there is the probability for the target class y_1=1 and in the second row y_0=0.
+"""
+function empirical_frequency_binary_classification(Y_cal,sampled_distributions)
+
+    #unique_elements = unique(Y_cal)
+    # Create the mapping
+    #mapping = Dict(unique_elements[1] => 0, unique_elements[2] => 1)
+    
+    # Convert categorical data to numeric data
+    #numeric_array = [mapping[c] for c in categorical_array]
+
+    # Create bins
+    num_bins=10
+    bins = range(0, stop=1, length=num_bins+1)
+
+    # Initialize arrays to hold predicted and empirical averages
+    pred_avg = zeros(num_bins)
+    emp_avg = zeros(num_bins)
+    total_pj_per_intervalj = zeros(num_bins)
+
+    class_indices = (Y_cal .== 1)
+
+    class_probs = sampled_distributions[1, :]
+
+    for j in 0:0.1:0.9
+
+        push!(total_pj_per_intervalj,sum( j<class_probs<j+0.1))
+
+        push!(emp_avg, 1/total_pj_per_intervalj[j]  *  sum( Int.( j<class_probs<j+0.1).*Y_val  ) )
+        push!(pred_avg, 1/total_pj_per_intervalj[j]  *  sum( Int.( j<class_probs<j+0.1).*sampled_distributions[1,:]  ) )
+
+
+    end
+    return (total_pj_per_intervalj,emp_avg,pred_avg)
+
+
+end
+
