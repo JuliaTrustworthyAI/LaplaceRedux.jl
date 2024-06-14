@@ -136,17 +136,17 @@ function MLJFlux.shape(model::LaplaceRegression, X, y)
 end
 
 
-function MLJFlux.build(model::LaplaceClassification,rng, shape)
+function MLJFlux.build(model::LaplaceClassification, shape)
     #chain
-    chain = Flux.Chain(MLJFlux.build(model.builder, rng,shape...), model.finaliser)
+    chain = Flux.Chain(MLJFlux.build(model.builder, model.rng,shape...), model.finaliser)
     
     return chain
 end
 
 
-function MLJFlux.build(model::LaplaceRegression,rng,shape)
+function MLJFlux.build(model::LaplaceRegression,shape)
     #chain
-    chain = MLJFlux.build(model.builder,rng , shape...)
+    chain = MLJFlux.build(model.builder,model.rng , shape...)
     
     return chain
 end
@@ -185,7 +185,7 @@ Fit the LaplaceClassification model using MLJFlux.
 # Returns
 - `model::LaplaceClassification`: The fitted LaplaceClassification model.
 """
-function MLJFlux.fit!(model::LaplaceClassification, chain,penalty,optimiser,epochs, verbosity, X, y)
+function MLJFlux.fit!(model::LaplaceClassification, penalty,chain,optimiser,epochs, verbosity, X, y)
     X = X isa Tables.MatrixTable ? MLJBase.matrix(X) : X
     X = X'
 
@@ -226,7 +226,7 @@ function MLJFlux.fit!(model::LaplaceClassification, chain,penalty,optimiser,epoc
 
            # Backward pass
            gs = Flux.gradient(parameters) do
-            batch_loss =  (model.loss(chain(X_batch), y_batch) + penalty(Flux.params(chain))  )
+            batch_loss =  (model.loss(chain(X_batch), y_batch) + penalty(parameters)  )
             epoch_loss += batch_loss
             end
            # Update parameters
@@ -298,9 +298,9 @@ Fit the LaplaceRegression model using Flux.jl.
 # Returns
 - `model::LaplaceRegression`: The fitted LaplaceRegression model.
 """
-function MLJFlux.fit!(model::LaplaceRegression, chain,penalty,optimiser,epochs, verbosity, X, y)
-    X = X isa Tables.MatrixTable ? MLJBase.matrix(X) : X
-    X = X'
+function MLJFlux.fit!(model::LaplaceRegression, penalty,chain,optimiser,epochs, verbosity, X, y)
+    X = X isa Tables.MatrixTable ? MLJBase.matrix(X,transpose=true) : X
+    #X = MLJ.matrix(X,transpose=true)
     la = LaplaceRedux.Laplace(
         chain;
         likelihood=:regression,
@@ -324,6 +324,8 @@ function MLJFlux.fit!(model::LaplaceRegression, chain,penalty,optimiser,epochs, 
         barlen=25,
         color=:yellow,
     )
+    println("Shape of X prima di loader: ", size(X))
+    println("Shape of y prima di loader : ", size(y))
     # Create a data loader
     loader = Flux.Data.DataLoader((data=X, label=y), batchsize=model.batch_size, shuffle=true)
     parameters = Flux.params(chain)
@@ -331,11 +333,16 @@ function MLJFlux.fit!(model::LaplaceRegression, chain,penalty,optimiser,epochs, 
         epoch_loss = 0.0
         # train the model
         for (X_batch, y_batch) in loader
+
             y_batch = reshape(y_batch,1,:)
+            println("Shape of X_batch: ", size(X_batch))
+            println("Shape of y_batch: ", size(y_batch))
+            X_batch = Flux.flatten(X_batch)
+            y_batch = Flux.flatten(y_batch)
         
             # Backward pass
             gs = Flux.gradient(parameters) do
-                batch_loss =  (model.loss(chain(X_batch), y_batch) + penalty(Flux.params(chain))  )
+                batch_loss =  (model.loss(chain(X_batch), y_batch) +penalty(parameters)   )
                 epoch_loss += batch_loss
             end
             # Update parameters

@@ -53,8 +53,7 @@ function basictest_regression(X, y, builder, optimiser, threshold)
 
     # start fresh with small epochs:
     model = LaplaceRegression(;
-        builder=builder, optimiser=optimiser, epochs=2, acceleration=CPU1(), rng=stable_rng
-    )
+        builder=builder, optimiser=optimiser, epochs=2, acceleration=CPU1(), rng=stable_rng)
 
     fitresult, cache, _report = MLJBase.fit(model, 0, X, y)
 
@@ -145,8 +144,7 @@ function basictest_classification(X, y, builder, optimiser, threshold)
 
     # start fresh with small epochs:
     model = LaplaceRegression(;
-        builder=builder, optimiser=optimiser, epochs=2, acceleration=CPU1(), rng=stable_rng
-    )
+        builder=builder, optimiser=optimiser, epochs=2, acceleration=CPU1(), rng=stable_rng)
 
     fitresult, cache, _report = MLJBase.fit(model, 0, X, y)
 
