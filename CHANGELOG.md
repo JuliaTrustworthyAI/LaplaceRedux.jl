@@ -10,6 +10,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ### Changed
 
+- Updated codecov workflow in CI.yml. [#39]
 - fixed test functions
 - adapted the LaplaceClassification and the LaplaceRegression struct to use the new @mlj_model macro from MLJBase.
 - Changed the fit! method arguments. 
@@ -20,13 +21,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - Removed the shape, build and clean! functions.
 - Removed Review dog for code format suggestions. [#39]
 
-
 ## Version [0.2.3] - 2024-05-31
 
 ### Changed
 
 - Removed the link_approx parameter in LaplaceRegression since it is not required.
-- Changed MMI.clean! to check the value of link_approx only in the case likelihood is set to :classification
+- Changed MMI.clean! to check the value of link_approx only in the case likelihood is set to `:classification`
 - Now the likelihood type in LaplaceClassification and LaplaceRegression is automatically set by the inner constructor. The user is not required to provide it as a parameter anymore.
 
 
