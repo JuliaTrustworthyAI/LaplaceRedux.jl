@@ -49,7 +49,7 @@ The model is trained using the `fit!` method. The model is defined by the follow
     acceleration=CPU1()::(_ in (CPU1(), CUDALibs()))
     subset_of_weights::Symbol=:all::(_ in (:all, :last_layer, :subnetwork))
     subnetwork_indices=nothing
-    hessian_structure::Union{HessianStructure,Symbol,String}=:full::(_ in (":full", ":diagonal"))
+    hessian_structure::Union{HessianStructure,Symbol,String}=:full::(_ in (:full, :diagonal))
     backend::Symbol=:GGN::(_ in (:GGN, :EmpiricalFisher))
     σ::Float64=1.0
     μ₀::Float64=0.0 
@@ -99,7 +99,7 @@ A mutable struct representing a Laplace Classification model that extends the ML
     acceleration=CPU1()::(_ in (CPU1(), CUDALibs()))
     subset_of_weights::Symbol=:all::(_ in (:all, :last_layer, :subnetwork))
     subnetwork_indices::Vector{Vector{Int}}=Vector{Vector{Int}}([]) 
-    hessian_structure::Union{HessianStructure,Symbol,String}=:full::(_ in (":full", ":diagonal"))
+    hessian_structure::Union{HessianStructure,Symbol,String}=:full::(_ in (:full, :diagonal))
     backend::Symbol=:GGN::(_ in (:GGN, :EmpiricalFisher))
     σ::Float64=1.0 
     μ₀::Float64=0.0 
@@ -136,17 +136,17 @@ function MLJFlux.shape(model::LaplaceRegression, X, y)
 end
 
 
-function MLJFlux.build(model::LaplaceClassification, shape)
+function MLJFlux.build(model::LaplaceClassification,rng, shape)
     #chain
-    chain = Flux.Chain(MLJFlux.build(model.builder, model.rng,shape...), model.finaliser)
+    chain = Flux.Chain(MLJFlux.build(model.builder, rng,shape...), model.finaliser)
     
     return chain
 end
 
 
-function MLJFlux.build(model::LaplaceRegression,shape)
+function MLJFlux.build(model::LaplaceRegression,rng,shape)
     #chain
-    chain = MLJFlux.build(model.builder,model.rng , shape...)
+    chain = MLJFlux.build(model.builder,rng , shape...)
     
     return chain
 end
@@ -174,23 +174,22 @@ Fit the LaplaceClassification model using MLJFlux.
 
 # Arguments
 - `model::LaplaceClassification`: The LaplaceClassification object to fit.
-- `chain`: The chain to use during training.
-- `penalty`: a penalty function to add to the loss function during training.
-- `optimiser`: the optimiser to use during training.
-- `epochs`: the number of epochs use for training.
 - `verbosity`: The verbosity level for training.
 - `X`: The input data for training.
-- `y`: The target labels for training.
+- `y`: The target labels for training one-hot encoded.
 
 # Returns
-- `model::LaplaceClassification`: The fitted LaplaceClassification model.
+- (la,chain), history, report)
+where la is the fitted Laplace model.
 """
-function MLJFlux.fit!(model::LaplaceClassification, penalty,chain,optimiser,epochs, verbosity, X, y)
-    X = X isa Tables.MatrixTable ? MLJBase.matrix(X) : X
-    X = X'
+function MLJFlux.fit!(model::LaplaceClassification,verbosity, X, y)
+    X = MLJBase.matrix(X)
 
-    # Integer encode the target variable y
-    #y_onehot = unique(y) .== permutedims(y)
+    shape= MLJFlux.shape(model, X,y)
+
+    chain= MLJFlux.build(model,model.rng, shape )
+
+
 
     la = LaplaceRedux.Laplace(
         chain;
@@ -209,7 +208,7 @@ function MLJFlux.fit!(model::LaplaceClassification, penalty,chain,optimiser,epoc
    history = []
    # intitialize and start progress meter:
    meter = Progress(
-       epochs + 1;
+       model.epochs + 1;
        dt=0,
        desc="Optimising neural net:",
        barglyphs=BarGlyphs("[=> ]"),
@@ -217,20 +216,20 @@ function MLJFlux.fit!(model::LaplaceClassification, penalty,chain,optimiser,epoc
        color=:yellow,
    )
    # Create a data loader
-   loader = Flux.Data.DataLoader((data=X, label=y), batchsize=model.batch_size, shuffle=true)
+   loader = Flux.Data.DataLoader((data=X', label=y), batchsize=model.batch_size, shuffle=true)
    parameters = Flux.params(chain)
-   for i in 1:epochs
+   for i in 1: model.epochs
        epoch_loss = 0.0
        # train the model
        for (X_batch, y_batch) in loader
 
            # Backward pass
            gs = Flux.gradient(parameters) do
-            batch_loss =  (model.loss(chain(X_batch), y_batch) + penalty(parameters)  )
+            batch_loss =  (model.loss(chain(X_batch), y_batch)  )
             epoch_loss += batch_loss
             end
            # Update parameters
-           Flux.update!(optimiser, parameters,gs)
+           Flux.update!(model.optimiser, parameters,gs)
         end
        epoch_loss /= n_samples
        push!(history, epoch_loss)
@@ -245,11 +244,11 @@ function MLJFlux.fit!(model::LaplaceClassification, penalty,chain,optimiser,epoc
    end
 
    # fit the Laplace model:
-   LaplaceRedux.fit!(la,zip(eachcol(X),y))
+   LaplaceRedux.fit!(la,zip(eachrow(X),y))
    optimize_prior!(la; verbose=verbose_laplace, n_steps=model.fit_prior_nsteps)
    report=[]
 
-   return (la, history, report)
+   return ((la,chain), history, report)
 end
 
 
@@ -260,19 +259,21 @@ Predicts the class labels for new data using the LaplaceClassification model.
 
 # Arguments
 - `model::LaplaceClassification`: The trained LaplaceClassification model.
+- fitresult: the fitresult output produced by MLJFlux.fit!
 - `Xnew`: The new data to make predictions on.
 
 # Returns
 An array of predicted class labels.
 
 """
-function MLJFlux.predict(model::LaplaceClassification, Xnew)
+function MLJFlux.predict(model::LaplaceClassification,fitresult, Xnew)
+    la= fitresult[1]
     Xnew = MLJBase.matrix(Xnew) 
     #convert in a vector of vectors because Laplace ask to do so
     X_vec= X_vec= [Xnew[i,:] for i in 1:size(Xnew, 1)]
 
     # Predict using Laplace and collect the predictions
-    predictions = [LaplaceRedux.predict(model.la, x;link_approx= model.link_approx,predict_proba=model.predict_proba) for x in X_vec]
+    predictions = [LaplaceRedux.predict(la, x;link_approx= model.link_approx,predict_proba=model.predict_proba) for x in X_vec]
     
     return predictions
 
@@ -287,10 +288,6 @@ Fit the LaplaceRegression model using Flux.jl.
 
 # Arguments
 - `model::LaplaceRegression`: The LaplaceRegression model.
-- `chain`: The chain to use during training.
-- `penalty`: a penalty function to add to the loss function during training.
-- `optimiser`: the optimiser to use during training.
-- `epochs`: the number of epochs use for training.
 - `verbosity`: The verbosity level for training.
 - `X`: The input data for training.
 - `y`: The target labels for training.
@@ -298,9 +295,16 @@ Fit the LaplaceRegression model using Flux.jl.
 # Returns
 - `model::LaplaceRegression`: The fitted LaplaceRegression model.
 """
-function MLJFlux.fit!(model::LaplaceRegression, penalty,chain,optimiser,epochs, verbosity, X, y)
-    X = X isa Tables.MatrixTable ? MLJBase.matrix(X,transpose=true) : X
-    #X = MLJ.matrix(X,transpose=true)
+function MLJFlux.fit!(model::LaplaceRegression, verbosity, X, y)
+    #X = X isa Tables.MatrixTable ? MLJBase.matrix(X) : X
+
+    X = MLJBase.matrix(X)
+
+    shape= MLJFlux.shape(model, X,y)
+
+    chain= MLJFlux.build(model, model.rng,shape )
+
+
     la = LaplaceRedux.Laplace(
         chain;
         likelihood=:regression,
@@ -317,7 +321,7 @@ function MLJFlux.fit!(model::LaplaceRegression, penalty,chain,optimiser,epochs, 
     verbose_laplace=false
     # intitialize and start progress meter:
     meter = Progress(
-        epochs + 1;
+        model.epochs + 1;
         dt=1.0,
         desc="Optimising neural net:",
         barglyphs=BarGlyphs("[=> ]"),
@@ -327,26 +331,24 @@ function MLJFlux.fit!(model::LaplaceRegression, penalty,chain,optimiser,epochs, 
     println("Shape of X prima di loader: ", size(X))
     println("Shape of y prima di loader : ", size(y))
     # Create a data loader
-    loader = Flux.Data.DataLoader((data=X, label=y), batchsize=model.batch_size, shuffle=true)
+    loader = Flux.Data.DataLoader((data=X', label=y), batchsize=model.batch_size, shuffle=true)
     parameters = Flux.params(chain)
-    for i in 1:epochs
+    for i in 1:model.epochs
         epoch_loss = 0.0
         # train the model
         for (X_batch, y_batch) in loader
 
             y_batch = reshape(y_batch,1,:)
-            println("Shape of X_batch: ", size(X_batch))
-            println("Shape of y_batch: ", size(y_batch))
-            X_batch = Flux.flatten(X_batch)
-            y_batch = Flux.flatten(y_batch)
+            println("Shape of X_batch dopo di loader: ", size(X_batch))
+            println("Shape of y_batch dopo di loader : ", size(y_batch))
         
             # Backward pass
             gs = Flux.gradient(parameters) do
-                batch_loss =  (model.loss(chain(X_batch), y_batch) +penalty(parameters)   )
+                batch_loss =  (model.loss(chain(X_batch), y_batch)    )
                 epoch_loss += batch_loss
             end
             # Update parameters
-            Flux.update!(optimiser, parameters,gs)
+            Flux.update!(model.optimiser, parameters,gs)
         end
         epoch_loss /= n_samples
         push!(history, epoch_loss)
@@ -363,11 +365,11 @@ function MLJFlux.fit!(model::LaplaceRegression, penalty,chain,optimiser,epochs, 
  
 
     # fit the Laplace model:
-    LaplaceRedux.fit!(la,zip(eachcol(X),y))
+    LaplaceRedux.fit!(la,zip(eachrow(X),y))
     optimize_prior!(la; verbose=verbose_laplace, n_steps=model.fit_prior_nsteps)
     report=[]
 
-    return (la, history, report)
+    return ((la,chain), history, report)
 end
 
 
@@ -378,20 +380,24 @@ Predict the output for new input data using a Laplace regression model.
 
 # Arguments
 - `model::LaplaceRegression`: The trained Laplace regression model.
+- the fitresult output produced by MLJFlux.fit!
 - `Xnew`: The new input data.
 
 # Returns
 - The predicted output for the new input data.
 
 """
-function MLJFlux.predict(model::LaplaceRegression, Xnew)
+function MLJFlux.predict(model::LaplaceRegression,fitresult, Xnew)
+
     Xnew = MLJBase.matrix(Xnew) 
+
+    la= fitresult[1]
     #convert in a vector of vectors because MLJ ask to do so
     X_vec= [Xnew[i,:] for i in 1:size(Xnew, 1)]
     #inizialize output vector yhat
     yhat=[]
     # Predict using Laplace and collect the predictions
-    yhat = [glm_predictive_distribution(model.la, x_vec) for x_vec in X_vec]
+    yhat = [glm_predictive_distribution(la, x_vec) for x_vec in X_vec]
 
     #predictions = []
     #for row in eachrow(yhat)
