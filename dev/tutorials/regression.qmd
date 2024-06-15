@@ -1,9 +1,11 @@
 ```@meta
 CurrentModule = LaplaceRedux
 ```
+## Libraries
+
+Import the libraries required to run this example
 
 ```{julia}
-#| echo: false
 using Pkg; Pkg.activate("docs")
 # Import libraries
 using Flux, Plots, TaijaPlotting, Random, Statistics, LaplaceRedux
