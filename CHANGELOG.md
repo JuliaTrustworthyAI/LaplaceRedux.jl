@@ -9,13 +9,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 ## Version [0.3.0] - 2024-06-8
 
 ### Changed
+
 - fixed test functions
 - adapted the LaplaceClassification and the LaplaceRegression struct to use the new @mlj_model macro from MLJBase.
 - Changed the fit! method arguments. 
 - Changed the predict functions for both LaplaceClassification and  LaplaceRegression.
 
 ### Removed
-- Removed the shape , build and clean! functions.
+
+- Removed the shape, build and clean! functions.
+- Removed Review dog for code format suggestions. [#39]
 
 
 ## Version [0.2.3] - 2024-05-31

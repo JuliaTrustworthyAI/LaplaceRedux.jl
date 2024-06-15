@@ -15,7 +15,7 @@ function basictest_regression(X, y, builder, optimiser, threshold)
         builder=builder,
         optimiser=optimiser,
         acceleration=CPUThreads(),
-        loss= Flux.Losses.mse,
+        loss=Flux.Losses.mse,
         rng=stable_rng,
         lambda=-1.0,
         alpha=-1.0,
@@ -23,7 +23,7 @@ function basictest_regression(X, y, builder, optimiser, threshold)
         batch_size=-1,
         subset_of_weights=:incorrect,
         hessian_structure=:incorrect,
-        backend=:incorrect
+        backend=:incorrect,
     )
 
     fitresult, cache, _report = MLJBase.fit(model, 0, X, y)
@@ -53,7 +53,8 @@ function basictest_regression(X, y, builder, optimiser, threshold)
 
     # start fresh with small epochs:
     model = LaplaceRegression(;
-        builder=builder, optimiser=optimiser, epochs=2, acceleration=CPU1(), rng=stable_rng)
+        builder=builder, optimiser=optimiser, epochs=2, acceleration=CPU1(), rng=stable_rng
+    )
 
     fitresult, cache, _report = MLJBase.fit(model, 0, X, y)
 
@@ -92,10 +93,6 @@ optimizer = Flux.Optimise.Adam(0.03)
 
 @test basictest_regression(X, ycont, builder, optimizer, 0.9)
 
-
-
-
-
 function basictest_classification(X, y, builder, optimiser, threshold)
     optimiser = deepcopy(optimiser)
 
@@ -104,7 +101,7 @@ function basictest_classification(X, y, builder, optimiser, threshold)
     model = LaplaceClassification(;
         builder=builder,
         optimiser=optimiser,
-        loss= Flux.crossentropy,
+        loss=Flux.crossentropy,
         epochs=-1,
         batch_size=-1,
         lambda=-1.0,
@@ -144,7 +141,8 @@ function basictest_classification(X, y, builder, optimiser, threshold)
 
     # start fresh with small epochs:
     model = LaplaceRegression(;
-        builder=builder, optimiser=optimiser, epochs=2, acceleration=CPU1(), rng=stable_rng)
+        builder=builder, optimiser=optimiser, epochs=2, acceleration=CPU1(), rng=stable_rng
+    )
 
     fitresult, cache, _report = MLJBase.fit(model, 0, X, y)
 
@@ -193,6 +191,6 @@ y = categorical(
 
 builder = MLJFlux.MLP(; hidden=(16, 8), σ=Flux.relu)
 optimizer = Flux.Optimise.Adam(0.03)
-y_onehot= transpose(unique(y) .== permutedims(y))
+y_onehot = transpose(unique(y) .== permutedims(y))
 
 @test basictest_classification(X, y_onehot, builder, optimizer, 0.9)
