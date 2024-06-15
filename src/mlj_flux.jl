@@ -3,15 +3,13 @@ using MLJFlux
 using ProgressMeter: Progress, next!, BarGlyphs
 using Random
 using Tables
-using Distributions
 using LinearAlgebra
 using LaplaceRedux
 using ComputationalResources
-using MLJBase
-import MLJBase: @mlj_model, metadata_model, metadata_pkg
+using MLJBase: MLJBase
 
 """
-    @mlj_model mutable struct LaplaceRegression <: MLJFlux.MLJFluxProbabilistic
+    MLJBase.@mlj_model mutable struct LaplaceRegression <: MLJFlux.MLJFluxProbabilistic
 
 A mutable struct representing a Laplace regression model that extends the `MLJFlux.MLJFluxProbabilistic` abstract type.
 It uses Laplace approximation to estimate the posterior distribution of the weights of a neural network. 
@@ -35,7 +33,7 @@ The model is trained using the `fit!` method. The model is defined by the follow
 - `P₀`: the covariance matrix of the prior distribution.
 - `fit_prior_nsteps`: the number of steps used to fit the priors.
 """
-@mlj_model mutable struct LaplaceRegression <: MLJFlux.MLJFluxProbabilistic
+MLJBase.@mlj_model mutable struct LaplaceRegression <: MLJFlux.MLJFluxProbabilistic
     builder = MLJFlux.MLP(; hidden=(32, 32, 32), σ=Flux.swish)
     optimiser = Flux.Optimise.Adam()
     loss = Flux.Losses.mse
@@ -58,7 +56,7 @@ The model is trained using the `fit!` method. The model is defined by the follow
 end
 
 """
-    @mlj_model mutable struct LaplaceClassification <: MLJFlux.MLJFluxProbabilistic
+    MLJBase.@mlj_model mutable struct LaplaceClassification <: MLJFlux.MLJFluxProbabilistic
 
 A mutable struct representing a Laplace Classification model that extends the MLJFluxProbabilistic abstract type.
     It uses Laplace approximation to estimate the posterior distribution of the weights of a neural network. 
@@ -83,7 +81,7 @@ A mutable struct representing a Laplace Classification model that extends the ML
 - `P₀`: the covariance matrix of the prior distribution.
 - `fit_prior_nsteps`: the number of steps used to fit the priors.
 """
-@mlj_model mutable struct LaplaceClassification <: MLJFlux.MLJFluxProbabilistic
+MLJBase.@mlj_model mutable struct LaplaceClassification <: MLJFlux.MLJFluxProbabilistic
     builder = MLJFlux.MLP(; hidden=(32, 32, 32), σ=Flux.swish)
     finaliser = Flux.softmax
     optimiser = Flux.Optimise.Adam()

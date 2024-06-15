@@ -1,6 +1,5 @@
 using Random: Random
 import Random.seed!
-using MLJ
 using MLJBase
 using MLJFlux
 using Flux
@@ -114,6 +113,8 @@ function basictest_classification(X, y, builder, optimiser, threshold)
         link_approx=:incorrect,
     )
 
+    # Test that shape is correct:
+    @test MLJFlux.shape(model, X, y)[2] == length(unique(y))
     fitresult, cache, _report = MLJBase.fit(model, 0, X, y)
 
     history = _report.training_losses
@@ -140,7 +141,7 @@ function basictest_classification(X, y, builder, optimiser, threshold)
     @test length(history) == model.epochs + 1
 
     # start fresh with small epochs:
-    model = LaplaceRegression(;
+    model = LaplaceClassification(;
         builder=builder, optimiser=optimiser, epochs=2, acceleration=CPU1(), rng=stable_rng
     )
 
@@ -193,4 +194,4 @@ builder = MLJFlux.MLP(; hidden=(16, 8), σ=Flux.relu)
 optimizer = Flux.Optimise.Adam(0.03)
 y_onehot = transpose(unique(y) .== permutedims(y))
 
-@test basictest_classification(X, y_onehot, builder, optimizer, 0.9)
+@test basictest_classification(X, y, builder, optimizer, 0.9)

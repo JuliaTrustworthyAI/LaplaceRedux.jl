@@ -1,4 +1,4 @@
-using Distributions
+using Distributions: Distributions
 """
     functional_variance(la::AbstractLaplace, 𝐉::AbstractArray)
 
