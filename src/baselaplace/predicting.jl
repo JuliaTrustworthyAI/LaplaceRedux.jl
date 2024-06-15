@@ -1,4 +1,5 @@
 using Distributions: Distributions
+using Statistics: mean, var
 """
     functional_variance(la::AbstractLaplace, 𝐉::AbstractArray)
 
