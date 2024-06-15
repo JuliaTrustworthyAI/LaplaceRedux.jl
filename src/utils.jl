@@ -94,41 +94,43 @@ We group the p_t into intervals I-j for j= 1,2,...,m that form a partition of [0
 the observed average p_j= T^-1_j ∑_{t:p_t ∈ I_j} y_j in each interval I_j. 
 The function was  suggested by Kuleshov(2018) in https://arxiv.org/abs/1807.00263
     Arguments:
-    Y_val: the array of outputs y_t numerically coded . 1 for the target class, 0 for the negative result.
+    y_binary: the array of outputs y_t numerically coded . 1 for the target class, 0 for the negative result.
     sampled_distributions: an array of sampled distributions stacked column-wise where in the first row 
     there is the probability for the target class y_1=1 and in the second row y_0=0.
 """
-function empirical_frequency_binary_classification(Y_cal,sampled_distributions)
+function empirical_frequency_binary_classification(y_binary,sampled_distributions)
 
-    #unique_elements = unique(Y_cal)
-    # Create the mapping
-    #mapping = Dict(unique_elements[1] => 0, unique_elements[2] => 1)
-    
-    # Convert categorical data to numeric data
-    #numeric_array = [mapping[c] for c in categorical_array]
-
-    # Create bins
-    num_bins=10
-    bins = range(0, stop=1, length=num_bins+1)
-
-    # Initialize arrays to hold predicted and empirical averages
-    pred_avg = zeros(num_bins)
-    emp_avg = zeros(num_bins)
-    total_pj_per_intervalj = zeros(num_bins)
-
-    class_indices = (Y_cal .== 1)
-
+    pred_avg= collect(range(0,step=0.1,stop=0.9))
+    emp_avg = []
+    total_pj_per_intervalj = []
     class_probs = sampled_distributions[1, :]
 
-    for j in 0:0.1:0.9
-
-        push!(total_pj_per_intervalj,sum( j<class_probs<j+0.1))
-
-        push!(emp_avg, 1/total_pj_per_intervalj[j]  *  sum( Int.( j<class_probs<j+0.1).*Y_val  ) )
-        push!(pred_avg, 1/total_pj_per_intervalj[j]  *  sum( Int.( j<class_probs<j+0.1).*sampled_distributions[1,:]  ) )
-
-
+    for j in 1:10
+        j_float = j / 10.0 -0.1
+        push!(total_pj_per_intervalj,sum( j_float.<class_probs.<j_float+0.1))
+       
+    
+        if total_pj_per_intervalj[j]== 0
+            #println("it's zero $j")
+            push!(emp_avg, 0)
+            #push!(pred_avg, 0)
+        else
+            indices = findall(x -> j_float < x <j_float+0.1, class_probs)
+    
+    
+    
+            push!(emp_avg, 1/total_pj_per_intervalj[j]  *  sum(y_binary[indices]))
+            println(" numero $j")
+            pred_avg[j] = 1/total_pj_per_intervalj[j]  *  sum(sampled_distributions[1,indices])
+        end
+    
     end
+
+
+
+
+
+
     return (total_pj_per_intervalj,emp_avg,pred_avg)
 
 
