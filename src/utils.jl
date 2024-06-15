@@ -67,7 +67,7 @@ function empirical_frequency(Y_cal,sampled_distributions)
 end
 
 """ 
-    sharpness(Y_val,array)
+    sharpness(array)
 
 FOR REGRESSION MODELS.
 Given a calibration dataset (x_t, y_t) for i ∈ {1,...,T} and an array of predicted distributions, the function calculates the 
@@ -95,6 +95,7 @@ the observed average p_j= T^-1_j ∑_{t:p_t ∈ I_j} y_j in each interval I_j.
 The function was  suggested by Kuleshov(2018) in https://arxiv.org/abs/1807.00263
     Arguments:
     y_binary: the array of outputs y_t numerically coded . 1 for the target class, 0 for the negative result.
+
     sampled_distributions: an array of sampled distributions stacked column-wise where in the first row 
     there is the probability for the target class y_1=1 and in the second row y_0=0.
 """
@@ -126,13 +127,31 @@ function empirical_frequency_binary_classification(y_binary,sampled_distribution
     
     end
 
-
-
-
-
-
     return (total_pj_per_intervalj,emp_avg,pred_avg)
-
 
 end
 
+
+
+
+""" 
+    sharpness-classification(array)
+
+FOR BINARY CLASSIFICATION MODELS.
+We can also assess sharpness by looking at the distribution of model predictions.When forecasts are sharp, 
+most predictions are close to 0 or 1; unsharp forecasters make predictions closer to 0.5.
+The function was  suggested by Kuleshov(2018) in https://arxiv.org/abs/1807.00263
+
+    Arguments:
+    y_binary: the array of outputs y_t numerically coded . 1 for the target class, 0 for the negative result.
+    sampled_distributions: an array of sampled distributions stacked column-wise where in the first row 
+    there is the probability for the target class y_1=1 and in the second row y_0=0.
+"""
+function sharpness_classification(y_binary,sampled_distributions)
+
+    class_one = sampled_distributions[1,findall(y_binary .== 1)]
+    class_zero = sampled_distributions[2,findall(y_binary .== 0)]
+    
+    return mean(class_one),mean(class_zero)
+    
+end
