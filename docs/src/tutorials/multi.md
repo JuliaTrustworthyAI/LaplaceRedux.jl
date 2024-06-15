@@ -1,6 +1,17 @@
 # Multi-class problem
 
 
+## Libraries
+
+``` julia
+using Pkg; Pkg.activate("docs")
+# Import libraries
+using Flux, Plots, TaijaPlotting, Random, Statistics, LaplaceRedux
+theme(:lime)
+```
+
+## Data
+
 ``` julia
 using LaplaceRedux.Data
 x, y = Data.toy_data_multi()
@@ -8,6 +19,10 @@ X = hcat(x...)
 y_train = Flux.onehotbatch(y, unique(y))
 y_train = Flux.unstack(y_train',1)
 ```
+
+## MLP
+
+We set up a model
 
 ``` julia
 data = zip(x,y_train)
@@ -20,6 +35,8 @@ nn = Chain(
 )  
 loss(x, y) = Flux.Losses.logitcrossentropy(nn(x), y)
 ```
+
+training:
 
 ``` julia
 using Flux.Optimise: update!, Adam
@@ -43,6 +60,8 @@ end
 ```
 
 ## Laplace Approximation
+
+The Laplace approximation can be implemented as follows:
 
 ``` julia
 la = Laplace(nn; likelihood=:classification)

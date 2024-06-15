@@ -6,6 +6,17 @@ CurrentModule = LaplaceRedux
 
 # Bayesian MLP
 
+## Libraries
+
+``` julia
+using Pkg; Pkg.activate("docs")
+# Import libraries
+using Flux, Plots, TaijaPlotting, Random, Statistics, LaplaceRedux, LinearAlgebra
+theme(:lime)
+```
+
+## Data
+
 This time we use a synthetic dataset containing samples that are not linearly separable:
 
 ``` julia
@@ -14,6 +25,8 @@ xs, ys = LaplaceRedux.Data.toy_data_non_linear(200)
 X = hcat(xs...) # bring into tabular format
 data = zip(xs,ys)
 ```
+
+## Model
 
 For the classification task we build a neural network with weight decay composed of a single hidden layer.
 

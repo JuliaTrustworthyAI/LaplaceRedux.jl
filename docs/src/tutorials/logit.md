@@ -6,6 +6,17 @@ CurrentModule = LaplaceRedux
 
 # Bayesian Logistic Regression
 
+## Libraries
+
+``` julia
+using Pkg; Pkg.activate("docs")
+# Import libraries
+using Flux, Plots, TaijaPlotting, Random, Statistics, LaplaceRedux, LinearAlgebra
+theme(:lime)
+```
+
+## Data
+
 We will use synthetic data with linearly separable samples:
 
 ``` julia
@@ -14,6 +25,8 @@ xs, ys = LaplaceRedux.Data.toy_data_linear(100)
 X = hcat(xs...) # bring into tabular format
 data = zip(xs,ys)
 ```
+
+## Model
 
 Logistic regression with weight decay can be implemented in Flux.jl as a single dense (linear) layer with binary logit crossentropy loss:
 
@@ -60,3 +73,11 @@ optimize_prior!(la; verbose=true, n_steps=500)
 ```
 
 The plot below shows the resulting posterior predictive surface for the plugin estimator (left) and the Laplace approximation (right).
+
+``` julia
+zoom = 0
+p_plugin = plot(la, X, ys; title="Plugin", link_approx=:plugin, clim=(0,1))
+p_untuned = plot(la_untuned, X, ys; title="LA - raw (λ=$(unique(diag(la_untuned.prior.P₀))[1]))", clim=(0,1), zoom=zoom)
+p_laplace = plot(la, X, ys; title="LA - tuned (λ=$(round(unique(diag(la.prior.P₀))[1],digits=2)))", clim=(0,1), zoom=zoom)
+plot(p_plugin, p_untuned, p_laplace, layout=(1,3), size=(1700,400))
+```
