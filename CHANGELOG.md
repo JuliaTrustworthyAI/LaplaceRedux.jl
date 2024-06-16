@@ -11,14 +11,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 ### Changed
 
 - Updated codecov workflow in CI.yml. [#39]
-- fixed test functions
-- adapted the LaplaceClassification and the LaplaceRegression struct to use the new @mlj_model macro from MLJBase.
-- Changed the fit! method arguments. 
-- Changed the predict functions for both LaplaceClassification and  LaplaceRegression.
+- fixed test functions [#39]
+- adapted the LaplaceClassification and the LaplaceRegression struct to use the new @mlj_model macro from MLJBase.[#39]
+- Changed the fit! method arguments. [#39]
+- Changed the predict functions for both LaplaceClassification and  LaplaceRegression.[#39]
 
 ### Removed
 
-- Removed the shape, build and clean! functions.
+- Removed the shape, build and clean! functions.[#39]
 - Removed Review dog for code format suggestions. [#39]
 
 ## Version [0.2.3] - 2024-05-31

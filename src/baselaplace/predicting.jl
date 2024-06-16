@@ -46,6 +46,8 @@ function glm_predictive_distribution(la::AbstractLaplace, X::AbstractArray)
         Distributions.Normal(fμ[i, j], fstd[i, j]) for i in 1:size(fμ, 1),
         j in 1:size(fμ, 2)
     ]
+    #normal_distr = [
+        #Distributions.Normal(fμ[i], fstd[i]) for i in 1:size(fμ, 1)] maybe this one is the correct one
     return normal_distr
 end
 

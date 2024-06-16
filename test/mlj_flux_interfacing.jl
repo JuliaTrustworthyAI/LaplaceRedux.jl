@@ -45,7 +45,7 @@ function basictest_regression(X, y, builder, optimiser, threshold)
 
     @test :chain in keys(MLJBase.fitted_params(model, fitresult))
 
-    #yhat = MLJBase.predict(model, fitresult, X)
+    yhat = MLJBase.predict(model, fitresult, X)
 
     history = _report.training_losses
     @test length(history) == model.epochs + 1
@@ -135,7 +135,7 @@ function basictest_classification(X, y, builder, optimiser, threshold)
 
     @test :chain in keys(MLJBase.fitted_params(model, fitresult))
 
-    #yhat = MLJBase.predict(model, fitresult, X)
+    yhat = MLJBase.predict(model, fitresult, X)
 
     history = _report.training_losses
     @test length(history) == model.epochs + 1
@@ -192,6 +192,4 @@ y = categorical(
 
 builder = MLJFlux.MLP(; hidden=(16, 8), σ=Flux.relu)
 optimizer = Flux.Optimise.Adam(0.03)
-y_onehot = transpose(unique(y) .== permutedims(y))
-
 @test basictest_classification(X, y, builder, optimizer, 0.9)

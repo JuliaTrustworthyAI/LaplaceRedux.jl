@@ -105,10 +105,22 @@ MLJBase.@mlj_model mutable struct LaplaceClassification <: MLJFlux.MLJFluxProbab
     predict_proba::Bool = true::(_ in (true, false))
     fit_prior_nsteps::Int = 100::(_ > 0)
 end
-###############
+
 const MLJ_Laplace = Union{LaplaceClassification,LaplaceRegression}
 
-################################ functions shape and build 
+"""
+    MLJFlux.shape(model::LaplaceClassification, X, y)
+
+Compute the the number of features of the dataset X and  the number of unique classes in y.
+
+# Arguments
+- `model::LaplaceClassification`: The LaplaceClassification model to fit.
+- `X`: The input data for training.
+- `y`: The target labels for training one-hot encoded.
+
+# Returns
+- (input size, output size)
+"""
 
 function MLJFlux.shape(model::LaplaceClassification, X, y)
     X = X isa Tables.MatrixTable ? MLJBase.matrix(X) : X
@@ -118,6 +130,21 @@ function MLJFlux.shape(model::LaplaceClassification, X, y)
     return (n_input, n_output)
 end
 
+
+
+"""
+    MLJFlux.shape(model::LaplaceRegression, X, y)
+
+Compute the the number of features of the X input dataset and  the number of variables to predict from  the y  output dataset.
+
+# Arguments
+- `model::LaplaceRegression`: The LaplaceRegression model to fit.
+- `X`: The input data for training.
+- `y`: The target labels for training one-hot encoded.
+
+# Returns
+- (input size, output size)
+"""
 function MLJFlux.shape(model::LaplaceRegression, X, y)
     X = X isa Tables.MatrixTable ? MLJBase.matrix(X) : X
     n_input = size(X, 2)
@@ -130,6 +157,21 @@ function MLJFlux.shape(model::LaplaceRegression, X, y)
     return (n_input, n_output)
 end
 
+
+
+"""
+    MLJFlux.build(model::LaplaceClassification, rng, shape)
+
+Builds an MLJFlux model for Laplace classification compatible with the dimensions of the input and output layers specified by `shape`.
+
+# Arguments
+- `model::LaplaceClassification`: The Laplace classification model.
+- `rng`: A random number generator to ensure reproducibility.
+- `shape`: A tuple or array specifying the dimensions of the input and output layers.
+
+# Returns
+- The constructed MLJFlux model, compatible with the specified input and output dimensions.
+"""
 function MLJFlux.build(model::LaplaceClassification, rng, shape)
     #chain
     chain = Flux.Chain(MLJFlux.build(model.builder, rng, shape...), model.finaliser)
@@ -137,22 +179,68 @@ function MLJFlux.build(model::LaplaceClassification, rng, shape)
     return chain
 end
 
+
+
+"""
+    MLJFlux.build(model::LaplaceRegression, rng, shape)
+
+Builds an MLJFlux model for Laplace regression compatible with the dimensions of the input and output layers specified by `shape`.
+
+# Arguments
+- `model::LaplaceRegression`: The Laplace regression model.
+- `rng`: A random number generator to ensure reproducibility.
+- `shape`: A tuple or array specifying the dimensions of the input and output layers.
+
+# Returns
+- The constructed MLJFlux model, compatible with the specified input and output dimensions.
+"""
 function MLJFlux.build(model::LaplaceRegression, rng, shape)
-    #chain
+
     chain = MLJFlux.build(model.builder, rng, shape...)
 
     return chain
 end
 
+
+"""
+    MLJFlux.fitresult(model::LaplaceClassification, chain, y)
+
+Computes the fit result for a Laplace classification model, returning the model chain and the number of unique classes in the target data.
+
+# Arguments
+- `model::LaplaceClassification`: The Laplace classification model to be evaluated.
+- `chain`: The trained model chain.
+- `y`: The target data, typically a vector of class labels.
+
+# Returns
+- A tuple containing:
+  - The model chain.
+  - The number of unique classes in the target data `y`.
+"""
 function MLJFlux.fitresult(model::LaplaceClassification, chain, y)
     return (chain, length(unique(y)))
 end
 
+
+"""
+    MLJFlux.fitresult(model::LaplaceRegression, chain, y)
+
+Computes the fit result for a Laplace Regression model, returning the model chain and the number of output variables in the target data.
+
+# Arguments
+- `model::LaplaceRegression`: The Laplace Regression model to be evaluated.
+- `chain`: The trained model chain.
+- `y`: The target data, typically a vector of class labels.
+
+# Returns
+- A tuple containing:
+  - The model chain.
+  - The number of unique classes in the target data `y`.
+"""
 function MLJFlux.fitresult(model::LaplaceRegression, chain, y)
     return (chain, size(y))
 end
 
-#########################################  fit and predict for classification
 
 """
     MLJFlux.fit!(model::LaplaceClassification, chain,penalty,optimiser,epochs, verbosity, X, y)
@@ -166,7 +254,7 @@ Fit the LaplaceClassification model using MLJFlux.
 - `y`: The target labels for training one-hot encoded.
 
 # Returns
-- (la,chain), history, report)
+- (chain,la), history, report)
 where la is the fitted Laplace model.
 """
 function MLJFlux.fit!(model::LaplaceClassification, verbosity, X, y)
@@ -236,7 +324,7 @@ function MLJFlux.fit!(model::LaplaceClassification, verbosity, X, y)
     optimize_prior!(la; verbose=verbose_laplace, n_steps=model.fit_prior_nsteps)
     report = []
 
-    return ((la, chain), history, report)
+    return ((chain,la), history, report)
 end
 
 """
@@ -254,7 +342,7 @@ An array of predicted class labels.
 
 """
 function MLJFlux.predict(model::LaplaceClassification, fitresult, Xnew)
-    la = fitresult[1]
+    la = fitresult[2]
     Xnew = MLJBase.matrix(Xnew)
     #convert in a vector of vectors because Laplace ask to do so
     X_vec = X_vec = [Xnew[i, :] for i in 1:size(Xnew, 1)]
@@ -281,10 +369,10 @@ Fit the LaplaceRegression model using Flux.jl.
 - `y`: The target labels for training.
 
 # Returns
-- `model::LaplaceRegression`: The fitted LaplaceRegression model.
+- (chain,la), loss history, report )
+where la is the fitted Laplace model.
 """
 function MLJFlux.fit!(model::LaplaceRegression, verbosity, X, y)
-    #X = X isa Tables.MatrixTable ? MLJBase.matrix(X) : X
 
     X = MLJBase.matrix(X)
 
@@ -316,8 +404,6 @@ function MLJFlux.fit!(model::LaplaceRegression, verbosity, X, y)
         barlen=25,
         color=:yellow,
     )
-    println("Shape of X prima di loader: ", size(X))
-    println("Shape of y prima di loader : ", size(y))
     # Create a data loader
     loader = Flux.Data.DataLoader(
         (data=X', label=y); batchsize=model.batch_size, shuffle=true
@@ -328,8 +414,6 @@ function MLJFlux.fit!(model::LaplaceRegression, verbosity, X, y)
         # train the model
         for (X_batch, y_batch) in loader
             y_batch = reshape(y_batch, 1, :)
-            println("Shape of X_batch dopo di loader: ", size(X_batch))
-            println("Shape of y_batch dopo di loader : ", size(y_batch))
 
             # Backward pass
             gs = Flux.gradient(parameters) do
@@ -356,7 +440,7 @@ function MLJFlux.fit!(model::LaplaceRegression, verbosity, X, y)
     optimize_prior!(la; verbose=verbose_laplace, n_steps=model.fit_prior_nsteps)
     report = []
 
-    return ((la, chain), history, report)
+    return ((chain,la), history, report)
 end
 
 """
@@ -376,7 +460,7 @@ Predict the output for new input data using a Laplace regression model.
 function MLJFlux.predict(model::LaplaceRegression, fitresult, Xnew)
     Xnew = MLJBase.matrix(Xnew)
 
-    la = fitresult[1]
+    la = fitresult[2]
     #convert in a vector of vectors because MLJ ask to do so
     X_vec = [Xnew[i, :] for i in 1:size(Xnew, 1)]
     #inizialize output vector yhat
@@ -384,19 +468,10 @@ function MLJFlux.predict(model::LaplaceRegression, fitresult, Xnew)
     # Predict using Laplace and collect the predictions
     yhat = [glm_predictive_distribution(la, x_vec) for x_vec in X_vec]
 
-    #predictions = []
-    #for row in eachrow(yhat)
-
-    #mean_val = Float64(row[1][1][1])
-    #std_val = sqrt(Float64(row[1][2][1]))
-    # Append a Normal distribution:
-    #push!(predictions, Normal(mean_val, std_val))
-    #end
-
     return yhat
 end
 
-# Then for each model,
+# metadata for each model,
 MLJBase.metadata_model(
     LaplaceClassification;
     input=Union{
@@ -410,7 +485,7 @@ MLJBase.metadata_model(
     target=Union{AbstractArray{MLJBase.Finite},AbstractArray{MLJBase.Continuous}},
     path="MLJFlux.LaplaceClassification",
 )
-# Then for each model,
+# metadata for each model,
 MLJBase.metadata_model(
     LaplaceRegression;
     input=Union{
