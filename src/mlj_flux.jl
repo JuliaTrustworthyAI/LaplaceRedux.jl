@@ -32,6 +32,7 @@ The model is trained using the `fit!` method. The model is defined by the follow
 - `μ₀`: the mean of the prior distribution.
 - `P₀`: the covariance matrix of the prior distribution.
 - `fit_prior_nsteps`: the number of steps used to fit the priors.
+- `la`: the Laplace model.
 """
 MLJBase.@mlj_model mutable struct LaplaceRegression <: MLJFlux.MLJFluxProbabilistic
     builder = MLJFlux.MLP(; hidden=(32, 32, 32), σ=Flux.swish)
@@ -53,6 +54,7 @@ MLJBase.@mlj_model mutable struct LaplaceRegression <: MLJFlux.MLJFluxProbabilis
     μ₀::Float64 = 0.0
     P₀::Union{AbstractMatrix,UniformScaling,Nothing} = nothing
     fit_prior_nsteps::Int = 100::(_ > 0)
+    la::Union{Nothing,AbstractLaplace} = nothing
 end
 
 """
@@ -80,6 +82,7 @@ A mutable struct representing a Laplace Classification model that extends the ML
 - `μ₀`: the mean of the prior distribution.
 - `P₀`: the covariance matrix of the prior distribution.
 - `fit_prior_nsteps`: the number of steps used to fit the priors.
+- `la`: the Laplace model.
 """
 MLJBase.@mlj_model mutable struct LaplaceClassification <: MLJFlux.MLJFluxProbabilistic
     builder = MLJFlux.MLP(; hidden=(32, 32, 32), σ=Flux.swish)
@@ -104,6 +107,7 @@ MLJBase.@mlj_model mutable struct LaplaceClassification <: MLJFlux.MLJFluxProbab
     link_approx::Symbol = :probit::(_ in (:probit, :plugin))
     predict_proba::Bool = true::(_ in (true, false))
     fit_prior_nsteps::Int = 100::(_ > 0)
+    la::Union{Nothing,AbstractLaplace} = nothing
 end
 
 const MLJ_Laplace = Union{LaplaceClassification,LaplaceRegression}
@@ -218,7 +222,7 @@ Computes the fit result for a Laplace classification model, returning the model 
   - The number of unique classes in the target data `y`.
 """
 function MLJFlux.fitresult(model::LaplaceClassification, chain, y)
-    return (chain, length(unique(y)))
+    return (chain, length(unique(y)), model.la)
 end
 
 
@@ -238,7 +242,12 @@ Computes the fit result for a Laplace Regression model, returning the model chai
   - The number of unique classes in the target data `y`.
 """
 function MLJFlux.fitresult(model::LaplaceRegression, chain, y)
-    return (chain, size(y))
+    if y isa AbstractArray
+        target_column_names = nothing
+    else
+        target_column_names = Tables.schema(y).names
+    end
+    return (chain, target_column_names, model.la)
 end
 
 
@@ -291,34 +300,13 @@ function MLJFlux.fit!(
         barlen=25,
         color=:yellow,
     )
-    # Create a data loader
-    loader = Flux.Data.DataLoader(
-        (data=X', label=y); batchsize=model.batch_size, shuffle=true
-    )
+
     parameters = Flux.params(chain)
     for i in 1:(model.epochs)
-        epoch_loss = 0.0
-        # train the model
-        for (X_batch, y_batch) in loader
-
-            # Backward pass
-            gs = Flux.gradient(parameters) do
-                batch_loss = (model.loss(chain(X_batch), y_batch))
-                epoch_loss += batch_loss
-            end
-            # Update parameters
-            Flux.update!(model.optimiser, parameters, gs)
-        end
-        epoch_loss /= n_samples
-        push!(history, epoch_loss)
-        #verbosity
-        if verbosity == 1
-            next!(meter)
-        elseif verbosity == 2
-            next!(meter)
-            verbose_laplace = true
-            println("Loss is $(round(epoch_loss; sigdigits=4))")
-        end
+        current_loss = MLJFlux.train!(model, penalty, chain, optimiser, X, y)
+        verbosity < 2 || @info "Loss is $(round(current_loss; sigdigits=4))"
+        verbosity != 1 || next!(meter)
+        push!(history, current_loss)
     end
 
     # fit the Laplace model:
@@ -326,7 +314,15 @@ function MLJFlux.fit!(
     optimize_prior!(la; verbose=verbose_laplace, n_steps=model.fit_prior_nsteps)
     report = []
 
-    return ((chain,la), history, report)
+    model.la = la
+
+    fitresult = MLJFlux.fitresult(model, Flux.cpu(chain), y)
+
+    report = (training_losses=history,)
+
+    cache = ()
+
+    return fitresult, cache, report
 end
 
 """
@@ -426,7 +422,13 @@ function MLJFlux.fit!(
     optimize_prior!(la; verbose=verbose_laplace, n_steps=model.fit_prior_nsteps)
     report = []
 
-    return ((chain,la), history, report)
+    fitresult = MLJFlux.fitresult(model, Flux.cpu(chain), y)
+
+    report = (training_losses=history,)
+
+    cache = ()
+
+    return fitresult, cache, report
 end
 
 """
