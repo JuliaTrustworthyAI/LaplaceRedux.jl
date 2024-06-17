@@ -257,7 +257,9 @@ Fit the LaplaceClassification model using MLJFlux.
 - (chain,la), history, report)
 where la is the fitted Laplace model.
 """
-function MLJFlux.fit!(model::LaplaceClassification, verbosity, X, y)
+function MLJFlux.fit!(
+    model::LaplaceClassification, penalty, chain, optimiser, epochs, verbosity, X, y
+)
     X = MLJBase.matrix(X)
 
     shape = MLJFlux.shape(model, X, y)
@@ -372,13 +374,16 @@ Fit the LaplaceRegression model using Flux.jl.
 - (chain,la), loss history, report )
 where la is the fitted Laplace model.
 """
-function MLJFlux.fit!(model::LaplaceRegression, verbosity, X, y)
-
-    X = MLJBase.matrix(X)
-
-    shape = MLJFlux.shape(model, X, y)
-
-    chain = MLJFlux.build(model, model.rng, shape)
+function MLJFlux.fit!(
+    model::LaplaceRegression,
+    penalty,
+    chain,
+    optimiser,
+    epochs,
+    verbosity,
+    X,
+    y,
+)
 
     la = LaplaceRedux.Laplace(
         chain;
@@ -391,52 +396,33 @@ function MLJFlux.fit!(model::LaplaceRegression, verbosity, X, y)
         μ₀=model.μ₀,
         P₀=model.P₀,
     )
-    n_samples = size(X, 1)
+
     # Initialize history:
     history = []
     verbose_laplace = false
     # intitialize and start progress meter:
     meter = Progress(
-        model.epochs + 1;
+        epochs + 1;
         dt=1.0,
         desc="Optimising neural net:",
         barglyphs=BarGlyphs("[=> ]"),
         barlen=25,
         color=:yellow,
     )
-    # Create a data loader
-    loader = Flux.Data.DataLoader(
-        (data=X', label=y); batchsize=model.batch_size, shuffle=true
-    )
-    parameters = Flux.params(chain)
-    for i in 1:(model.epochs)
-        epoch_loss = 0.0
-        # train the model
-        for (X_batch, y_batch) in loader
-            y_batch = reshape(y_batch, 1, :)
+    verbosity != 1 || next!(meter)
 
-            # Backward pass
-            gs = Flux.gradient(parameters) do
-                batch_loss = (model.loss(chain(X_batch), y_batch))
-                epoch_loss += batch_loss
-            end
-            # Update parameters
-            Flux.update!(model.optimiser, parameters, gs)
-        end
-        epoch_loss /= n_samples
-        push!(history, epoch_loss)
-        #verbosity
-        if verbosity == 1
-            next!(meter)
-        elseif verbosity == 2
-            next!(meter)
-            verbose_laplace = true
-            println("Loss is $(round(epoch_loss; sigdigits=4))")
-        end
+    parameters = Flux.params(chain)
+    for i in 1:(epochs)
+        current_loss = MLJFlux.train!(
+            model, penalty, chain, optimiser, X, y
+        )
+        verbosity < 2 || @info "Loss is $(round(current_loss; sigdigits=4))"
+        verbosity != 1 || next!(meter)
+        push!(history, current_loss)
     end
 
     # fit the Laplace model:
-    LaplaceRedux.fit!(la, zip(eachrow(X), y))
+    LaplaceRedux.fit!(la, zip(X, y))
     optimize_prior!(la; verbose=verbose_laplace, n_steps=model.fit_prior_nsteps)
     report = []
 
@@ -460,7 +446,8 @@ Predict the output for new input data using a Laplace regression model.
 function MLJFlux.predict(model::LaplaceRegression, fitresult, Xnew)
     Xnew = MLJBase.matrix(Xnew)
 
-    la = fitresult[2]
+    println(fitresult)
+    la = fitresult[1][2]
     #convert in a vector of vectors because MLJ ask to do so
     X_vec = [Xnew[i, :] for i in 1:size(Xnew, 1)]
     #inizialize output vector yhat

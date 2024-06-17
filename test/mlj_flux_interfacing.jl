@@ -26,15 +26,16 @@ function basictest_regression(X, y, builder, optimiser, threshold)
     )
 
     fitresult, cache, _report = MLJBase.fit(model, 0, X, y)
+    println(typeof(fitresult))
 
     history = _report.training_losses
-    @test length(history) == model.epochs + 1
+    @test length(history) == epochs + 1
 
     # test improvement in training loss:
     @test history[end] < threshold * history[1]
 
     # increase iterations and check update is incremental:
-    model.epochs = model.epochs + 3
+    epochs = epochs + 3
 
     fitresult, cache, _report = @test_logs(
         (:info, r""), # one line of :info per extra epoch
