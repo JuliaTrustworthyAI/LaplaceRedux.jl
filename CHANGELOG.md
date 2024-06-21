@@ -6,6 +6,22 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 *Note*: We try to adhere to these practices as of version [v0.2.1].
 
+
+## Version [0.3.0] - 2024-06-21
+
+### Changed
+
+- Changed `glm_predictive_distribution` so that return a Normal distribution rather than the tuple (mean,variance). [#90]
+- Changed `predict` so that return directly a Normal distribution  in the case of regression. [#90]
+
+### Added
+
+- Added functions to compute the average empirical frequency for both classification and regression problems in utils.jl. [#90]
+
+
+
+
+
 ## Version [0.2.1] - 2024-05-29
 
 ### Changed

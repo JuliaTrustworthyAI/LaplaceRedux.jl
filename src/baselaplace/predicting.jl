@@ -1,4 +1,5 @@
-using Distributions
+using Distributions: Distributions
+using Statistics: mean, var
 """
     functional_variance(la::AbstractLaplace, 𝐉::AbstractArray)
 
@@ -41,7 +42,8 @@ function glm_predictive_distribution(la::AbstractLaplace, X::AbstractArray)
     fvar = functional_variance(la, 𝐉)
     fvar = reshape(fvar, size(fμ)...)
     fstd = sqrt.(fvar)
-    normal_distr= [Distributions.Normal(fμ[i, j], fstd[i, j]) for i in 1:size(fμ, 1), j in 1:size(fμ, 2)]
+    normal_distr = [
+        Distributions.Normal(fμ[i], fstd[i]) for i in 1:size(fμ, 1)] 
     return normal_distr
 end
 
@@ -79,7 +81,7 @@ function predict(
     la::AbstractLaplace, X::AbstractArray; link_approx=:probit, predict_proba::Bool=true
 )
     normal_distr = glm_predictive_distribution(la, X)
-    fμ, fvar =  mean.(normal_distr), var.(normal_distr)
+    fμ, fvar = mean.(normal_distr), var.(normal_distr)
 
     # Regression:
     if la.likelihood == :regression
