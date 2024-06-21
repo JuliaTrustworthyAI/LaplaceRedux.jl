@@ -24,6 +24,8 @@ Computes the linearized GLM predictive.
 - `fμ::AbstractArray`: Mean of the predictive distribution. The output shape is column-major as in Flux.
 - `fvar::AbstractArray`: Variance of the predictive distribution. The output shape is column-major as in Flux.
 
+- `normal_distr` An array of  normal distributions approximating the predictive distribution p(y|X) given the input data X.
+
 # Examples
 
 ```julia-repl
@@ -60,9 +62,10 @@ Computes predictions from Bayesian neural network.
 - `predict_proba::Bool=true`: If `true` (default), returns probabilities for classification tasks.
 
 # Returns
-
+For classification tasks:
 - `fμ::AbstractArray`: Mean of the predictive distribution if link function is set to `:plugin`, otherwise the probit approximation. The output shape is column-major as in Flux.
-- `fvar::AbstractArray`: If regression, it also returns the variance of the predictive distribution. The output shape is column-major as in Flux.
+For regression tasks:
+- `normal_distr::Distributions.Normal`:the array of Normal distributions computed by glm_predictive_distribution. The output shape is column-major as in Flux.
 
 # Examples
 
