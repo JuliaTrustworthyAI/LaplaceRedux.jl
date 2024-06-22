@@ -82,7 +82,7 @@ predict(la, hcat(x...))
 function predict(
     la::AbstractLaplace, X::AbstractArray; link_approx=:probit, predict_proba::Bool=true
 )
-    normal_distr,fμ, fvar = glm_predictive_distribution(la, X)
+    normal_distr, fμ, fvar = glm_predictive_distribution(la, X)
     #fμ, fvar = mean.(normal_distr), var.(normal_distr)
 
     # Regression:
