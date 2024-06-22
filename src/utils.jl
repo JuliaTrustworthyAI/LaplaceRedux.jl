@@ -147,11 +147,9 @@ The function was  suggested by Kuleshov(2018) in https://arxiv.org/abs/1807.0026
     sampled_distributions: an array of sampled distributions stacked column-wise where in the first row 
     there is the probability for the target class y_1=1 and in the second row y_0=0.
 """
-function sharpness_classification(y_binary,sampled_distributions)
+function sharpness_classification(y_binary, sampled_distributions)
+    class_one = sampled_distributions[1, findall(y_binary .== 1)]
+    class_zero = sampled_distributions[2, findall(y_binary .== 0)]
 
-    class_one = sampled_distributions[1,findall(y_binary .== 1)]
-    class_zero = sampled_distributions[2,findall(y_binary .== 0)]
-    
-    return mean(class_one),mean(class_zero)
-    
+    return mean(class_one), mean(class_zero)
 end
