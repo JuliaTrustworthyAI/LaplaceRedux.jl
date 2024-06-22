@@ -131,9 +131,6 @@ function empirical_frequency_binary_classification(y_binary,sampled_distribution
 
 end
 
-
-
-
 """ 
     sharpness-classification(array)
 
