@@ -46,7 +46,7 @@ function glm_predictive_distribution(la::AbstractLaplace, X::AbstractArray)
     fstd = sqrt.(fvar)
     normal_distr = [
         Distributions.Normal(fμ[i], fstd[i]) for i in 1:size(fμ, 1)] 
-    return normal_distr
+    return (normal_distr,fμ,fvar )
 end
 
 """
@@ -83,8 +83,8 @@ predict(la, hcat(x...))
 function predict(
     la::AbstractLaplace, X::AbstractArray; link_approx=:probit, predict_proba::Bool=true
 )
-    normal_distr = glm_predictive_distribution(la, X)
-    fμ, fvar = mean.(normal_distr), var.(normal_distr)
+    normal_distr,fμ, fvar = glm_predictive_distribution(la, X)
+    #fμ, fvar = mean.(normal_distr), var.(normal_distr)
 
     # Regression:
     if la.likelihood == :regression
