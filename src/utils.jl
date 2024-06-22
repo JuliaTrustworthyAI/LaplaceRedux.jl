@@ -52,15 +52,15 @@ cumulative distribution function of the predicted distribution targeting y_t. Th
     Y_val: a vector of values y_t
     array: an array of sampled distributions F(x_t) stacked column-wise.
 """
-function empirical_frequency(Y_cal,sampled_distributions)
-
-
-    quantiles= collect(0:0.05:1)
-    quantiles_matrix = hcat([quantile(samples, quantiles) for samples in sampled_distributions]...)
-    n_rows  = size(bounds_quantiles_matrix,1)
+function empirical_frequency(Y_cal, sampled_distributions)
+    quantiles = collect(0:0.05:1)
+    quantiles_matrix = hcat(
+        [quantile(samples, quantiles) for samples in sampled_distributions]...
+    )
+    n_rows = size(bounds_quantiles_matrix, 1)
     counts = []
 
-    for i in  1:n_rows
+    for i in 1:n_rows
         push!(counts, sum(Y_cal .<= quantiles_matrix[i, :]) / length(Y_cal))
     end
     return counts
@@ -77,13 +77,9 @@ The function was  suggested by Kuleshov(2018) in https://arxiv.org/abs/1807.0026
     sampled_distributions: an array of sampled distributions F(x_t) stacked column-wise.
 """
 function sharpness(sampled_distributions)
-    sharpness=  mean(var.(sampled_distributions))
+    sharpness = mean(var.(sampled_distributions))
     return sharpness
-
 end
-
-
-
 
 """ 
     empirical_frequency-classification(Y_val,array)
@@ -99,32 +95,24 @@ The function was  suggested by Kuleshov(2018) in https://arxiv.org/abs/1807.0026
     sampled_distributions: an array of sampled distributions stacked column-wise where in the first row 
     there is the probability for the target class y_1=1 and in the second row y_0=0.
 """
-function empirical_frequency_binary_classification(y_binary,sampled_distributions)
-
-    pred_avg= collect(range(0,step=0.1,stop=0.9))
+function empirical_frequency_binary_classification(y_binary, sampled_distributions)
+    pred_avg = collect(range(0; step=0.1, stop=0.9))
     emp_avg = []
     total_pj_per_intervalj = []
     class_probs = sampled_distributions[1, :]
 
     for j in 1:10
-        j_float = j / 10.0 -0.1
-        push!(total_pj_per_intervalj,sum( j_float.<class_probs.<j_float+0.1))
-       
-    
-        if total_pj_per_intervalj[j]== 0
-            #println("it's zero $j")
+        j_float = j / 10.0 - 0.1
+        push!(total_pj_per_intervalj, sum(j_float .< class_probs .< j_float + 0.1))
+        if total_pj_per_intervalj[j] == 0
             push!(emp_avg, 0)
-            #push!(pred_avg, 0)
         else
-            indices = findall(x -> j_float < x <j_float+0.1, class_probs)
-    
-    
-    
-            push!(emp_avg, 1/total_pj_per_intervalj[j]  *  sum(y_binary[indices]))
+            indices = findall(x -> j_float < x < j_float + 0.1, class_probs)
+            push!(emp_avg, 1 / total_pj_per_intervalj[j] * sum(y_binary[indices]))
             println(" numero $j")
-            pred_avg[j] = 1/total_pj_per_intervalj[j]  *  sum(sampled_distributions[1,indices])
+            pred_avg[j] =
+                1 / total_pj_per_intervalj[j] * sum(sampled_distributions[1, indices])
         end
-    
     end
 
     return (total_pj_per_intervalj, emp_avg, pred_avg)
@@ -146,6 +134,5 @@ The function was  suggested by Kuleshov(2018) in https://arxiv.org/abs/1807.0026
 function sharpness_classification(y_binary, sampled_distributions)
     class_one = sampled_distributions[1, findall(y_binary .== 1)]
     class_zero = sampled_distributions[2, findall(y_binary .== 0)]
-
     return mean(class_one), mean(class_zero)
 end
