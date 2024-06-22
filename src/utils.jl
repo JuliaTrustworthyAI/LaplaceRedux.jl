@@ -127,8 +127,7 @@ function empirical_frequency_binary_classification(y_binary,sampled_distribution
     
     end
 
-    return (total_pj_per_intervalj,emp_avg,pred_avg)
-
+    return (total_pj_per_intervalj, emp_avg, pred_avg)
 end
 
 """ 
