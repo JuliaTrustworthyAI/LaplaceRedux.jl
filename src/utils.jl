@@ -48,7 +48,7 @@ FOR REGRESSION MODELS.
 Given a calibration dataset (x_t, y_t) for i ∈ {1,...,T} and an array of predicted distributions, the function calculates the empirical frequency
 phat_j = {y_t|F_t(y_t)<= p_j, t= 1,....,T}/T, where T is the number of calibration points, p_j is the confidence level and F_t is the 
 cumulative distribution function of the predicted distribution targeting y_t.
- The function was  suggested by Kuleshov(2018) in https://arxiv.org/abs/1807.00263
+Source: https://arxiv.org/abs/1807.00263
 
     Arguments:
     -Y_cal: a vector of values y_t
@@ -74,7 +74,7 @@ end
 FOR REGRESSION MODELS.
 Given a calibration dataset (x_t, y_t) for i ∈ {1,...,T} and an array of predicted distributions, the function calculates the 
 sharpness of the predicted distributions, i.e., the average of the variances var(F_t) predicted by the forecaster for each x_t
-The function was  suggested by Kuleshov(2018) in https://arxiv.org/abs/1807.00263
+Source: https://arxiv.org/abs/1807.00263
 
     Arguments:
     -sampled_distributions: an array of sampled distributions F(x_t) stacked column-wise.
@@ -91,7 +91,7 @@ FOR BINARY CLASSIFICATION MODELS.
 Given a calibration dataset (x_t, y_t) for i ∈ {1,...,T} let p_t= H(x_t)∈[0,1] be the forecasted probability. 
 We group the p_t into intervals I-j for j= 1,2,...,m that form a partition of [0,1]. The function computes
 the observed average p_j= T^-1_j ∑_{t:p_t ∈ I_j} y_j in each interval I_j. 
-The function was  suggested by Kuleshov(2018) in https://arxiv.org/abs/1807.00263
+Source: https://arxiv.org/abs/1807.00263
 
     Arguments:
     -y_binary: the array of outputs y_t numerically coded: 1 for the target class, 0 for the negative result.
@@ -126,12 +126,11 @@ end
     sharpness-classification(y_binary,sampled_distributions)
 
 FOR BINARY CLASSIFICATION MODELS.
-We can also assess sharpness by looking at the distribution of model predictions.When forecasts are sharp, 
+Assess  the sharpness of the model by looking at the distribution of model predictions. When forecasts are sharp, 
 most predictions are close to 0 or 1; not sharp forecasters make predictions closer to 0.5.
-The function was  suggested by Kuleshov(2018) in https://arxiv.org/abs/1807.00263
+Source: https://arxiv.org/abs/1807.00263
 
     Arguments:
-
     -y_binary: the array of outputs y_t numerically coded . 1 for the target class, 0 for the negative result.
     -sampled_distributions: an array of sampled distributions stacked column-wise so that in the first row 
         there is the probability for the target class y_1 and in the second row the probability for the null class y_0.
