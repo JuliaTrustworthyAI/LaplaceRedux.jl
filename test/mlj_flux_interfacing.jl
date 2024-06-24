@@ -26,6 +26,7 @@ function basictest_regression(X, y, builder, optimiser, threshold)
     )
     fitresult, cache, _report = MLJBase.fit(model, 0, X, y)
 
+    println("ayyyyy")
     #println(boh)
     #println(cache)
     println(_report)

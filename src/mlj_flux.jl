@@ -237,12 +237,12 @@ Computes the fit result for a Laplace classification model, returning the model 
 
 # Returns
 - A tuple containing:
-  - The model.
+  - The model chain.
   - The number of unique classes in the target data `y`.
 """
 function MLJFlux.fitresult(model::LaplaceClassification, chain, y)
     println("fitresultclass")
-    return ( model, length(unique(y)))
+    return (chain, model.la, length(unique(y)))
 end
 
 """
@@ -257,13 +257,17 @@ Computes the fit result for a Laplace Regression model, returning the model chai
 
 # Returns
 - A tuple containing:
-  - The model.
-  - The size `y`.
+  - The model chain.
+  - The number of unique classes in the target data `y`.
 """
 function MLJFlux.fitresult(model::LaplaceRegression, chain, y)
     println("fitresultregre")
-
-    return ( model, size(y))
+    if y isa AbstractArray
+        target_column_names = nothing
+    else
+        target_column_names = Tables.schema(y).names
+    end
+    return (chain, model.la, size(y))
 end
 
 function MLJFlux.fit!(
@@ -321,7 +325,7 @@ function MLJFlux.fit!(
 
     #return  cache, report
 
-    return (fitresult, cache, report)
+    return (fitresult, report, cache)
 end
 """
     predict(model::LaplaceClassification, Xnew)
@@ -339,7 +343,7 @@ An array of predicted class labels.
 """
 function MLJFlux.predict(model::LaplaceClassification, fitresult, Xnew)
     println("predictclass")
-    model = fitresult[1]
+    la = fitresult[2]
     Xnew = MLJBase.matrix(Xnew)
     #convert in a vector of vectors because Laplace ask to do so
     X_vec = X_vec = [Xnew[i, :] for i in 1:size(Xnew, 1)]
@@ -347,7 +351,7 @@ function MLJFlux.predict(model::LaplaceClassification, fitresult, Xnew)
     # Predict using Laplace and collect the predictions
     predictions = [
         LaplaceRedux.predict(
-            model.la, x; link_approx=model.link_approx, predict_proba=model.predict_proba
+            la, x; link_approx=model.link_approx, predict_proba=model.predict_proba
         ) for x in X_vec
     ]
 
@@ -422,7 +426,7 @@ function MLJFlux.fit!(
 
     #return  cache, report
 
-    return (fitresult, cache, report)
+    return (fitresult, report, cache)
 end
 
 """
@@ -443,14 +447,13 @@ function MLJFlux.predict(model::LaplaceRegression, fitresult, Xnew)
     println("predictregre")
     Xnew = MLJBase.matrix(Xnew)
 
-    model = fitresult[1]
-    
+    la = fitresult[2]
     #convert in a vector of vectors because MLJ ask to do so
     X_vec = [Xnew[i, :] for i in 1:size(Xnew, 1)]
     #inizialize output vector yhat
     yhat = []
     # Predict using Laplace and collect the predictions
-    yhat = [glm_predictive_distribution(model.la, x_vec) for x_vec in X_vec]
+    yhat = [glm_predictive_distribution(la, x_vec) for x_vec in X_vec]
 
     return yhat
 end
