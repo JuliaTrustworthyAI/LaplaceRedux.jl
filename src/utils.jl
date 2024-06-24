@@ -56,7 +56,7 @@ Inputs:
 Outputs:
     - counts: an array cointaining the empirical frequencies for each quantile interval.
 """
-function empirical_frequency(Y_cal, sampled_distributions)
+function empirical_frequency_regression(Y_cal, sampled_distributions)
     quantiles = collect(0:0.05:1)
     quantiles_matrix = hcat(
         [quantile(samples, quantiles) for samples in sampled_distributions]...
@@ -83,7 +83,7 @@ Inputs:
 Outputs:
     - sharpness: a scalar that measure the level of sharpness of the regressor
 """
-function sharpness(sampled_distributions)
+function sharpness_regression(sampled_distributions)
     sharpness = mean(var.(sampled_distributions))
     return sharpness
 end
@@ -102,31 +102,46 @@ Inputs:
     - sampled_distributions: an array of sampled distributions stacked column-wise so that in the first row 
         there is the probability for the target class y_1 and in the second row the probability for the null class y_0.
 Outputs:
-    - total_pj_per_intervalj:
-    - emp_avg:
-    - pred_avg:
+    - num_p_per_interval: array with the number of probabilities falling within interval
+    - emp_avg: array with the observed empirical average per interval
+    - bin_centers: array with the centers of the bins
+
 """
 function empirical_frequency_binary_classification(y_binary, sampled_distributions)
-    pred_avg = collect(range(0; step=0.1, stop=0.9))
-    emp_avg = []
-    total_pj_per_intervalj = []
-    class_probs = sampled_distributions[1, :]
 
-    for j in 1:10
-        j_float = j / 10.0 - 0.1
-        push!(total_pj_per_intervalj, sum(j_float .< class_probs .< j_float + 0.1))
-        if total_pj_per_intervalj[j] == 0
+    # Number of bins
+    n_bins=20
+    #intervals boundaries
+    int_bds = collect(range(0, stop=1, length=n_bins + 1))
+    #bin centers
+    bin_centers = [(int_bds[i] + int_bds[i+1]) / 2 for i in 1:length(int_bds)-1]
+    #initialize list for empirical averages per interval 
+    emp_avg = []
+    #initialize list for predicted averages per interval
+    pred_avg=[]
+    # initialize list of number of probabilities falling within each intervals
+    num_p_per_interval = []
+    #list of the predicted probabilities for the target class
+    class_probs = sampled_distributions[1, :]
+    # iterate over the bins
+    for j in 1:n_bins
+        push!(num_p_per_interval, sum( int_bds[j].<class_probs.<int_bds[j+1]))
+        if num_p_per_interval[j] == 0
             push!(emp_avg, 0)
+            push!(pred_avg, bin_centers[j])
+
         else
-            indices = findall(x -> j_float < x < j_float + 0.1, class_probs)
-            push!(emp_avg, 1 / total_pj_per_intervalj[j] * sum(y_binary[indices]))
-            println(" numero $j")
-            pred_avg[j] =
-                1 / total_pj_per_intervalj[j] * sum(sampled_distributions[1, indices])
+            # find the indices fo all istances for which class_probs fall withing the j-th interval
+            indices = findall(x -> int_bds[j] < x <int_bds[j+1], class_probs)
+            #compute the empirical average and saved it in emp_avg in the j-th position
+            push!(emp_avg, 1 / num_p_per_interval[j] * sum(y_binary[indices]))
+            #TO DO: maybe substitute to bin_Centers?
+            push!(pred_avg, 1 / num_p_per_interval[j] * sum(class_probs[1,indices]))
+
         end
     end
-
-    return (total_pj_per_intervalj, emp_avg, pred_avg)
+    #return the tuple
+    return (num_p_per_interval, emp_avg, bin_centers)
 end
 
 """ 
