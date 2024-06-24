@@ -50,9 +50,11 @@ phat_j = {y_t|F_t(y_t)<= p_j, t= 1,....,T}/T, where T is the number of calibrati
 cumulative distribution function of the predicted distribution targeting y_t.
 Source: https://arxiv.org/abs/1807.00263
 
-    Arguments:
-    -Y_cal: a vector of values y_t
-    -sampled_distributions: an array of sampled distributions F(x_t) stacked column-wise.
+Inputs:
+    - Y_cal: a vector of values y_t
+    - sampled_distributions: an array of sampled distributions F(x_t) stacked column-wise.
+Outputs:
+    - counts: an array cointaining the empirical frequencies for each quantile interval.
 """
 function empirical_frequency(Y_cal, sampled_distributions)
     quantiles = collect(0:0.05:1)
@@ -76,8 +78,10 @@ Given a calibration dataset (x_t, y_t) for i ∈ {1,...,T} and an array of predi
 sharpness of the predicted distributions, i.e., the average of the variances var(F_t) predicted by the forecaster for each x_t
 Source: https://arxiv.org/abs/1807.00263
 
-    Arguments:
-    -sampled_distributions: an array of sampled distributions F(x_t) stacked column-wise.
+Inputs:
+    - sampled_distributions: an array of sampled distributions F(x_t) stacked column-wise.
+Outputs:
+    - sharpness: a scalar that measure the level of sharpness of the regressor
 """
 function sharpness(sampled_distributions)
     sharpness = mean(var.(sampled_distributions))
@@ -93,11 +97,14 @@ We group the p_t into intervals I-j for j= 1,2,...,m that form a partition of [0
 the observed average p_j= T^-1_j ∑_{t:p_t ∈ I_j} y_j in each interval I_j. 
 Source: https://arxiv.org/abs/1807.00263
 
-    Arguments:
-    -y_binary: the array of outputs y_t numerically coded: 1 for the target class, 0 for the negative result.
-
-    -sampled_distributions: an array of sampled distributions stacked column-wise so that in the first row 
+Inputs:
+    - y_binary: the array of outputs y_t numerically coded: 1 for the target class, 0 for the null class.
+    - sampled_distributions: an array of sampled distributions stacked column-wise so that in the first row 
         there is the probability for the target class y_1 and in the second row the probability for the null class y_0.
+Outputs:
+    - total_pj_per_intervalj:
+    - emp_avg:
+    - pred_avg:
 """
 function empirical_frequency_binary_classification(y_binary, sampled_distributions)
     pred_avg = collect(range(0; step=0.1, stop=0.9))
@@ -130,13 +137,16 @@ Assess  the sharpness of the model by looking at the distribution of model predi
 most predictions are close to 0 or 1; not sharp forecasters make predictions closer to 0.5.
 Source: https://arxiv.org/abs/1807.00263
 
-    Arguments:
+Inputs:
     -y_binary: the array of outputs y_t numerically coded . 1 for the target class, 0 for the negative result.
     -sampled_distributions: an array of sampled distributions stacked column-wise so that in the first row 
-        there is the probability for the target class y_1 and in the second row the probability for the null class y_0.
+        there is the probability for the target class and in the second row the probability for the null class.
+    Outputs:
+    - mean_class_one: a scalar that measure the average prediction for the target class
+    - mean_class_zero: a scalar that measure the average prediction for the null class
 """
 function sharpness_classification(y_binary, sampled_distributions)
-    class_one = sampled_distributions[1, findall(y_binary .== 1)]
-    class_zero = sampled_distributions[2, findall(y_binary .== 0)]
-    return mean(class_one), mean(class_zero)
+    mean_class_one = mean(sampled_distributions[1, findall(y_binary .== 1)])
+    mean_class_zero= mean(sampled_distributions[2, findall(y_binary .== 0)])
+    return mean_class_one, mean_class_zero
 end
