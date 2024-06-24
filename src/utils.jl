@@ -110,34 +110,33 @@ Outputs:
 function empirical_frequency_binary_classification(y_binary, sampled_distributions)
 
     # Number of bins
-    n_bins=20
+    n_bins = 20
     #intervals boundaries
-    int_bds = collect(range(0, stop=1, length=n_bins + 1))
+    int_bds = collect(range(0; stop=1, length=n_bins + 1))
     #bin centers
-    bin_centers = [(int_bds[i] + int_bds[i+1]) / 2 for i in 1:length(int_bds)-1]
+    bin_centers = [(int_bds[i] + int_bds[i + 1]) / 2 for i in 1:(length(int_bds) - 1)]
     #initialize list for empirical averages per interval 
     emp_avg = []
     #initialize list for predicted averages per interval
-    pred_avg=[]
+    pred_avg = []
     # initialize list of number of probabilities falling within each intervals
     num_p_per_interval = []
     #list of the predicted probabilities for the target class
     class_probs = sampled_distributions[1, :]
     # iterate over the bins
     for j in 1:n_bins
-        push!(num_p_per_interval, sum( int_bds[j].<class_probs.<int_bds[j+1]))
+        push!(num_p_per_interval, sum(int_bds[j] .< class_probs .< int_bds[j + 1]))
         if num_p_per_interval[j] == 0
             push!(emp_avg, 0)
             push!(pred_avg, bin_centers[j])
 
         else
             # find the indices fo all istances for which class_probs fall withing the j-th interval
-            indices = findall(x -> int_bds[j] < x <int_bds[j+1], class_probs)
+            indices = findall(x -> int_bds[j] < x < int_bds[j + 1], class_probs)
             #compute the empirical average and saved it in emp_avg in the j-th position
             push!(emp_avg, 1 / num_p_per_interval[j] * sum(y_binary[indices]))
             #TO DO: maybe substitute to bin_Centers?
-            push!(pred_avg, 1 / num_p_per_interval[j] * sum(class_probs[1,indices]))
-
+            push!(pred_avg, 1 / num_p_per_interval[j] * sum(class_probs[1, indices]))
         end
     end
     #return the tuple
@@ -162,6 +161,6 @@ Inputs:
 """
 function sharpness_classification(y_binary, sampled_distributions)
     mean_class_one = mean(sampled_distributions[1, findall(y_binary .== 1)])
-    mean_class_zero= mean(sampled_distributions[2, findall(y_binary .== 0)])
+    mean_class_zero = mean(sampled_distributions[2, findall(y_binary .== 0)])
     return mean_class_one, mean_class_zero
 end
