@@ -237,12 +237,12 @@ Computes the fit result for a Laplace classification model, returning the model 
 
 # Returns
 - A tuple containing:
-  - The model chain.
+  - The model.
   - The number of unique classes in the target data `y`.
 """
 function MLJFlux.fitresult(model::LaplaceClassification, chain, y)
     println("fitresultclass")
-    return (chain, model.la, length(unique(y)))
+    return ( deepcopy(model), chain, length(unique(y)))
 end
 
 """
@@ -257,7 +257,7 @@ Computes the fit result for a Laplace Regression model, returning the model chai
 
 # Returns
 - A tuple containing:
-  - The model chain.
+  - The model.
   - The number of unique classes in the target data `y`.
 """
 function MLJFlux.fitresult(model::LaplaceRegression, chain, y)
@@ -267,7 +267,7 @@ function MLJFlux.fitresult(model::LaplaceRegression, chain, y)
     else
         target_column_names = Tables.schema(y).names
     end
-    return (chain, model.la, size(y))
+    return (deepcopy(model),chain, size(y))
 end
 
 function MLJFlux.fit!(
@@ -343,7 +343,7 @@ An array of predicted class labels.
 """
 function MLJFlux.predict(model::LaplaceClassification, fitresult, Xnew)
     println("predictclass")
-    la = fitresult[2]
+    model = fitresult[1]
     Xnew = MLJBase.matrix(Xnew)
     #convert in a vector of vectors because Laplace ask to do so
     X_vec = X_vec = [Xnew[i, :] for i in 1:size(Xnew, 1)]
@@ -351,7 +351,7 @@ function MLJFlux.predict(model::LaplaceClassification, fitresult, Xnew)
     # Predict using Laplace and collect the predictions
     predictions = [
         LaplaceRedux.predict(
-            la, x; link_approx=model.link_approx, predict_proba=model.predict_proba
+            model.la, x; link_approx=model.link_approx, predict_proba=model.predict_proba
         ) for x in X_vec
     ]
 
@@ -429,6 +429,59 @@ function MLJFlux.fit!(
     return (fitresult, report, cache)
 end
 
+import Optimisers
+function MLJFlux.update(model::LaplaceRegression, verbosity, old_fitresult, old_cache, X, y)
+    println("updatereg")
+    X = X isa Tables.MatrixTable ? MLJBase.matrix(X) : X
+
+    old_model= old_fitresult[1]
+    old_chain = old_fitresult[2]
+
+     
+     # Initialize history:
+     history = []
+     verbose_laplace = false
+     # intitialize and start progress meter:
+     meter = Progress(
+         model.epochs + 1;
+         dt=1.0,
+         desc="Optimising neural net:",
+         barglyphs=BarGlyphs("[=> ]"),
+         barlen=25,
+         color=:yellow,
+     )
+     verbosity != 1 || next!(meter)
+
+     regularized_optimiser = MLJFlux.regularized_optimiser(model, length(y))
+     optimiser_state = Optimisers.setup(regularized_optimiser, old_chain)
+     epochs = model.epochs - old_model.epochs
+ 
+     for i in 1:(epochs)
+        println("inner loop")
+         current_loss = MLJFlux.train_epoch(model, old_chain, regularized_optimiser, optimiser_state, X, y)
+         verbosity < 2 || @info "Loss is $(round(current_loss; sigdigits=4))"
+         verbosity != 1 || next!(meter)
+         push!(history, current_loss)
+     end
+ 
+     # fit the Laplace model:
+     LaplaceRedux.fit!(old_model.la, zip(X, y))
+     optimize_prior!(old_model.la; verbose=verbose_laplace, n_steps=model.fit_prior_nsteps)
+     model.la = la
+ 
+     cache = ()
+     fitresult = MLJFlux.fitresult(model, Flux.cpu(old_chain), y)
+ 
+     report = history
+ 
+     #return  cache, report
+ 
+     return (fitresult, report, cache)
+end
+
+
+
+
 """
     predict(model::LaplaceRegression, Xnew)
 
@@ -447,13 +500,13 @@ function MLJFlux.predict(model::LaplaceRegression, fitresult, Xnew)
     println("predictregre")
     Xnew = MLJBase.matrix(Xnew)
 
-    la = fitresult[2]
+    model = fitresult[1]
     #convert in a vector of vectors because MLJ ask to do so
     X_vec = [Xnew[i, :] for i in 1:size(Xnew, 1)]
     #inizialize output vector yhat
     yhat = []
     # Predict using Laplace and collect the predictions
-    yhat = [glm_predictive_distribution(la, x_vec) for x_vec in X_vec]
+    yhat = [glm_predictive_distribution(model.la, x_vec) for x_vec in X_vec]
 
     return yhat
 end
