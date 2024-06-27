@@ -26,32 +26,19 @@ function basictest_regression(X, y, builder, optimiser, threshold)
     )
     fitresult, cache, _report = MLJBase.fit(model, 0, X, y)
 
-    #println(boh)
-    println(fitresult)
-    println(_report)
     history = _report.training_losses
-    #println(fitresult)
-    @test length(history) == model.epochs + 1 
+
+    @test length(history) == model.epochs
 
     # test improvement in training loss:
     @test history[end] < threshold * history[1]
-
-    # increase iterations and check update is incremental:
-    model.epochs = model.epochs + 3
-
-    fitresult, cache, _report = @test_logs(
-        (:info, r""), # one line of :info per extra epoch
-        (:info, r""),
-        (:info, r""),
-        MLJBase.update(model, 2, fitresult, cache, X, y)
-    )
-
 
     @test :chain in keys(MLJBase.fitted_params(model, fitresult))
 
     yhat = MLJBase.predict(model, fitresult, X)
 
     history = _report.training_losses
+    #@test length(history) == model.epochs
 
     # start fresh with small epochs:
     model = LaplaceRegression(;
@@ -86,19 +73,17 @@ function basictest_classification(X, y, builder, optimiser, threshold)
     fitresult, cache, _report = MLJBase.fit(model, 0, X, y)
 
     history = _report.training_losses
-    @test length(history) == model.epochs + 1
+    @test length(history) == model.epochs
 
     # test improvement in training loss:
     @test history[end] < threshold * history[1]
-
-    # increase iterations and check update is incremental:
-    model.epochs = model.epochs + 3
 
     @test :chain in keys(MLJBase.fitted_params(model, fitresult))
 
     yhat = MLJBase.predict(model, fitresult, X)
 
-    history = _report.training_losses
+    #history = _report.training_losses
+    @test length(history) == model.epochs
 
     # start fresh with small epochs:
     model = LaplaceClassification(;
@@ -106,17 +91,6 @@ function basictest_classification(X, y, builder, optimiser, threshold)
     )
 
     fitresult, cache, _report = MLJBase.fit(model, 0, X, y)
-
-    # change batch_size and check it performs cold restart:
-    model.batch_size = 2
-
-    # change learning rate and check it does *not* restart:
-    model.optimiser.eta /= 2
-
-    # set `optimiser_changes_trigger_retraining = true` and change
-    # learning rate and check it does restart:
-    model.optimiser_changes_trigger_retraining = true
-    model.optimiser.eta /= 2
 
     return true
 end

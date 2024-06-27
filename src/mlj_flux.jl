@@ -8,6 +8,7 @@ using LaplaceRedux
 using ComputationalResources
 using MLJBase: MLJBase
 import MLJModelInterface as MMI
+using Optimisers: Optimisers
 
 """
     MLJBase.@mlj_model mutable struct LaplaceRegression <: MLJFlux.MLJFluxProbabilistic
@@ -19,6 +20,7 @@ The model is trained using the `fit!` method. The model is defined by the follow
 - `builder`: a Flux model that constructs the neural network.
 - `optimiser`: a Flux optimiser.
 - `loss`: a loss function that takes the predicted output and the true output as arguments.
+- `epochs`: the number of epochs.
 - `batch_size`: the size of a batch.
 - `lambda`: the regularization strength.
 - `alpha`: the regularization mix (0 for all l2, 1 for all l1).
@@ -37,9 +39,9 @@ The model is trained using the `fit!` method. The model is defined by the follow
 """
 MLJBase.@mlj_model mutable struct LaplaceRegression <: MLJFlux.MLJFluxProbabilistic
     builder = MLJFlux.MLP(; hidden=(32, 32, 32), σ=Flux.swish)
-    optimiser = Flux.Optimise.Adam()
+    optimiser = Optimisers.Adam()
     loss = Flux.Losses.mse
-    epochs::Int = 10::(_ > 0)
+    epochs::Int = 100::(_ > 0)
     batch_size::Int = 1::(_ > 0)
     lambda::Float64 = 1.0
     alpha::Float64 = 0.0
@@ -69,6 +71,7 @@ A mutable struct representing a Laplace Classification model that extends the ML
 - `finaliser`: a Flux model that processes the output of the neural network.
 - `optimiser`: a Flux optimiser.
 - `loss`: a loss function that takes the predicted output and the true output as arguments.
+- `epochs`: the number of epochs.
 - `batch_size`: the size of a batch.
 - `lambda`: the regularization strength.
 - `alpha`: the regularization mix (0 for all l2, 1 for all l1).
@@ -88,9 +91,9 @@ A mutable struct representing a Laplace Classification model that extends the ML
 MLJBase.@mlj_model mutable struct LaplaceClassification <: MLJFlux.MLJFluxProbabilistic
     builder = MLJFlux.MLP(; hidden=(32, 32, 32), σ=Flux.swish)
     finaliser = Flux.softmax
-    optimiser = Flux.Optimise.Adam()
+    optimiser = Optimisers.Adam()
     loss = Flux.crossentropy
-    epochs::Int = 10::(_ > 0)
+    epochs::Int = 100::(_ > 0)
     batch_size::Int = 1::(_ > 0)
     lambda::Float64 = 1.0
     alpha::Float64 = 0.0
@@ -114,29 +117,6 @@ end
 const MLJ_Laplace = Union{LaplaceClassification,LaplaceRegression}
 
 """
-    MLJFlux.shape(model::LaplaceClassification, X, y)
-
-Compute the the number of features of the dataset X and  the number of unique classes in y.
-
-# Arguments
-- `model::LaplaceClassification`: The LaplaceClassification model to fit.
-- `X`: The input data for training.
-- `y`: The target labels for training one-hot encoded.
-
-# Returns
-- (input size, output size)
-"""
-
-function MLJFlux.shape(model::LaplaceClassification, X, y)
-    println("shapeclass")
-    X = X isa Tables.MatrixTable ? MLJBase.matrix(X) : X
-    n_input = size(X, 2)
-    levels = unique(y)
-    n_output = length(levels)
-    return (n_input, n_output)
-end
-
-"""
     MLJFlux.shape(model::LaplaceRegression, X, y)
 
 Compute the the number of features of the X input dataset and  the number of variables to predict from  the y  output dataset.
@@ -150,7 +130,6 @@ Compute the the number of features of the X input dataset and  the number of var
 - (input size, output size)
 """
 function MLJFlux.shape(model::LaplaceRegression, X, y)
-    println("shapereg")
     X = X isa Tables.MatrixTable ? MLJBase.matrix(X) : X
     n_input = size(X, 2)
     dims = size(y)
@@ -160,37 +139,6 @@ function MLJFlux.shape(model::LaplaceRegression, X, y)
         n_output = dims[1]
     end
     return (n_input, n_output)
-end
-
-"""
-    MLJFlux.build(model::LaplaceClassification, rng, shape)
-
-Builds an MLJFlux model for Laplace classification compatible with the dimensions of the input and output layers specified by `shape`.
-
-# Arguments
-- `model::LaplaceClassification`: The Laplace classification model.
-- `rng`: A random number generator to ensure reproducibility.
-- `shape`: A tuple or array specifying the dimensions of the input and output layers.
-
-# Returns
-- The constructed MLJFlux model, compatible with the specified input and output dimensions.
-"""
-function MLJFlux.build(model::LaplaceClassification, rng, shape)
-    println("buildclass")
-    chain = Flux.Chain(MLJFlux.build(model.builder, rng, shape...), model.finaliser)
-    model.la = Laplace(
-        chain;
-        likelihood=:classification,
-        subset_of_weights=model.subset_of_weights,
-        subnetwork_indices=model.subnetwork_indices,
-        hessian_structure=model.hessian_structure,
-        backend=model.backend,
-        σ=model.σ,
-        μ₀=model.μ₀,
-        P₀=model.P₀,
-    )
-
-    return chain
 end
 
 """
@@ -207,8 +155,6 @@ Builds an MLJFlux model for Laplace regression compatible with the dimensions of
 - The constructed MLJFlux model, compatible with the specified input and output dimensions.
 """
 function MLJFlux.build(model::LaplaceRegression, rng, shape)
-    println("buildreg")
-
     chain = MLJFlux.build(model.builder, rng, shape...)
     model.la = Laplace(
         chain;
@@ -226,26 +172,6 @@ function MLJFlux.build(model::LaplaceRegression, rng, shape)
 end
 
 """
-    MLJFlux.fitresult(model::LaplaceClassification, chain, y)
-
-Computes the fit result for a Laplace classification model, returning the model chain and the number of unique classes in the target data.
-
-# Arguments
-- `model::LaplaceClassification`: The Laplace classification model to be evaluated.
-- `chain`: The trained model chain.
-- `y`: The target data, typically a vector of class labels.
-
-# Returns
-- A tuple containing:
-  - The model.
-  - The number of unique classes in the target data `y`.
-"""
-function MLJFlux.fitresult(model::LaplaceClassification, chain, y)
-    println("fitresultclass")
-    return ( deepcopy(model), chain, length(unique(y)))
-end
-
-"""
     MLJFlux.fitresult(model::LaplaceRegression, chain, y)
 
 Computes the fit result for a Laplace Regression model, returning the model chain and the number of output variables in the target data.
@@ -258,127 +184,48 @@ Computes the fit result for a Laplace Regression model, returning the model chai
 # Returns
 - A tuple containing:
   - The model.
+  - The trained Flux chain.
   - The number of unique classes in the target data `y`.
 """
 function MLJFlux.fitresult(model::LaplaceRegression, chain, y)
-    println("fitresultregre")
     if y isa AbstractArray
         target_column_names = nothing
     else
         target_column_names = Tables.schema(y).names
     end
-    return (deepcopy(model),chain, size(y))
-end
-
-function MLJFlux.fit!(
-    model::LaplaceClassification, penalty, chain, optimiser, epochs, verbosity, X, y
-)
-    println("fitclass")
-    X = X isa Tables.MatrixTable ? MLJBase.matrix(X) : X
-
-    #X = MLJBase.matrix(X)
-
-    #shape = MLJFlux.shape(model, X, y)
-
-    #chain = MLJFlux.build(model, model.rng, shape)
-
-    la = LaplaceRedux.Laplace(
-        chain;
-        likelihood=:classification,
-        subset_of_weights=model.subset_of_weights,
-        subnetwork_indices=model.subnetwork_indices,
-        hessian_structure=model.hessian_structure,
-        backend=model.backend,
-        σ=model.σ,
-        μ₀=model.μ₀,
-        P₀=model.P₀,
-    )
-    verbose_laplace = false
-
-    # Initialize history:
-    history = []
-    # intitialize and start progress meter:
-    meter = Progress(
-        model.epochs + 1;
-        dt=0,
-        desc="Optimising neural net:",
-        barglyphs=BarGlyphs("[=> ]"),
-        barlen=25,
-        color=:yellow,
-    )
-    for i in 1:epochs
-        current_loss = MLJFlux.train!(model, penalty, chain, optimiser, X, y)
-        verbosity < 2 || @info "Loss is $(round(current_loss; sigdigits=4))"
-        verbosity != 1 || next!(meter)
-        append!(history, current_loss)
-    end
-
-    # fit the Laplace model:
-    LaplaceRedux.fit!(la, zip(X, y))
-    optimize_prior!(la; verbose=verbose_laplace, n_steps=model.fit_prior_nsteps)
-    model.la = la
-
-    cache = ()
-    fitresult = MLJFlux.fitresult(model, Flux.cpu(chain), y)
-
-    report = history
-
-    #return  cache, report
-
-    return (fitresult, report, cache)
-end
-"""
-    predict(model::LaplaceClassification, Xnew)
-
-Predicts the class labels for new data using the LaplaceClassification model.
-
-# Arguments
-- `model::LaplaceClassification`: The trained LaplaceClassification model.
-- fitresult: the fitresult output produced by MLJFlux.fit!
-- `Xnew`: The new data to make predictions on.
-
-# Returns
-An array of predicted class labels.
-
-"""
-function MLJFlux.predict(model::LaplaceClassification, fitresult, Xnew)
-    println("predictclass")
-    model = fitresult[1]
-    Xnew = MLJBase.matrix(Xnew)
-    #convert in a vector of vectors because Laplace ask to do so
-    X_vec = X_vec = [Xnew[i, :] for i in 1:size(Xnew, 1)]
-
-    # Predict using Laplace and collect the predictions
-    predictions = [
-        LaplaceRedux.predict(
-            model.la, x; link_approx=model.link_approx, predict_proba=model.predict_proba
-        ) for x in X_vec
-    ]
-
-    return predictions
+    return (deepcopy(model), chain)
 end
 
 """
-    MLJFlux.fit!(model::LaplaceRegression, penalty, chain, epochs, batch_size, optimiser, verbosity, X, y)
+    MLJFlux.train(model::LaplaceRegression, chain, regularized_optimiser, optimiser_state, epochs, verbosity, X, y)
 
 Fit the LaplaceRegression model using Flux.jl.
 
 # Arguments
 - `model::LaplaceRegression`: The LaplaceRegression model.
+- `regularized_optimiser`: the regularized optimiser to apply to the loss function.
+- `optimiser_state`: thestate of the optimiser.
+- `epochs`: The number of epochs for training.
 - `verbosity`: The verbosity level for training.
 - `X`: The input data for training.
 - `y`: The target labels for training.
 
-# Returns
-- 
-where la is the fitted Laplace model.
+# Returns (fitresult, cache, report )
+where
+- `fitresult`: is the output of MLJFlux.fitresult.
+- `cache`: an empty tuple.
+- `report`: a named tuple that contain the field training_losses.
 """
-#model::LaplaceRegression, penalty, chain, optimiser, epochs, verbosity, X, y
-function MLJFlux.fit!(
-    model::LaplaceRegression, penalty, chain, optimiser, epochs, verbosity, X, y
+function MLJFlux.train(
+    model::LaplaceRegression,
+    chain,
+    regularized_optimiser,
+    optimiser_state,
+    epochs,
+    verbosity,
+    X,
+    y,
 )
-    println("fitregre")
-
     X = X isa Tables.MatrixTable ? MLJBase.matrix(X) : X
 
     la = LaplaceRedux.Laplace(
@@ -408,7 +255,9 @@ function MLJFlux.fit!(
     verbosity != 1 || next!(meter)
 
     for i in 1:epochs
-        current_loss = MLJFlux.train!(model, penalty, chain, optimiser, X, y)
+        chain, optimiser_state, current_loss = MLJFlux.train_epoch(
+            model, chain, regularized_optimiser, optimiser_state, X, y
+        )
         verbosity < 2 || @info "Loss is $(round(current_loss; sigdigits=4))"
         verbosity != 1 || next!(meter)
         push!(history, current_loss)
@@ -424,63 +273,8 @@ function MLJFlux.fit!(
 
     report = history
 
-    #return  cache, report
-
-    return (fitresult, report, cache)
+    return (fitresult, cache, report)
 end
-
-import Optimisers
-function MLJFlux.update(model::LaplaceRegression, verbosity, old_fitresult, old_cache, X, y)
-    println("updatereg")
-    X = X isa Tables.MatrixTable ? MLJBase.matrix(X) : X
-
-    old_model= old_fitresult[1]
-    old_chain = old_fitresult[2]
-
-     
-     # Initialize history:
-     history = []
-     verbose_laplace = false
-     # intitialize and start progress meter:
-     meter = Progress(
-         model.epochs + 1;
-         dt=1.0,
-         desc="Optimising neural net:",
-         barglyphs=BarGlyphs("[=> ]"),
-         barlen=25,
-         color=:yellow,
-     )
-     verbosity != 1 || next!(meter)
-
-     regularized_optimiser = MLJFlux.regularized_optimiser(model, length(y))
-     optimiser_state = Optimisers.setup(regularized_optimiser, old_chain)
-     epochs = model.epochs - old_model.epochs
- 
-     for i in 1:(epochs)
-        println("inner loop")
-         current_loss = MLJFlux.train_epoch(model, old_chain, regularized_optimiser, optimiser_state, X, y)
-         verbosity < 2 || @info "Loss is $(round(current_loss; sigdigits=4))"
-         verbosity != 1 || next!(meter)
-         push!(history, current_loss)
-     end
- 
-     # fit the Laplace model:
-     LaplaceRedux.fit!(old_model.la, zip(X, y))
-     optimize_prior!(old_model.la; verbose=verbose_laplace, n_steps=model.fit_prior_nsteps)
-     model.la = la
- 
-     cache = ()
-     fitresult = MLJFlux.fitresult(model, Flux.cpu(old_chain), y)
- 
-     report = history
- 
-     #return  cache, report
- 
-     return (fitresult, report, cache)
-end
-
-
-
 
 """
     predict(model::LaplaceRegression, Xnew)
@@ -497,7 +291,6 @@ Predict the output for new input data using a Laplace regression model.
 
 """
 function MLJFlux.predict(model::LaplaceRegression, fitresult, Xnew)
-    println("predictregre")
     Xnew = MLJBase.matrix(Xnew)
 
     model = fitresult[1]
@@ -509,6 +302,188 @@ function MLJFlux.predict(model::LaplaceRegression, fitresult, Xnew)
     yhat = [glm_predictive_distribution(model.la, x_vec) for x_vec in X_vec]
 
     return yhat
+end
+
+"""
+    MLJFlux.shape(model::LaplaceClassification, X, y)
+
+Compute the the number of features of the dataset X and  the number of unique classes in y.
+
+# Arguments
+- `model::LaplaceClassification`: The LaplaceClassification model to fit.
+- `X`: The input data for training.
+- `y`: The target labels for training one-hot encoded.
+
+# Returns
+- (input size, output size)
+"""
+
+function MLJFlux.shape(model::LaplaceClassification, X, y)
+    X = X isa Tables.MatrixTable ? MLJBase.matrix(X) : X
+    n_input = size(X, 2)
+    levels = unique(y)
+    n_output = length(levels)
+    println(n_output)
+    return (n_input, n_output)
+end
+
+"""
+    MLJFlux.build(model::LaplaceClassification, rng, shape)
+
+Builds an MLJFlux model for Laplace classification compatible with the dimensions of the input and output layers specified by `shape`.
+
+# Arguments
+- `model::LaplaceClassification`: The Laplace classification model.
+- `rng`: A random number generator to ensure reproducibility.
+- `shape`: A tuple or array specifying the dimensions of the input and output layers.
+
+# Returns
+- The constructed MLJFlux model, compatible with the specified input and output dimensions.
+"""
+function MLJFlux.build(model::LaplaceClassification, rng, shape)
+    chain = Flux.Chain(MLJFlux.build(model.builder, rng, shape...), model.finaliser)
+    println(chain)
+    model.la = Laplace(
+        chain;
+        likelihood=:classification,
+        subset_of_weights=model.subset_of_weights,
+        subnetwork_indices=model.subnetwork_indices,
+        hessian_structure=model.hessian_structure,
+        backend=model.backend,
+        σ=model.σ,
+        μ₀=model.μ₀,
+        P₀=model.P₀,
+    )
+
+    return chain
+end
+
+"""
+    MLJFlux.fitresult(model::LaplaceClassification, chain, y)
+
+Computes the fit result for a Laplace classification model, returning the model chain and the number of unique classes in the target data.
+
+# Arguments
+- `model::LaplaceClassification`: The Laplace classification model to be evaluated.
+- `chain`: The trained model chain.
+- `y`: The target data, typically a vector of class labels.
+
+# Returns
+- A tuple containing:
+  - The model.
+  - The number of unique classes in the target data `y`.
+"""
+function MLJFlux.fitresult(model::LaplaceClassification, chain, y)
+    return (deepcopy(model), chain, length(unique(y)))
+end
+
+"""
+    MLJFlux.train(model::LaplaceClassification, chain, regularized_optimiser, optimiser_state, epochs, verbosity, X, y)
+
+Fit the LaplaceRegression model using Flux.jl.
+
+# Arguments
+- `model::LaplaceClassification`: The LaplaceClassification model.
+- `regularized_optimiser`: the regularized optimiser to apply to the loss function.
+- `optimiser_state`: thestate of the optimiser.
+- `epochs`: The number of epochs for training.
+- `verbosity`: The verbosity level for training.
+- `X`: The input data for training.
+- `y`: The target labels for training.
+
+# Returns (fitresult, cache, report )
+where
+- `fitresult`: is the output of MLJFlux.fitresult.
+- `cache`: an empty tuple.
+- `report`: a named tuple that contain the field training_losses.
+"""
+function MLJFlux.train(
+    model::LaplaceClassification,
+    chain,
+    regularized_optimiser,
+    optimiser_state,
+    epochs,
+    verbosity,
+    X,
+    y,
+)
+    X = X isa Tables.MatrixTable ? MLJBase.matrix(X) : X
+
+    la = LaplaceRedux.Laplace(
+        chain;
+        likelihood=:classification,
+        subset_of_weights=model.subset_of_weights,
+        subnetwork_indices=model.subnetwork_indices,
+        hessian_structure=model.hessian_structure,
+        backend=model.backend,
+        σ=model.σ,
+        μ₀=model.μ₀,
+        P₀=model.P₀,
+    )
+    verbose_laplace = false
+
+    # Initialize history:
+    history = []
+    # intitialize and start progress meter:
+    meter = Progress(
+        model.epochs + 1;
+        dt=0,
+        desc="Optimising neural net:",
+        barglyphs=BarGlyphs("[=> ]"),
+        barlen=25,
+        color=:yellow,
+    )
+    for i in 1:epochs
+        chain, optimiser_state, current_loss = MLJFlux.train_epoch(
+            model, chain, regularized_optimiser, optimiser_state, X, y
+        )
+        verbosity < 2 || @info "Loss is $(round(current_loss; sigdigits=4))"
+        verbosity != 1 || next!(meter)
+        push!(history, current_loss)
+    end
+
+    # fit the Laplace model:
+    LaplaceRedux.fit!(la, zip(X, y))
+    optimize_prior!(la; verbose=verbose_laplace, n_steps=model.fit_prior_nsteps)
+    model.la = la
+
+    cache = ()
+    fitresult = MLJFlux.fitresult(model, Flux.cpu(chain), y)
+
+    report = history
+
+    return (fitresult, cache, report)
+end
+
+"""
+    predict(model::LaplaceClassification, Xnew)
+
+Predicts the class labels for new data using the LaplaceClassification model.
+
+# Arguments
+- `model::LaplaceClassification`: The trained LaplaceClassification model.
+- fitresult: the fitresult output produced by MLJFlux.fit!
+- `Xnew`: The new data to make predictions on.
+
+# Returns
+An array of predicted class labels.
+
+"""
+function MLJFlux.predict(model::LaplaceClassification, fitresult, Xnew)
+    println("predictclass")
+    model = fitresult[1]
+    Xnew = MLJBase.matrix(Xnew)
+    #convert in a vector of vectors because Laplace ask to do so
+    X_vec = X_vec = [Xnew[i, :] for i in 1:size(Xnew, 1)]
+
+    # Predict using Laplace and collect the predictions
+    predictions = [
+        LaplaceRedux.predict(
+            model.la, x; link_approx=model.link_approx, predict_proba=model.predict_proba
+        ) for x in X_vec
+    ]
+
+    return predictions
 end
 
 # metadata for each model,
