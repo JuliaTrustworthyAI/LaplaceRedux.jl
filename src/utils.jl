@@ -57,7 +57,7 @@ Inputs:
 Outputs:
     - counts: an array cointaining the empirical frequencies for each quantile interval.
 """
-function empirical_frequency_regression(Y_cal, sampled_distributions, n_bins)
+function empirical_frequency_regression(Y_cal, sampled_distributions, n_bins = 20)
     quantiles = collect(range(0; stop=1, length=n_bins + 1))
     quantiles_matrix = hcat(
         [quantile(samples, quantiles) for samples in sampled_distributions]...
@@ -109,7 +109,7 @@ Outputs:
     - bin_centers: array with the centers of the bins
 
 """
-function empirical_frequency_binary_classification(y_binary, sampled_distributions, n_bins)
+function empirical_frequency_binary_classification(y_binary, sampled_distributions, n_bins = 20)
 
     # Number of bins
     n_bins = n_bins
