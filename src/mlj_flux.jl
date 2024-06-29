@@ -41,7 +41,7 @@ MLJBase.@mlj_model mutable struct LaplaceRegression <: MLJFlux.MLJFluxProbabilis
     builder = MLJFlux.MLP(; hidden=(32, 32, 32), σ=Flux.swish)
     optimiser = Optimisers.Adam()
     loss = Flux.Losses.mse
-    epochs::Int = 100::(_ > 0)
+    epochs::Int = 10::(_ > 0)
     batch_size::Int = 1::(_ > 0)
     lambda::Float64 = 1.0
     alpha::Float64 = 0.0
@@ -98,7 +98,7 @@ MLJBase.@mlj_model mutable struct LaplaceClassification <: MLJFlux.MLJFluxProbab
     lambda::Float64 = 1.0
     alpha::Float64 = 0.0
     rng::Union{AbstractRNG,Int64} = Random.GLOBAL_RNG
-    optimiser_changes_trigger_retraining::Bool = false
+    optimiser_changes_trigger_retraining::Bool = true::(_ in (true, false))
     acceleration = CPU1()::(_ in (CPU1(), CUDALibs()))
     subset_of_weights::Symbol = :all::(_ in (:all, :last_layer, :subnetwork))
     subnetwork_indices::Vector{Vector{Int}} = Vector{Vector{Int}}([])
@@ -193,7 +193,7 @@ function MLJFlux.fitresult(model::LaplaceRegression, chain, y)
     else
         target_column_names = Tables.schema(y).names
     end
-    return (deepcopy(model), chain)
+    return (chain, deepcopy(model))
 end
 
 """
@@ -268,7 +268,20 @@ function MLJFlux.train(
     optimize_prior!(la; verbose=verbose_laplace, n_steps=model.fit_prior_nsteps)
     model.la = la
 
-    cache = ()
+    shape = MLJFlux.shape(model, X, y)
+    move = MLJFlux.Mover(model.acceleration)
+
+    cache = (
+        deepcopy(model),
+        zip(X, y),
+        history,
+        shape,
+        regularized_optimiser,
+        optimiser_state,
+        deepcopy(model.rng),
+        move,
+    )
+
     fitresult = MLJFlux.fitresult(model, Flux.cpu(chain), y)
 
     report = history
@@ -293,7 +306,7 @@ Predict the output for new input data using a Laplace regression model.
 function MLJFlux.predict(model::LaplaceRegression, fitresult, Xnew)
     Xnew = MLJBase.matrix(Xnew)
 
-    model = fitresult[1]
+    model = fitresult[2]
     #convert in a vector of vectors because MLJ ask to do so
     X_vec = [Xnew[i, :] for i in 1:size(Xnew, 1)]
     #inizialize output vector yhat
@@ -302,6 +315,122 @@ function MLJFlux.predict(model::LaplaceRegression, fitresult, Xnew)
     yhat = [glm_predictive_distribution(model.la, x_vec) for x_vec in X_vec]
 
     return yhat
+end
+
+function _isdefined(object, name)
+    pnames = propertynames(object)
+    fnames = fieldnames(typeof(object))
+    name in pnames && !(name in fnames) && return true
+    return isdefined(object, name)
+end
+
+function _equal_to_depth_one(x1, x2)
+    names = propertynames(x1)
+    names === propertynames(x2) || return false
+    for name in names
+        getproperty(x1, name) == getproperty(x2, name) || return false
+    end
+    return true
+end
+
+function MMI.is_same_except(
+    m1::M1, m2::M2, exceptions::Symbol...
+) where {M1<:LaplaceRegression,M2<:LaplaceRegression}
+    typeof(m1) === typeof(m2) || return false
+    names = propertynames(m1)
+    propertynames(m2) === names || return false
+
+    for name in names
+        if !(name in exceptions) && name != :la
+            if !_isdefined(m1, name)
+                !_isdefined(m2, name) || return false
+            elseif _isdefined(m2, name)
+                if name in MLJFlux.deep_properties(M1)
+                    _equal_to_depth_one(getproperty(m1, name), getproperty(m2, name)) ||
+                        return false
+                else
+                    (
+                        MMI.is_same_except(getproperty(m1, name), getproperty(m2, name)) ||
+                        getproperty(m1, name) isa AbstractRNG ||
+                        getproperty(m2, name) isa AbstractRNG
+                    ) || return false
+                end
+            else
+                return false
+            end
+        end
+    end
+    return true
+end
+
+function MLJFlux.update(model::LaplaceRegression, verbosity, old_fitresult, old_cache, X, y)
+    println("test update")
+    X = X isa Tables.MatrixTable ? MLJBase.matrix(X) : X
+
+    old_model, data, old_history, shape, regularized_optimiser, optimiser_state, rng, move =
+        old_cache
+    old_chain = old_fitresult[1]
+
+    optimiser_flag =
+        model.optimiser_changes_trigger_retraining && model.optimiser != old_model.optimiser
+
+    keep_chain =
+        !optimiser_flag &&
+        model.epochs >= old_model.epochs &&
+        MMI.is_same_except(model, old_model, :optimiser, :epochs)
+
+    println(old_chain[1])
+
+    println(model.optimiser_changes_trigger_retraining)
+    println(model.optimiser)
+    println(old_model.optimiser)
+
+    println(model.optimiser != old_model.optimiser)
+    println(old_model.epochs)
+    println(model.epochs)
+    println(optimiser_flag)
+    println(MMI.is_same_except(model, old_model, :optimiser, :epochs))
+
+    println(keep_chain)
+
+    if keep_chain
+        chain = move(old_chain[1])
+        epochs = model.epochs - old_model.epochs
+        # (`optimiser_state` is not reset)
+    else
+        move = MLJFlux.Mover(model.acceleration)
+        rng = model.rng
+        chain = MLJFlux.build(model, rng, shape) |> move
+        # reset `optimiser_state`:
+        #data = move.(MLJFlux.collate(model, X, y))
+        nbatches = length(data[2])
+        regularized_optimiser = MLJFlux.regularized_optimiser(model, nbatches)
+        optimiser_state = Optimisers.setup(regularized_optimiser, chain)
+        epochs = model.epochs
+    end
+
+    chain, optimiser_state, history = MLJFlux.train(
+        model, chain, regularized_optimiser, optimiser_state, epochs, verbosity, X, y
+    )
+    if keep_chain
+        # note: history[1] = old_history[end]
+        history = vcat(old_history[1:(end - 1)], history)
+    end
+
+    fitresult = MLJFlux.fitresult(model, Flux.cpu(chain), y)
+    cache = (
+        deepcopy(model),
+        data,
+        history,
+        shape,
+        regularized_optimiser,
+        optimiser_state,
+        deepcopy(rng),
+        move,
+    )
+    report = (training_losses=history,)
+
+    return fitresult, cache, report
 end
 
 """
@@ -470,7 +599,6 @@ An array of predicted class labels.
 
 """
 function MLJFlux.predict(model::LaplaceClassification, fitresult, Xnew)
-    println("predictclass")
     model = fitresult[1]
     Xnew = MLJBase.matrix(Xnew)
     #convert in a vector of vectors because Laplace ask to do so
