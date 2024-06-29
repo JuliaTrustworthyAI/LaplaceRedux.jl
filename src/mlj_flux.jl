@@ -188,6 +188,7 @@ Computes the fit result for a Laplace Regression model, returning the model chai
   - The number of unique classes in the target data `y`.
 """
 function MLJFlux.fitresult(model::LaplaceRegression, chain, y)
+    println("fitresult function")
     if y isa AbstractArray
         target_column_names = nothing
     else
@@ -226,6 +227,7 @@ function MLJFlux.train(
     X,
     y,
 )
+    println("train function")
     X = X isa Tables.MatrixTable ? MLJBase.matrix(X) : X
 
     la = LaplaceRedux.Laplace(
@@ -273,7 +275,6 @@ function MLJFlux.train(
 
     cache = (
         deepcopy(model),
-        zip(X, y),
         history,
         shape,
         regularized_optimiser,
@@ -317,57 +318,11 @@ function MLJFlux.predict(model::LaplaceRegression, fitresult, Xnew)
     return yhat
 end
 
-function _isdefined(object, name)
-    pnames = propertynames(object)
-    fnames = fieldnames(typeof(object))
-    name in pnames && !(name in fnames) && return true
-    return isdefined(object, name)
-end
-
-function _equal_to_depth_one(x1, x2)
-    names = propertynames(x1)
-    names === propertynames(x2) || return false
-    for name in names
-        getproperty(x1, name) == getproperty(x2, name) || return false
-    end
-    return true
-end
-
-function MMI.is_same_except(
-    m1::M1, m2::M2, exceptions::Symbol...
-) where {M1<:LaplaceRegression,M2<:LaplaceRegression}
-    typeof(m1) === typeof(m2) || return false
-    names = propertynames(m1)
-    propertynames(m2) === names || return false
-
-    for name in names
-        if !(name in exceptions) && name != :la
-            if !_isdefined(m1, name)
-                !_isdefined(m2, name) || return false
-            elseif _isdefined(m2, name)
-                if name in MLJFlux.deep_properties(M1)
-                    _equal_to_depth_one(getproperty(m1, name), getproperty(m2, name)) ||
-                        return false
-                else
-                    (
-                        MMI.is_same_except(getproperty(m1, name), getproperty(m2, name)) ||
-                        getproperty(m1, name) isa AbstractRNG ||
-                        getproperty(m2, name) isa AbstractRNG
-                    ) || return false
-                end
-            else
-                return false
-            end
-        end
-    end
-    return true
-end
-
 function MLJFlux.update(model::LaplaceRegression, verbosity, old_fitresult, old_cache, X, y)
     println("test update")
     X = X isa Tables.MatrixTable ? MLJBase.matrix(X) : X
 
-    old_model, data, old_history, shape, regularized_optimiser, optimiser_state, rng, move =
+    old_model, old_history, shape, regularized_optimiser, optimiser_state, rng, move =
         old_cache
     old_chain = old_fitresult[1]
 
@@ -381,16 +336,6 @@ function MLJFlux.update(model::LaplaceRegression, verbosity, old_fitresult, old_
 
     println(old_chain[1])
 
-    println(model.optimiser_changes_trigger_retraining)
-    println(model.optimiser)
-    println(old_model.optimiser)
-
-    println(model.optimiser != old_model.optimiser)
-    println(old_model.epochs)
-    println(model.epochs)
-    println(optimiser_flag)
-    println(MMI.is_same_except(model, old_model, :optimiser, :epochs))
-
     println(keep_chain)
 
     if keep_chain
@@ -400,14 +345,18 @@ function MLJFlux.update(model::LaplaceRegression, verbosity, old_fitresult, old_
     else
         move = MLJFlux.Mover(model.acceleration)
         rng = model.rng
-        chain = MLJFlux.build(model, rng, shape) |> move
+        shape = MLJFlux.shape(model, X, y)
+        println(shape)
+        chain = MLJFlux.build(model, rng, shape) #|> move
+        println(chain)
         # reset `optimiser_state`:
         #data = move.(MLJFlux.collate(model, X, y))
-        nbatches = length(data[2])
+        nbatches = length(y)
         regularized_optimiser = MLJFlux.regularized_optimiser(model, nbatches)
         optimiser_state = Optimisers.setup(regularized_optimiser, chain)
         epochs = model.epochs
     end
+    println("after if")
 
     chain, optimiser_state, history = MLJFlux.train(
         model, chain, regularized_optimiser, optimiser_state, epochs, verbosity, X, y
@@ -417,10 +366,13 @@ function MLJFlux.update(model::LaplaceRegression, verbosity, old_fitresult, old_
         history = vcat(old_history[1:(end - 1)], history)
     end
 
+    println("after train")
+
     fitresult = MLJFlux.fitresult(model, Flux.cpu(chain), y)
     cache = (
         deepcopy(model),
-        data,
+        X,
+        y,
         history,
         shape,
         regularized_optimiser,

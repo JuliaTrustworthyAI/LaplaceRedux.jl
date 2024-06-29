@@ -147,4 +147,4 @@ optimizer = Flux.Optimise.Adam(0.03)
 
 @test basictest_regression(X, ycont, builder, optimizer, 0.9)
 
-#@test basictest_classification(X, y, builder, optimizer, 0.9)
+@test basictest_classification(X, y, builder, optimizer, 0.9)
