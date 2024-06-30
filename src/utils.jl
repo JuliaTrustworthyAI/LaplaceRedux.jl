@@ -62,7 +62,7 @@ function empirical_frequency_regression(Y_cal, sampled_distributions, n_bins=20)
     quantiles_matrix = hcat(
         [quantile(samples, quantiles) for samples in sampled_distributions]...
     )
-    n_rows = size(bounds_quantiles_matrix, 1)
+    n_rows = size(quantiles_matrix, 1)
     counts = []
 
     for i in 1:n_rows
