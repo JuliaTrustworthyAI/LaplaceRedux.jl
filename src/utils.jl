@@ -137,7 +137,7 @@ function empirical_frequency_binary_classification(
             #compute the empirical average and saved it in emp_avg in the j-th position
             push!(emp_avg, 1 / num_p_per_interval[j] * sum(y_binary[indices]))
             #TO DO: maybe substitute to bin_Centers?
-            push!(pred_avg, 1 / num_p_per_interval[j] * sum(class_probs[1, indices]))
+            push!(pred_avg, 1 / num_p_per_interval[j] * sum(class_probs[ indices]))
         end
     end
     #return the tuple
