@@ -193,6 +193,8 @@ function MLJFlux.fitresult(model::LaplaceRegression, chain, y)
     else
         target_column_names = Tables.schema(y).names
     end
+    @info "From fitresult"
+    println(chain)
     return (chain, deepcopy(model))
 end
 
@@ -254,6 +256,12 @@ function MLJFlux.train(
     )
     verbosity != 1 || next!(meter)
 
+    # initiate history:
+    loss = model.loss
+    n_batches = length(y)
+    losses = (loss(chain(X[i]), y[i]) for i in 1:n_batches)
+    history = [mean(losses)]
+
     for i in 1:epochs
         chain, optimiser_state, current_loss = MLJFlux.train_epoch(
             model, chain, regularized_optimiser, optimiser_state, X, y
@@ -281,6 +289,8 @@ function MLJFlux.train(
         move,
     )
 
+    @info "From train"
+    println(chain)
     fitresult = MLJFlux.fitresult(model, Flux.cpu(chain), y)
 
     report = history
@@ -499,8 +509,6 @@ function MLJFlux.train(
     )
     verbose_laplace = false
 
-    # Initialize history:
-    history = []
     # intitialize and start progress meter:
     meter = Progress(
         model.epochs + 1;
@@ -510,6 +518,13 @@ function MLJFlux.train(
         barlen=25,
         color=:yellow,
     )
+
+    # initiate history:
+    loss = model.loss
+    n_batches = length(y)
+    losses = (loss(chain(X[i]), y[i]) for i in 1:n_batches)
+    history = [mean(losses)]
+
     for i in 1:epochs
         chain, optimiser_state, current_loss = MLJFlux.train_epoch(
             model, chain, regularized_optimiser, optimiser_state, X, y
