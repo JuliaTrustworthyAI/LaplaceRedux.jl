@@ -10,6 +10,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ### Changed
 
+- Calling a Laplace object on an array, `(la::AbstractLaplace)(X::AbstractArray)` now simply calls the underlying neural network on data. In other words, it returns the generic predictions, not LA predictions. This was implemented to facilitate better interplay with `MLJFlux`. [#39] 
 - Moving straight to `1.0.0` now for package, because zero major versions cause compat headaches with other packages in Taija ecosystem. [#39]
 - Removed support for `v1.7`, now `v1.9` as lower bound. This is because we are now overloading the `MLJFlux.train` and `MLJFlux.train_epoch` functions, which were added in version `v0.5.0` of that package, which is lower-bounded at `v1.9`. [#39]
 - Updated codecov workflow in CI.yml. [#39]
