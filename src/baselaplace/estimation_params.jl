@@ -119,7 +119,6 @@ function instantiate_curvature!(
     return params.curvature = curvature
 end
 
-
 function Base.:(==)(a::EstimationParams, b::EstimationParams)
     checks = [getfield(a, x) == getfield(b, x) for x in fieldnames(typeof(a))]
     println(checks)

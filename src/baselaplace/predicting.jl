@@ -136,5 +136,5 @@ end
 Calling a model with Laplace Approximation on an array of inputs is equivalent to explicitly calling the `predict` function.
 """
 function (la::AbstractLaplace)(X::AbstractArray; kwrgs...)
-    return predict(la, X; kwrgs...)
+    return la.model(X)
 end

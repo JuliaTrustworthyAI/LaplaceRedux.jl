@@ -35,7 +35,6 @@ The model is trained using the `fit!` method. The model is defined by the follow
 - `μ₀`: the mean of the prior distribution.
 - `P₀`: the covariance matrix of the prior distribution.
 - `fit_prior_nsteps`: the number of steps used to fit the priors.
-- `la`: the Laplace model.
 """
 MLJBase.@mlj_model mutable struct LaplaceRegression <: MLJFlux.MLJFluxProbabilistic
     builder = MLJFlux.MLP(; hidden=(32, 32, 32), σ=Flux.swish)
@@ -57,7 +56,6 @@ MLJBase.@mlj_model mutable struct LaplaceRegression <: MLJFlux.MLJFluxProbabilis
     μ₀::Float64 = 0.0
     P₀::Union{AbstractMatrix,UniformScaling,Nothing} = nothing
     fit_prior_nsteps::Int = 100::(_ > 0)
-    la::Union{Nothing,AbstractLaplace} = nothing
 end
 
 """
@@ -86,19 +84,18 @@ A mutable struct representing a Laplace Classification model that extends the ML
 - `μ₀`: the mean of the prior distribution.
 - `P₀`: the covariance matrix of the prior distribution.
 - `fit_prior_nsteps`: the number of steps used to fit the priors.
-- `la`: the Laplace model.
 """
 MLJBase.@mlj_model mutable struct LaplaceClassification <: MLJFlux.MLJFluxProbabilistic
     builder = MLJFlux.MLP(; hidden=(32, 32, 32), σ=Flux.swish)
     finaliser = Flux.softmax
     optimiser = Optimisers.Adam()
     loss = Flux.crossentropy
-    epochs::Int = 100::(_ > 0)
+    epochs::Int = 10::(_ > 0)
     batch_size::Int = 1::(_ > 0)
     lambda::Float64 = 1.0
     alpha::Float64 = 0.0
     rng::Union{AbstractRNG,Int64} = Random.GLOBAL_RNG
-    optimiser_changes_trigger_retraining::Bool = true::(_ in (true, false))
+    optimiser_changes_trigger_retraining::Bool = false::(_ in (true, false))
     acceleration = CPU1()::(_ in (CPU1(), CUDALibs()))
     subset_of_weights::Symbol = :all::(_ in (:all, :last_layer, :subnetwork))
     subnetwork_indices::Vector{Vector{Int}} = Vector{Vector{Int}}([])
@@ -111,7 +108,6 @@ MLJBase.@mlj_model mutable struct LaplaceClassification <: MLJFlux.MLJFluxProbab
     link_approx::Symbol = :probit::(_ in (:probit, :plugin))
     predict_proba::Bool = true::(_ in (true, false))
     fit_prior_nsteps::Int = 100::(_ > 0)
-    la::Union{Nothing,AbstractLaplace} = nothing
 end
 
 const MLJ_Laplace = Union{LaplaceClassification,LaplaceRegression}
@@ -156,18 +152,6 @@ Builds an MLJFlux model for Laplace regression compatible with the dimensions of
 """
 function MLJFlux.build(model::LaplaceRegression, rng, shape)
     chain = MLJFlux.build(model.builder, rng, shape...)
-    model.la = Laplace(
-        chain;
-        likelihood=:regression,
-        subset_of_weights=model.subset_of_weights,
-        subnetwork_indices=model.subnetwork_indices,
-        hessian_structure=model.hessian_structure,
-        backend=model.backend,
-        σ=model.σ,
-        μ₀=model.μ₀,
-        P₀=model.P₀,
-    )
-
     return chain
 end
 
@@ -193,7 +177,6 @@ function MLJFlux.fitresult(model::LaplaceRegression, chain, y)
     else
         target_column_names = Tables.schema(y).names
     end
-    println(chain)
     return (chain, deepcopy(model))
 end
 
@@ -229,17 +212,21 @@ function MLJFlux.train(
 )
     X = X isa Tables.MatrixTable ? MLJBase.matrix(X) : X
 
-    la = LaplaceRedux.Laplace(
-        chain;
-        likelihood=:regression,
-        subset_of_weights=model.subset_of_weights,
-        subnetwork_indices=model.subnetwork_indices,
-        hessian_structure=model.hessian_structure,
-        backend=model.backend,
-        σ=model.σ,
-        μ₀=model.μ₀,
-        P₀=model.P₀,
-    )
+    if !isa(chain, AbstractLaplace)
+        la = LaplaceRedux.Laplace(
+            chain;
+            likelihood=:regression,
+            subset_of_weights=model.subset_of_weights,
+            subnetwork_indices=model.subnetwork_indices,
+            hessian_structure=model.hessian_structure,
+            backend=model.backend,
+            σ=model.σ,
+            μ₀=model.μ₀,
+            P₀=model.P₀,
+        )
+    else
+        la = chain
+    end
 
     # Initialize history:
     history = []
@@ -273,9 +260,8 @@ function MLJFlux.train(
     # fit the Laplace model:
     LaplaceRedux.fit!(la, zip(X, y))
     optimize_prior!(la; verbose=verbose_laplace, n_steps=model.fit_prior_nsteps)
-    model.la = la
 
-    return chain, optimiser_state, history
+    return la, optimiser_state, history
 end
 
 """
@@ -295,83 +281,16 @@ Predict the output for new input data using a Laplace regression model.
 function MLJFlux.predict(model::LaplaceRegression, fitresult, Xnew)
     Xnew = MLJBase.matrix(Xnew)
 
-    model = fitresult[2]
+    model = fitresult[1]
     #convert in a vector of vectors because MLJ ask to do so
     X_vec = [Xnew[i, :] for i in 1:size(Xnew, 1)]
     #inizialize output vector yhat
     yhat = []
     # Predict using Laplace and collect the predictions
-    yhat = [glm_predictive_distribution(model.la, x_vec) for x_vec in X_vec]
+    yhat = [glm_predictive_distribution(model, x_vec) for x_vec in X_vec]
 
     return yhat
 end
-
-# function MLJFlux.update(model::LaplaceRegression, verbosity, old_fitresult, old_cache, X, y)
-#     println("test update")
-#     X = X isa Tables.MatrixTable ? MLJBase.matrix(X) : X
-
-#     old_model, old_history, shape, regularized_optimiser, optimiser_state, rng, move =
-#         old_cache
-#     old_chain = old_fitresult[1]
-
-#     optimiser_flag =
-#         model.optimiser_changes_trigger_retraining && model.optimiser != old_model.optimiser
-
-#     keep_chain =
-#         !optimiser_flag &&
-#         model.epochs >= old_model.epochs &&
-#         MMI.is_same_except(model, old_model, :optimiser, :epochs)
-
-#     println(old_chain[1])
-
-#     println(keep_chain)
-
-#     if keep_chain
-#         chain = move(old_chain[1])
-#         epochs = model.epochs - old_model.epochs
-#         # (`optimiser_state` is not reset)
-#     else
-#         move = MLJFlux.Mover(model.acceleration)
-#         rng = model.rng
-#         shape = MLJFlux.shape(model, X, y)
-#         println(shape)
-#         chain = MLJFlux.build(model, rng, shape) #|> move
-#         println(chain)
-#         # reset `optimiser_state`:
-#         #data = move.(MLJFlux.collate(model, X, y))
-#         nbatches = length(y)
-#         regularized_optimiser = MLJFlux.regularized_optimiser(model, nbatches)
-#         optimiser_state = Optimisers.setup(regularized_optimiser, chain)
-#         epochs = model.epochs
-#     end
-#     println("after if")
-
-#     chain, optimiser_state, history = MLJFlux.train(
-#         model, chain, regularized_optimiser, optimiser_state, epochs, verbosity, X, y
-#     )
-#     if keep_chain
-#         # note: history[1] = old_history[end]
-#         history = vcat(old_history[1:(end - 1)], history)
-#     end
-
-#     println("after train")
-
-#     fitresult = MLJFlux.fitresult(model, Flux.cpu(chain), y)
-#     cache = (
-#         deepcopy(model),
-#         X,
-#         y,
-#         history,
-#         shape,
-#         regularized_optimiser,
-#         optimiser_state,
-#         deepcopy(rng),
-#         move,
-#     )
-#     report = (training_losses=history,)
-
-#     return fitresult, cache, report
-# end
 
 """
     MLJFlux.shape(model::LaplaceClassification, X, y)
@@ -410,17 +329,6 @@ Builds an MLJFlux model for Laplace classification compatible with the dimension
 """
 function MLJFlux.build(model::LaplaceClassification, rng, shape)
     chain = Flux.Chain(MLJFlux.build(model.builder, rng, shape...), model.finaliser)
-    model.la = Laplace(
-        chain;
-        likelihood=:classification,
-        subset_of_weights=model.subset_of_weights,
-        subnetwork_indices=model.subnetwork_indices,
-        hessian_structure=model.hessian_structure,
-        backend=model.backend,
-        σ=model.σ,
-        μ₀=model.μ₀,
-        P₀=model.P₀,
-    )
 
     return chain
 end
@@ -441,7 +349,7 @@ Computes the fit result for a Laplace classification model, returning the model 
   - The number of unique classes in the target data `y`.
 """
 function MLJFlux.fitresult(model::LaplaceClassification, chain, y)
-    return (deepcopy(model), chain, length(unique(y)))
+    return (chain, deepcopy(model))
 end
 
 """
@@ -476,28 +384,35 @@ function MLJFlux.train(
 )
     X = X isa Tables.MatrixTable ? MLJBase.matrix(X) : X
 
-    la = LaplaceRedux.Laplace(
-        chain;
-        likelihood=:classification,
-        subset_of_weights=model.subset_of_weights,
-        subnetwork_indices=model.subnetwork_indices,
-        hessian_structure=model.hessian_structure,
-        backend=model.backend,
-        σ=model.σ,
-        μ₀=model.μ₀,
-        P₀=model.P₀,
-    )
-    verbose_laplace = false
+    if !isa(chain, AbstractLaplace)
+        la = LaplaceRedux.Laplace(
+            chain;
+            likelihood=:classification,
+            subset_of_weights=model.subset_of_weights,
+            subnetwork_indices=model.subnetwork_indices,
+            hessian_structure=model.hessian_structure,
+            backend=model.backend,
+            σ=model.σ,
+            μ₀=model.μ₀,
+            P₀=model.P₀,
+        )
+    else
+        la = chain
+    end
 
+    # Initialize history:
+    history = []
+    verbose_laplace = false
     # intitialize and start progress meter:
     meter = Progress(
-        model.epochs + 1;
-        dt=0,
+        epochs + 1;
+        dt=1.0,
         desc="Optimising neural net:",
         barglyphs=BarGlyphs("[=> ]"),
         barlen=25,
         color=:yellow,
     )
+    verbosity != 1 || next!(meter)
 
     # initiate history:
     loss = model.loss
@@ -517,14 +432,8 @@ function MLJFlux.train(
     # fit the Laplace model:
     LaplaceRedux.fit!(la, zip(X, y))
     optimize_prior!(la; verbose=verbose_laplace, n_steps=model.fit_prior_nsteps)
-    model.la = la
 
-    cache = ()
-    fitresult = MLJFlux.fitresult(model, Flux.cpu(chain), y)
-
-    report = history
-
-    return (fitresult, cache, report)
+    return la, optimiser_state, history
 end
 
 """
@@ -542,7 +451,7 @@ An array of predicted class labels.
 
 """
 function MLJFlux.predict(model::LaplaceClassification, fitresult, Xnew)
-    model = fitresult[1]
+    la = fitresult[1]
     Xnew = MLJBase.matrix(Xnew)
     #convert in a vector of vectors because Laplace ask to do so
     X_vec = X_vec = [Xnew[i, :] for i in 1:size(Xnew, 1)]
@@ -550,7 +459,7 @@ function MLJFlux.predict(model::LaplaceClassification, fitresult, Xnew)
     # Predict using Laplace and collect the predictions
     predictions = [
         LaplaceRedux.predict(
-            model.la, x; link_approx=model.link_approx, predict_proba=model.predict_proba
+            la, x; link_approx=model.link_approx, predict_proba=model.predict_proba
         ) for x in X_vec
     ]
 

@@ -43,7 +43,7 @@ function Posterior(model::Any, est_params::EstimationParams)
     )
 end
 
-function Base.:(==)(a::Posterior, b::Posterior) 
-    checks = [getfield(a, x)==getfield(b, x) for x in fieldnames(typeof(a))] 
+function Base.:(==)(a::Posterior, b::Posterior)
+    checks = [getfield(a, x) == getfield(b, x) for x in fieldnames(typeof(a))]
     return all(checks)
 end
