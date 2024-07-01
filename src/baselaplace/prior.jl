@@ -36,8 +36,3 @@ function Prior(params::LaplaceParams, model::Any, likelihood::Symbol)
     end
     return Prior(params.σ, params.μ₀, params.λ, P₀)
 end
-
-function Base.:(==)(a::Prior, b::Prior)
-    checks = [getfield(a, x) == getfield(b, x) for x in fieldnames(typeof(a))]
-    return all(checks)
-end
