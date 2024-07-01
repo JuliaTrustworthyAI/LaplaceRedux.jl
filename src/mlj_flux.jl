@@ -193,7 +193,6 @@ function MLJFlux.fitresult(model::LaplaceRegression, chain, y)
     else
         target_column_names = Tables.schema(y).names
     end
-    @info "From fitresult"
     println(chain)
     return (chain, deepcopy(model))
 end
@@ -276,26 +275,7 @@ function MLJFlux.train(
     optimize_prior!(la; verbose=verbose_laplace, n_steps=model.fit_prior_nsteps)
     model.la = la
 
-    shape = MLJFlux.shape(model, X, y)
-    move = MLJFlux.Mover(model.acceleration)
-
-    cache = (
-        deepcopy(model),
-        history,
-        shape,
-        regularized_optimiser,
-        optimiser_state,
-        deepcopy(model.rng),
-        move,
-    )
-
-    @info "From train"
-    println(chain)
-    fitresult = MLJFlux.fitresult(model, Flux.cpu(chain), y)
-
-    report = history
-
-    return (fitresult, cache, report)
+    return chain, optimiser_state, history
 end
 
 """
