@@ -188,7 +188,6 @@ Computes the fit result for a Laplace Regression model, returning the model chai
   - The number of unique classes in the target data `y`.
 """
 function MLJFlux.fitresult(model::LaplaceRegression, chain, y)
-    println("fitresult function")
     if y isa AbstractArray
         target_column_names = nothing
     else
@@ -227,7 +226,6 @@ function MLJFlux.train(
     X,
     y,
 )
-    println("train function")
     X = X isa Tables.MatrixTable ? MLJBase.matrix(X) : X
 
     la = LaplaceRedux.Laplace(
@@ -318,72 +316,72 @@ function MLJFlux.predict(model::LaplaceRegression, fitresult, Xnew)
     return yhat
 end
 
-function MLJFlux.update(model::LaplaceRegression, verbosity, old_fitresult, old_cache, X, y)
-    println("test update")
-    X = X isa Tables.MatrixTable ? MLJBase.matrix(X) : X
+# function MLJFlux.update(model::LaplaceRegression, verbosity, old_fitresult, old_cache, X, y)
+#     println("test update")
+#     X = X isa Tables.MatrixTable ? MLJBase.matrix(X) : X
 
-    old_model, old_history, shape, regularized_optimiser, optimiser_state, rng, move =
-        old_cache
-    old_chain = old_fitresult[1]
+#     old_model, old_history, shape, regularized_optimiser, optimiser_state, rng, move =
+#         old_cache
+#     old_chain = old_fitresult[1]
 
-    optimiser_flag =
-        model.optimiser_changes_trigger_retraining && model.optimiser != old_model.optimiser
+#     optimiser_flag =
+#         model.optimiser_changes_trigger_retraining && model.optimiser != old_model.optimiser
 
-    keep_chain =
-        !optimiser_flag &&
-        model.epochs >= old_model.epochs &&
-        MMI.is_same_except(model, old_model, :optimiser, :epochs)
+#     keep_chain =
+#         !optimiser_flag &&
+#         model.epochs >= old_model.epochs &&
+#         MMI.is_same_except(model, old_model, :optimiser, :epochs)
 
-    println(old_chain[1])
+#     println(old_chain[1])
 
-    println(keep_chain)
+#     println(keep_chain)
 
-    if keep_chain
-        chain = move(old_chain[1])
-        epochs = model.epochs - old_model.epochs
-        # (`optimiser_state` is not reset)
-    else
-        move = MLJFlux.Mover(model.acceleration)
-        rng = model.rng
-        shape = MLJFlux.shape(model, X, y)
-        println(shape)
-        chain = MLJFlux.build(model, rng, shape) #|> move
-        println(chain)
-        # reset `optimiser_state`:
-        #data = move.(MLJFlux.collate(model, X, y))
-        nbatches = length(y)
-        regularized_optimiser = MLJFlux.regularized_optimiser(model, nbatches)
-        optimiser_state = Optimisers.setup(regularized_optimiser, chain)
-        epochs = model.epochs
-    end
-    println("after if")
+#     if keep_chain
+#         chain = move(old_chain[1])
+#         epochs = model.epochs - old_model.epochs
+#         # (`optimiser_state` is not reset)
+#     else
+#         move = MLJFlux.Mover(model.acceleration)
+#         rng = model.rng
+#         shape = MLJFlux.shape(model, X, y)
+#         println(shape)
+#         chain = MLJFlux.build(model, rng, shape) #|> move
+#         println(chain)
+#         # reset `optimiser_state`:
+#         #data = move.(MLJFlux.collate(model, X, y))
+#         nbatches = length(y)
+#         regularized_optimiser = MLJFlux.regularized_optimiser(model, nbatches)
+#         optimiser_state = Optimisers.setup(regularized_optimiser, chain)
+#         epochs = model.epochs
+#     end
+#     println("after if")
 
-    chain, optimiser_state, history = MLJFlux.train(
-        model, chain, regularized_optimiser, optimiser_state, epochs, verbosity, X, y
-    )
-    if keep_chain
-        # note: history[1] = old_history[end]
-        history = vcat(old_history[1:(end - 1)], history)
-    end
+#     chain, optimiser_state, history = MLJFlux.train(
+#         model, chain, regularized_optimiser, optimiser_state, epochs, verbosity, X, y
+#     )
+#     if keep_chain
+#         # note: history[1] = old_history[end]
+#         history = vcat(old_history[1:(end - 1)], history)
+#     end
 
-    println("after train")
+#     println("after train")
 
-    fitresult = MLJFlux.fitresult(model, Flux.cpu(chain), y)
-    cache = (
-        deepcopy(model),
-        X,
-        y,
-        history,
-        shape,
-        regularized_optimiser,
-        optimiser_state,
-        deepcopy(rng),
-        move,
-    )
-    report = (training_losses=history,)
+#     fitresult = MLJFlux.fitresult(model, Flux.cpu(chain), y)
+#     cache = (
+#         deepcopy(model),
+#         X,
+#         y,
+#         history,
+#         shape,
+#         regularized_optimiser,
+#         optimiser_state,
+#         deepcopy(rng),
+#         move,
+#     )
+#     report = (training_losses=history,)
 
-    return fitresult, cache, report
-end
+#     return fitresult, cache, report
+# end
 
 """
     MLJFlux.shape(model::LaplaceClassification, X, y)
@@ -404,7 +402,6 @@ function MLJFlux.shape(model::LaplaceClassification, X, y)
     n_input = size(X, 2)
     levels = unique(y)
     n_output = length(levels)
-    println(n_output)
     return (n_input, n_output)
 end
 
@@ -423,7 +420,6 @@ Builds an MLJFlux model for Laplace classification compatible with the dimension
 """
 function MLJFlux.build(model::LaplaceClassification, rng, shape)
     chain = Flux.Chain(MLJFlux.build(model.builder, rng, shape...), model.finaliser)
-    println(chain)
     model.la = Laplace(
         chain;
         likelihood=:classification,

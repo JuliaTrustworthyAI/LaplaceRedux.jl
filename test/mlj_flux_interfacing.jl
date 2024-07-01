@@ -1,6 +1,6 @@
 using Random: Random
 import Random.seed!
-using MLJBase
+using MLJBase: MLJBase, categorical
 using MLJFlux
 using Flux
 using StableRNGs
@@ -13,7 +13,7 @@ function basictest_regression(X, y, builder, optimiser, threshold)
     model = LaplaceRegression(;
         builder=builder,
         optimiser=optimiser,
-        acceleration=CPUThreads(),
+        acceleration=MLJBase.CPUThreads(),
         loss=Flux.Losses.mse,
         rng=stable_rng,
         lambda=-1.0,
@@ -24,11 +24,15 @@ function basictest_regression(X, y, builder, optimiser, threshold)
         hessian_structure=:incorrect,
         backend=:incorrect,
     )
+
     fitresult, cache, _report = MLJBase.fit(model, 0, X, y)
+    chain, _ = fitresult[1]
 
     history = _report.training_losses
+    @test length(history) == model.epochs + 1
 
-    @test length(history) == model.epochs
+    # test improvement in training loss:
+    @test history[end] < threshold * history[1]
 
     # increase iterations and check update is incremental:
     model.epochs = model.epochs + 3
@@ -37,7 +41,7 @@ function basictest_regression(X, y, builder, optimiser, threshold)
         (:info, r""), # one line of :info per extra epoch
         (:info, r""),
         (:info, r""),
-        MLJBase.update(model, 2, fitresult, cache, X, y)
+        MLJBase.update(model, 2, chain, cache, X, y)
     )
 
     @test :chain in keys(MLJBase.fitted_params(model, fitresult))
@@ -45,7 +49,7 @@ function basictest_regression(X, y, builder, optimiser, threshold)
     yhat = MLJBase.predict(model, fitresult, X)
 
     history = _report.training_losses
-    @test length(history) == model.epochs
+    @test length(history) == model.epochs + 1
 
     # start fresh with small epochs:
     model = LaplaceRegression(;
@@ -79,6 +83,16 @@ function basictest_regression(X, y, builder, optimiser, threshold)
     return true
 end
 
+seed!(1234)
+N = 300
+X = MLJBase.table(rand(Float32, N, 4));
+ycont = 2 * X.x1 - X.x3 + 0.1 * rand(N)
+
+builder = MLJFlux.MLP(; hidden=(16, 8), σ=Flux.relu)
+optimizer = Flux.Optimise.Adam(0.03)
+
+@test basictest_regression(X, ycont, builder, optimizer, 0.9)
+
 function basictest_classification(X, y, builder, optimiser, threshold)
     optimiser = deepcopy(optimiser)
 
@@ -87,32 +101,45 @@ function basictest_classification(X, y, builder, optimiser, threshold)
     model = LaplaceClassification(;
         builder=builder,
         optimiser=optimiser,
-        acceleration=CPUThreads(),
-        rng=stable_rng,
-        lambda=-1.0,
-        alpha=-1.0,
+        loss=Flux.crossentropy,
         epochs=-1,
         batch_size=-1,
+        lambda=-1.0,
+        alpha=-1.0,
+        rng=stable_rng,
+        acceleration=MLJBase.CPUThreads(),
         subset_of_weights=:incorrect,
         hessian_structure=:incorrect,
         backend=:incorrect,
         link_approx=:incorrect,
     )
 
+    # Test that shape is correct:
+    @test MLJFlux.shape(model, X, y)[2] == length(unique(y))
     fitresult, cache, _report = MLJBase.fit(model, 0, X, y)
 
     history = _report.training_losses
-    @test length(history) == model.epochs
+    @test length(history) == model.epochs + 1
 
     # test improvement in training loss:
     @test history[end] < threshold * history[1]
+
+    # increase iterations and check update is incremental:
+    model.epochs = model.epochs + 3
+
+    fitresult, cache, _report = @test_logs(
+        (:info, r""), # one line of :info per extra epoch
+        (:info, r""),
+        (:info, r""),
+        MLJBase.update(model, 2, fitresult, cache, X, y)
+    )
 
     @test :chain in keys(MLJBase.fitted_params(model, fitresult))
 
     yhat = MLJBase.predict(model, fitresult, X)
 
-    #history = _report.training_losses
-    @test length(history) == model.epochs
+    history = _report.training_losses
+    @test length(history) == model.epochs + 1
 
     # start fresh with small epochs:
     model = LaplaceClassification(;
@@ -120,6 +147,28 @@ function basictest_classification(X, y, builder, optimiser, threshold)
     )
 
     fitresult, cache, _report = MLJBase.fit(model, 0, X, y)
+
+    # change batch_size and check it performs cold restart:
+    model.batch_size = 2
+    fitresult, cache, _report = @test_logs(
+        (:info, r""), # one line of :info per extra epoch
+        (:info, r""),
+        MLJBase.update(model, 2, fitresult, cache, X, y)
+    )
+
+    # change learning rate and check it does *not* restart:
+    model.optimiser.eta /= 2
+    fitresult, cache, _report = @test_logs(MLJBase.update(model, 2, fitresult, cache, X, y))
+
+    # set `optimiser_changes_trigger_retraining = true` and change
+    # learning rate and check it does restart:
+    model.optimiser_changes_trigger_retraining = true
+    model.optimiser.eta /= 2
+    @test_logs(
+        (:info, r""), # one line of :info per extra epoch
+        (:info, r""),
+        MLJBase.update(model, 2, fitresult, cache, X, y)
+    )
 
     return true
 end
@@ -144,7 +193,4 @@ y = categorical(
 
 builder = MLJFlux.MLP(; hidden=(16, 8), σ=Flux.relu)
 optimizer = Flux.Optimise.Adam(0.03)
-
-@test basictest_regression(X, ycont, builder, optimizer, 0.9)
-
 @test basictest_classification(X, y, builder, optimizer, 0.9)
