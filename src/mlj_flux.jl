@@ -166,17 +166,11 @@ Computes the fit result for a Laplace Regression model, returning the model chai
 - `y`: The target data, typically a vector of class labels.
 
 # Returns
-- A tuple containing:
-  - The model.
+ A tuple containing:
   - The trained Flux chain.
-  - The number of unique classes in the target data `y`.
+  - a deepcopy of the laplace model.
 """
 function MLJFlux.fitresult(model::LaplaceRegression, chain, y)
-    if y isa AbstractArray
-        target_column_names = nothing
-    else
-        target_column_names = Tables.schema(y).names
-    end
     return (chain, deepcopy(model))
 end
 
@@ -194,11 +188,11 @@ Fit the LaplaceRegression model using Flux.jl.
 - `X`: The input data for training.
 - `y`: The target labels for training.
 
-# Returns (fitresult, cache, report )
+# Returns (la, optimiser_state, history )
 where
-- `fitresult`: is the output of MLJFlux.fitresult.
-- `cache`: an empty tuple.
-- `report`: a named tuple that contain the field training_losses.
+- `la`: the fitted Laplace model.
+- `optimiser_state`: the state of the optimiser.
+- `history`: the training loss history.
 """
 function MLJFlux.train(
     model::LaplaceRegression,
@@ -244,8 +238,7 @@ function MLJFlux.train(
 
     # initiate history:
     loss = model.loss
-    n_batches = length(y)
-    losses = (loss(chain(X[i]), y[i]) for i in 1:n_batches)
+    losses = (loss(chain(X[i]), y[i]) for i in 1:length(y))
     history = [mean(losses)]
 
     for i in 1:epochs
@@ -344,9 +337,10 @@ Computes the fit result for a Laplace classification model, returning the model 
 - `y`: The target data, typically a vector of class labels.
 
 # Returns
-- A tuple containing:
-  - The model.
-  - The number of unique classes in the target data `y`.
+# Returns
+ A tuple containing:
+  - The trained Flux chain.
+  - a deepcopy of the laplace model.
 """
 function MLJFlux.fitresult(model::LaplaceClassification, chain, y)
     return (chain, deepcopy(model))
@@ -368,9 +362,9 @@ Fit the LaplaceRegression model using Flux.jl.
 
 # Returns (fitresult, cache, report )
 where
-- `fitresult`: is the output of MLJFlux.fitresult.
-- `cache`: an empty tuple.
-- `report`: a named tuple that contain the field training_losses.
+- `la`: the fitted Laplace model.
+- `optimiser_state`: the state of the optimiser.
+- `history`: the training loss history.
 """
 function MLJFlux.train(
     model::LaplaceClassification,
