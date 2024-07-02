@@ -42,7 +42,7 @@ function outdim(model::Chain)::Number
 end
 
 @doc raw""" 
-    empirical_frequency(Y_cal, sampled_distributions)
+    empirical_frequency_regression(Y_cal, sampled_distributions, n_bins=20)
 
 FOR REGRESSION MODELS.  \
 Given a calibration dataset ``(x_t, y_t)`` for ``i ∈ {1,...,T}`` and an array of predicted distributions, the function calculates the empirical frequency
@@ -75,7 +75,7 @@ function empirical_frequency_regression(Y_cal, sampled_distributions, n_bins=20)
 end
 
 @doc raw""" 
-    sharpness(sampled_distributions)
+    sharpness_regression(sampled_distributions)
 
 FOR REGRESSION MODELS.  \
 Given a calibration dataset ``(x_t, y_t)`` for ``i ∈ {1,...,T}`` and an array of predicted distributions, the function calculates the 
@@ -93,7 +93,7 @@ function sharpness_regression(sampled_distributions)
 end
 
 @doc raw""" 
-    empirical_frequency-classification(y_binary, sampled_distributions)
+    empirical_frequency_classification(y_binary, sampled_distributions)
 
 FOR BINARY CLASSIFICATION MODELS.\
 Given a calibration dataset ``(x_t, y_t)`` for ``i ∈ {1,...,T}`` let ``p_t= H(x_t)∈[0,1]`` be the forecasted probability. \
