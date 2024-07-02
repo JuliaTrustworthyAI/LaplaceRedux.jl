@@ -1,3 +1,5 @@
+using Distributions: Distributions
+using Statistics: mean, var
 """
     functional_variance(la::AbstractLaplace, 𝐉::AbstractArray)
 
@@ -22,6 +24,8 @@ Computes the linearized GLM predictive.
 - `fμ::AbstractArray`: Mean of the predictive distribution. The output shape is column-major as in Flux.
 - `fvar::AbstractArray`: Variance of the predictive distribution. The output shape is column-major as in Flux.
 
+- `normal_distr` An array of  normal distributions approximating the predictive distribution p(y|X) given the input data X.
+
 # Examples
 
 ```julia-repl
@@ -39,7 +43,9 @@ function glm_predictive_distribution(la::AbstractLaplace, X::AbstractArray)
     fμ = reshape(fμ, Flux.outputsize(la.model, size(X)))
     fvar = functional_variance(la, 𝐉)
     fvar = reshape(fvar, size(fμ)...)
-    return fμ, fvar
+    fstd = sqrt.(fvar)
+    normal_distr = [Distributions.Normal(fμ[i], fstd[i]) for i in 1:size(fμ, 1)]
+    return (normal_distr, fμ, fvar)
 end
 
 """
@@ -55,9 +61,12 @@ Computes predictions from Bayesian neural network.
 - `predict_proba::Bool=true`: If `true` (default), returns probabilities for classification tasks.
 
 # Returns
-
-- `fμ::AbstractArray`: Mean of the predictive distribution if link function is set to `:plugin`, otherwise the probit approximation. The output shape is column-major as in Flux.
-- `fvar::AbstractArray`: If regression, it also returns the variance of the predictive distribution. The output shape is column-major as in Flux.
+For classification tasks, LaplaceRedux provides different options:
+    -`normal_distr::Distributions.Normal`:the array of Normal distributions computed by glm_predictive_distribution  If the `link_approx` is set to :distribution
+    -`fμ::AbstractArray` Mean of the normal distribution if  link_approx is set to :plugin
+    -`fμ::AbstractArray` The probit approximation if  link_approx is set to :probit
+For regression tasks:
+- `normal_distr::Distributions.Normal`:the array of Normal distributions computed by glm_predictive_distribution. 
 
 # Examples
 
@@ -75,15 +84,21 @@ predict(la, hcat(x...))
 function predict(
     la::AbstractLaplace, X::AbstractArray; link_approx=:probit, predict_proba::Bool=true
 )
-    fμ, fvar = glm_predictive_distribution(la, X)
+    normal_distr, fμ, fvar = glm_predictive_distribution(la, X)
+    #fμ, fvar = mean.(normal_distr), var.(normal_distr)
 
     # Regression:
     if la.likelihood == :regression
-        return fμ, fvar
+        return normal_distr
     end
 
     # Classification:
     if la.likelihood == :classification
+
+        # Probit approximation
+        if link_approx == :distribution
+            z = normal_distr
+        end
 
         # Probit approximation
         if link_approx == :probit
@@ -95,7 +110,7 @@ function predict(
         end
 
         # Sigmoid/Softmax
-        if predict_proba
+        if (predict_proba && link_approx != :distribution)
             if la.posterior.n_out == 1
                 p = Flux.sigmoid(z)
             else
