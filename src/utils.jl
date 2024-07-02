@@ -41,21 +41,24 @@ function outdim(model::Chain)::Number
     return [size(p) for p in Flux.params(model)][end][1]
 end
 
-""" 
+@doc raw""" 
     empirical_frequency(Y_cal, sampled_distributions)
 
-FOR REGRESSION MODELS.
-Given a calibration dataset (x_t, y_t) for i ∈ {1,...,T} and an array of predicted distributions, the function calculates the empirical frequency
-phat_j = {y_t|F_t(y_t)<= p_j, t= 1,....,T}/T, where T is the number of calibration points, p_j is the confidence level and F_t is the 
-cumulative distribution function of the predicted distribution targeting y_t.
-Source: https://arxiv.org/abs/1807.00263
+FOR REGRESSION MODELS.  \
+Given a calibration dataset ``(x_t, y_t)`` for ``i ∈ {1,...,T}`` and an array of predicted distributions, the function calculates the empirical frequency
+```math
+p^hat_j = {y_t|F_t(y_t)<= p_j, t= 1,....,T}/T,
+```
+where ``T`` is the number of calibration points, ``p_j`` is the confidence level and ``F_t`` is the 
+cumulative distribution function of the predicted distribution targeting ``y_t``. \
+Source: [Kuleshov, Fenner, Ermon 2018](https://arxiv.org/abs/1807.00263)
 
-Inputs:
-    - 'Y_cal': a vector of values y_t
-    - 'sampled_distributions': an array of sampled distributions F(x_t) stacked column-wise.
-    - 'n_bins': number of equally spaced bins to use.
-Outputs:
-    - counts: an array cointaining the empirical frequencies for each quantile interval.
+Inputs: \
+    - `Y_cal`: a vector of values ``y_t``\
+    - `sampled_distributions`: an array of sampled distributions ``F(x_t)`` stacked column-wise.\
+    - `n_bins`: number of equally spaced bins to use.\
+Outputs:\
+    - `counts`: an array cointaining the empirical frequencies for each quantile interval.
 """
 function empirical_frequency_regression(Y_cal, sampled_distributions, n_bins=20)
     quantiles = collect(range(0; stop=1, length=n_bins + 1))
@@ -71,42 +74,43 @@ function empirical_frequency_regression(Y_cal, sampled_distributions, n_bins=20)
     return counts
 end
 
-""" 
+@doc raw""" 
     sharpness(sampled_distributions)
 
-FOR REGRESSION MODELS.
-Given a calibration dataset (x_t, y_t) for i ∈ {1,...,T} and an array of predicted distributions, the function calculates the 
-sharpness of the predicted distributions, i.e., the average of the variances var(F_t) predicted by the forecaster for each x_t
-Source: https://arxiv.org/abs/1807.00263
+FOR REGRESSION MODELS.  \
+Given a calibration dataset ``(x_t, y_t)`` for ``i ∈ {1,...,T}`` and an array of predicted distributions, the function calculates the 
+sharpness of the predicted distributions, i.e., the average of the variances ``\sigma^2(F_t)`` predicted by the forecaster for each ``x_t``. \
+source: [Kuleshov, Fenner, Ermon 2018](https://arxiv.org/abs/1807.00263)
 
-Inputs:
-    - sampled_distributions: an array of sampled distributions F(x_t) stacked column-wise.
-Outputs:
-    - sharpness: a scalar that measure the level of sharpness of the regressor
+Inputs: \
+    - `sampled_distributions`: an array of sampled distributions ``F(x_t)`` stacked column-wise. \
+Outputs: \
+    - `sharpness`: a scalar that measure the level of sharpness of the regressor
 """
 function sharpness_regression(sampled_distributions)
     sharpness = mean(var.(sampled_distributions))
     return sharpness
 end
 
-""" 
+@doc raw""" 
     empirical_frequency-classification(y_binary, sampled_distributions)
 
-FOR BINARY CLASSIFICATION MODELS.
-Given a calibration dataset (x_t, y_t) for i ∈ {1,...,T} let p_t= H(x_t)∈[0,1] be the forecasted probability. 
-We group the p_t into intervals I-j for j= 1,2,...,m that form a partition of [0,1]. The function computes
-the observed average p_j= T^-1_j ∑_{t:p_t ∈ I_j} y_j in each interval I_j. 
-Source: https://arxiv.org/abs/1807.00263
+FOR BINARY CLASSIFICATION MODELS.\
+Given a calibration dataset ``(x_t, y_t)`` for ``i ∈ {1,...,T}`` let ``p_t= H(x_t)∈[0,1]`` be the forecasted probability. \
+We group the ``p_t`` into intervals ``I_j`` for ``j= 1,2,...,m`` that form a partition of [0,1]. 
+The function computes the observed average ``p_j= T^-1_j ∑_{t:p_t ∈ I_j} y_j`` in each interval ``I_j``.  \
+Source: [Kuleshov, Fenner, Ermon 2018](https://arxiv.org/abs/1807.00263)
 
-Inputs:
-    - y_binary: the array of outputs y_t numerically coded: 1 for the target class, 0 for the null class.
-    - sampled_distributions: an array of sampled distributions stacked column-wise so that in the first row 
-        there is the probability for the target class y_1 and in the second row the probability for the null class y_0.
-    - 'n_bins': number of equally spaced bins to use.
-Outputs:
-    - num_p_per_interval: array with the number of probabilities falling within interval
-    - emp_avg: array with the observed empirical average per interval
-    - bin_centers: array with the centers of the bins
+Inputs: \
+    - `y_binary`: the array of outputs ``y_t`` numerically coded: 1 for the target class, 0 for the null class. \
+    - `sampled_distributions`: an array of sampled distributions stacked column-wise so that in the first row 
+        there is the probability for the target class ``y_1`` and in the second row the probability for the null class ``y_0``. \
+    - `n_bins`: number of equally spaced bins to use.
+
+Outputs: \
+    - `num_p_per_interval`: array with the number of probabilities falling within interval. \
+    - `emp_avg`: array with the observed empirical average per interval. \
+    - `bin_centers`: array with the centers of the bins. 
 
 """
 function empirical_frequency_binary_classification(
@@ -144,21 +148,22 @@ function empirical_frequency_binary_classification(
     return (num_p_per_interval, emp_avg, bin_centers)
 end
 
-""" 
-    sharpness-classification(y_binary,sampled_distributions)
+@doc raw""" 
+    sharpness_classification(y_binary,sampled_distributions)
 
-FOR BINARY CLASSIFICATION MODELS.
-Assess  the sharpness of the model by looking at the distribution of model predictions. When forecasts are sharp, 
-most predictions are close to 0 or 1; not sharp forecasters make predictions closer to 0.5.
-Source: https://arxiv.org/abs/1807.00263
+FOR BINARY CLASSIFICATION MODELS.  \
+Assess  the sharpness of the model by looking at the distribution of model predictions.  
+When forecasts are sharp, most predictions are close to either 0 or 1   \
+Source: [Kuleshov, Fenner, Ermon 2018](https://arxiv.org/abs/1807.00263)
 
-Inputs:
-    -y_binary: the array of outputs y_t numerically coded . 1 for the target class, 0 for the negative result.
-    -sampled_distributions: an array of sampled distributions stacked column-wise so that in the first row 
-        there is the probability for the target class and in the second row the probability for the null class.
-    Outputs:
-    - mean_class_one: a scalar that measure the average prediction for the target class
-    - mean_class_zero: a scalar that measure the average prediction for the null class
+Inputs:  \
+    - `y_binary` : the array of outputs  ``y_t``  numerically coded: 1 for the target class, 0 for the negative result.  \
+    - `sampled_distributions` : an array of sampled distributions stacked column-wise so that in the first row there is the probability for the target class ``y_1`` and in the second row the probability for the null class ``y_0``.  \
+
+Outputs:  \
+    -  `mean_class_one` : a scalar that measure the average prediction for the target class  \
+    -  `mean_class_zero` : a scalar that measure the average prediction for the null class  
+
 """
 function sharpness_classification(y_binary, sampled_distributions)
     mean_class_one = mean(sampled_distributions[1, findall(y_binary .== 1)])

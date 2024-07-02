@@ -61,10 +61,12 @@ Computes predictions from Bayesian neural network.
 - `predict_proba::Bool=true`: If `true` (default), returns probabilities for classification tasks.
 
 # Returns
-For classification tasks:
-- `fμ::AbstractArray`: Mean of the predictive distribution if link function is set to `:plugin`, otherwise the probit approximation. The output shape is column-major as in Flux.
+For classification tasks, LaplaceRedux provides different options:
+    -`normal_distr::Distributions.Normal`:the array of Normal distributions computed by glm_predictive_distribution  If the `link_approx` is set to :distribution
+    -`fμ::AbstractArray` Mean of the normal distribution if  link_approx is set to :plugin
+    -`fμ::AbstractArray` The probit approximation if  link_approx is set to :probit
 For regression tasks:
-- `normal_distr::Distributions.Normal`:the array of Normal distributions computed by glm_predictive_distribution. The output shape is column-major as in Flux.
+- `normal_distr::Distributions.Normal`:the array of Normal distributions computed by glm_predictive_distribution. 
 
 # Examples
 
@@ -94,6 +96,11 @@ function predict(
     if la.likelihood == :classification
 
         # Probit approximation
+        if link_approx == :distribution
+            z = normal_distr
+        end
+
+        # Probit approximation
         if link_approx == :probit
             z = probit(fμ, fvar)
         end
@@ -103,7 +110,7 @@ function predict(
         end
 
         # Sigmoid/Softmax
-        if predict_proba
+        if (predict_proba && link_approx != :distribution)
             if la.posterior.n_out == 1
                 p = Flux.sigmoid(z)
             else
