@@ -60,7 +60,12 @@ Inputs: \
 Outputs:\
     - `counts`: an array cointaining the empirical frequencies for each quantile interval.
 """
-function empirical_frequency_regression(Y_cal, sampled_distributions, n_bins=20)
+function empirical_frequency_regression(Y_cal, sampled_distributions, n_bins::Int=20)
+    if n_bins <= 0
+        throw(ArgumentError("n_bins must be a positive integer"))
+    elseif all(x -> x == 0 || x == 1, y_binary)
+        throw(ArgumentError("y_binary must be an array of 0 and 1"))
+    end
     quantiles = collect(range(0; stop=1, length=n_bins + 1))
     quantiles_matrix = hcat(
         [quantile(samples, quantiles) for samples in sampled_distributions]...
@@ -113,9 +118,12 @@ Outputs: \
     - `bin_centers`: array with the centers of the bins. 
 
 """
-function empirical_frequency_binary_classification(
-    y_binary, sampled_distributions, n_bins=20
-)
+function empirical_frequency_binary_classification(y_binary, sampled_distributions, n_bins::Int=20)
+    if n_bins <= 0
+        throw(ArgumentError("n_bins must be a positive integer"))
+    elseif all(x -> x == 0 || x == 1, y_binary)
+        throw(ArgumentError("y_binary must be an array of 0 and 1"))
+    end
     #intervals boundaries
     int_bds = collect(range(0; stop=1, length=n_bins + 1))
     #bin centers
