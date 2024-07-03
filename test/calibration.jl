@@ -73,6 +73,7 @@ end
     sampled_distributions = [rand(Distributions.Normal(1, 1.0),6) for _ in 1:5]
     counts = empirical_frequency_regression(Y_cal, sampled_distributions, n_bins=10)
     @test typeof(counts) == Array{Float64, 1}  # Check if the output is an array of Float64
+    @test length(counts) == 10
 
     # Test 2: Check the function with a known input
     #to do
@@ -103,13 +104,13 @@ end
 
 
 
-    # Test 4: Invalid Y_cal input
+    # Test 3: Invalid Y_cal input
     Y_cal =  [0, 1, 0, 1.2, 4]
     sampled_distributions =  rand(Normal(0.5, 0.1), 5, 6)
     @test_throws ArgumentError empirical_frequency_binary_classification(Y_cal, sampled_distributions, n_bins=10)
 
 
-    # Test 5: Invalid n_bins input
+    # Test 4: Invalid n_bins input
     Y_cal = rand(0:1, 5)
     sampled_distributions =  rand(Normal(0.5, 0.1), 5, 6)
     @test_throws ArgumentError empirical_frequency_binary_classification(Y_cal, sampled_distributions, n_bins=0)

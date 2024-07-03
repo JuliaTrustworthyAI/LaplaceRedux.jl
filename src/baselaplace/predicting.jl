@@ -98,6 +98,7 @@ function predict(
         # Probit approximation
         if link_approx == :distribution
             z = normal_distr
+            #to complete e transform in a distribution.categorical ....
         end
 
         # Probit approximation
