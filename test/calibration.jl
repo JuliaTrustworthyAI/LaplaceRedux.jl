@@ -70,10 +70,11 @@ end
 @testset "empirical_frequency_regression tests" begin
     # Test 1: Check that the function runs without errors and returns an array for a simple case
     Y_cal = [0.5, 1.5, 2.5, 3.5, 4.5]
+    n_bins = 10
     sampled_distributions = [rand(Distributions.Normal(1, 1.0),6) for _ in 1:5]
-    counts = empirical_frequency_regression(Y_cal, sampled_distributions, n_bins=10)
+    counts = empirical_frequency_regression(Y_cal, sampled_distributions, n_bins=n_bins)
     @test typeof(counts) == Array{Float64, 1}  # Check if the output is an array of Float64
-    @test length(counts) == 10
+    @test length(counts) == n_bins + 1 
 
     # Test 2: Check the function with a known input
     #to do
@@ -91,7 +92,7 @@ end
 @testset "empirical_frequency_binary_classification tests" begin
     # Test 1: Check that the function runs without errors and returns an array for a simple case
     y_binary = rand(0:1, 10)
-    sampled_distributions = rand(Normal(0.5, 0.1), 10, 6)
+    sampled_distributions = rand(2,10)
     n_bins = 4
     num_p_per_interval, emp_avg, bin_centers = empirical_frequency_binary_classification(y_binary, sampled_distributions,  n_bins=n_bins)
     @test length(num_p_per_interval) == n_bins
@@ -106,12 +107,12 @@ end
 
     # Test 3: Invalid Y_cal input
     Y_cal =  [0, 1, 0, 1.2, 4]
-    sampled_distributions =  rand(Normal(0.5, 0.1), 5, 6)
+    sampled_distributions =  rand(2,5)
     @test_throws ArgumentError empirical_frequency_binary_classification(Y_cal, sampled_distributions, n_bins=10)
 
 
     # Test 4: Invalid n_bins input
     Y_cal = rand(0:1, 5)
-    sampled_distributions =  rand(Normal(0.5, 0.1), 5, 6)
+    sampled_distributions =  rand(2,5)
     @test_throws ArgumentError empirical_frequency_binary_classification(Y_cal, sampled_distributions, n_bins=0)
 end
