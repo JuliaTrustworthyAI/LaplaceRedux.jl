@@ -132,3 +132,11 @@ plot(la, X, y; zoom=-5, size=(400,400))
     Scatter: 8.497215713339543
 
 ![](regression_files/figure-commonmark/cell-7-output-5.svg)
+
+
+## Calibration Plot
+Once the prior precision has been optimized it is possible to evaluate the quality of the predictive distribution 
+obtained through a calibration plot [Link text Here](https://link-url-here.org)  [add cross link]. 
+
+![](regression_files/figure-commonmark/miscalibration.svg)
+
