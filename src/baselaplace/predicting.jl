@@ -1,7 +1,6 @@
 using Distributions
 using Flux
 
-
 """
     has_softmax_or_sigmoid_final_layer(model::Flux.Chain)
 
@@ -20,10 +19,8 @@ function has_softmax_or_sigmoid_final_layer(model::Flux.Chain)
     # Check if the last layer is either softmax or sigmoid
     has_finaliser = (last_layer == Flux.sigmoid || last_layer == Flux.softmax)
 
-    return  has_finaliser
+    return has_finaliser
 end
-
-
 
 """
     functional_variance(la::AbstractLaplace, 𝐉::AbstractArray)
@@ -107,10 +104,13 @@ predict(la, hcat(x...))
 ```
 """
 function predict(
-    la::AbstractLaplace, X::AbstractArray; link_approx=:probit, predict_proba::Bool=true , ret_distr::Bool=false
+    la::AbstractLaplace,
+    X::AbstractArray;
+    link_approx=:probit,
+    predict_proba::Bool=true,
+    ret_distr::Bool=false,
 )
     normal_distr, fμ, fvar = glm_predictive_distribution(la, X)
-
 
     # Regression:
     if la.likelihood == :regression
@@ -119,7 +119,6 @@ function predict(
 
     # Classification:
     if la.likelihood == :classification
-
         has_finaliser = has_softmax_or_sigmoid_final_layer(la.model)
 
         if has_finaliser == false
@@ -132,7 +131,6 @@ function predict(
             if link_approx == :plugin
                 z = fμ
             end
-            
 
             # Sigmoid/Softmax
             if predict_proba
@@ -142,13 +140,11 @@ function predict(
                         p = map(x -> Bernoulli(x), z)
                     end
 
-
                 else
                     p = Flux.softmax(z; dims=1)
                     if ret_distr
-                        p = mapslices(col -> Categorical(col), p, dims=1)
+                        p = mapslices(col -> Categorical(col), p; dims=1)
                     end
-
                 end
             else
                 if ret_distr
@@ -164,21 +160,17 @@ function predict(
                 if la.posterior.n_out == 1
                     p = map(x -> Bernoulli(x), fμ)
                 else
-                    p = mapslices(col -> Categorical(col), fμ, dims=1)
+                    p = mapslices(col -> Categorical(col), fμ; dims=1)
                 end
 
             else
-                p= fμ
-            end       
+                p = fμ
+            end
         end
-
 
         return p
     end
 end
-
-
-
 
 """
     probit(fμ::AbstractArray, fvar::AbstractArray)
