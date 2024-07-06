@@ -16,7 +16,7 @@ yadda yadda
 
 ## Libraries
 
-``` julia
+```{julia}
 using Pkg; Pkg.activate("docs")
 # Import libraries
 using Flux, Plots, TaijaPlotting, Random, Statistics, LaplaceRedux, LinearAlgebra
