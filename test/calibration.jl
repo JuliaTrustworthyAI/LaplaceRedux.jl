@@ -79,30 +79,28 @@ end
 
     # Test 2: Check the function with a known input
     #to do
-        # Step 1: Define the parameters for the sine wave
-        start_point = 0.0  # Start of the interval
-        end_point = 2 * π  # End of the interval, 2π for a full sine wave cycle
-        sample_points = 2000  # Number of sample points between 0 and 2π
-    
-        # Step 2: Generate the sample points
-        x = LinRange(start_point, end_point, sample_points)
-    
-        # Step 3: Generate the sine wave data
-        y = sin.(x)
-        # Step 4: Generate samples
-        distrs= Distributions.Normal.(y,0.01)
-        sampled_distributions = rand.(distrs,100)
-        #fake perfectly calibrated predictions 
-        predicted_elements = rand.(distrs)
-        n_bins=100
-        emp_freq = empirical_frequency_regression(predicted_elements, sampled_distributions; n_bins= n_bins)
-        quantiles = collect(range(0; stop = 1, length = n_bins + 1))
-        area = trapz((quantiles), vec(abs.(emp_freq - quantiles)))
-        @test area < 0.1
+    # Step 1: Define the parameters for the sine wave
+    start_point = 0.0  # Start of the interval
+    end_point = 2 * π  # End of the interval, 2π for a full sine wave cycle
+    sample_points = 2000  # Number of sample points between 0 and 2π
 
+    # Step 2: Generate the sample points
+    x = LinRange(start_point, end_point, sample_points)
 
-
-
+    # Step 3: Generate the sine wave data
+    y = sin.(x)
+    # Step 4: Generate samples
+    distrs = Distributions.Normal.(y, 0.01)
+    sampled_distributions = rand.(distrs, 100)
+    #fake perfectly calibrated predictions 
+    predicted_elements = rand.(distrs)
+    n_bins = 100
+    emp_freq = empirical_frequency_regression(
+        predicted_elements, sampled_distributions; n_bins=n_bins
+    )
+    quantiles = collect(range(0; stop=1, length=n_bins + 1))
+    area = trapz((quantiles), vec(abs.(emp_freq - quantiles)))
+    @test area < 0.1
 
     # Test 3: Invalid n_bins input
     Y_cal = [0.5, 1.5, 2.5, 3.5, 4.5]
@@ -144,10 +142,6 @@ end
     )
 end
 
-
-
-
-
 # Test for `sharpness_regression` function
 @testset "sharpness_regression distributions tests" begin
 
@@ -158,12 +152,13 @@ end
 
     # Test 2: Check the function with a known input
     distributions = [
-        Distributions.Normal.(1, 0.01), Distributions.Normal.(1, 2), Distributions.Normal.(1, 3)
+        Distributions.Normal.(1, 0.01),
+        Distributions.Normal.(1, 2),
+        Distributions.Normal.(1, 3),
     ]
     mean_variance = mean(map(var, distributions))
     sharpness = sharpness_regression(distributions)
     @test sharpness ≈ mean_variance
-
 end
 # Test for `empirical_frequency_regression` function
 @testset "empirical_frequency_regression distributions tests" begin
@@ -187,17 +182,14 @@ end
 
     # Step 3: Generate the sine wave data
     y = sin.(x)
-    distrs= Distributions.Normal.(y,0.01)
+    distrs = Distributions.Normal.(y, 0.01)
     #fake perfectly calibrated predictions 
     predicted_elements = rand.(distrs)
-    n_bins=100
-    emp_freq = empirical_frequency_regression(predicted_elements, distrs; n_bins= n_bins)
-    quantiles = collect(range(0; stop = 1, length = n_bins + 1))
+    n_bins = 100
+    emp_freq = empirical_frequency_regression(predicted_elements, distrs; n_bins=n_bins)
+    quantiles = collect(range(0; stop=1, length=n_bins + 1))
     area = trapz((quantiles), vec(abs.(emp_freq - quantiles)))
     @test area < 0.1
-
-
-
 
     # Test 3: Invalid n_bins input
     Y_cal = [0.5, 1.5, 2.5, 3.5, 4.5]
@@ -210,10 +202,13 @@ end
 
     # Test 1: Check that the function runs without errors and returns two scalars for a simple case
     y_binary = [1, 0, 1, 0]
-    distributions = [Distributions.Bernoulli(0.7); Distributions.Bernoulli(0.7); Distributions.Bernoulli(0.7); Distributions.Bernoulli(0.7)]  # probabilities
-    mean_class_one, mean_class_zero = sharpness_classification(
-        y_binary, distributions
-    )
+    distributions = [
+        Distributions.Bernoulli(0.7)
+        Distributions.Bernoulli(0.7)
+        Distributions.Bernoulli(0.7)
+        Distributions.Bernoulli(0.7)
+    ]  # probabilities
+    mean_class_one, mean_class_zero = sharpness_classification(y_binary, distributions)
     @test typeof(mean_class_one) <: Real  # Check if mean_class_one is a scalar
     @test typeof(mean_class_zero) <: Real  # Check if mean_class_zero is a scalar
 
@@ -226,15 +221,17 @@ end
         Distributions.Bernoulli(0.5)
         Distributions.Bernoulli(0.9)
     ]
-    mean_class_one, mean_class_zero = sharpness_classification(
-        y_binary, distributions
-    )
-    @test mean_class_one ≈ mean(mean.(distributions[ [2, 4, 5]]))
-    @test mean_class_zero ≈ mean(mean.(distributions[ [1, 3]]))
+    mean_class_one, mean_class_zero = sharpness_classification(y_binary, distributions)
+    @test mean_class_one ≈ mean(mean.(distributions[[2, 4, 5]]))
+    @test mean_class_zero ≈ mean(mean.(distributions[[1, 3]]))
 
     # Test 3: Edge case with all ones in y_binary
     y_binary_all_ones = [1, 1, 1]
-    distributions_all_ones = [ Distributions.Bernoulli(0.7); Distributions.Bernoulli(0.7); Distributions.Bernoulli(0.3)]
+    distributions_all_ones = [
+        Distributions.Bernoulli(0.7)
+        Distributions.Bernoulli(0.7)
+        Distributions.Bernoulli(0.3)
+    ]
     mean_class_one_all_ones, mean_class_zero_all_ones = sharpness_classification(
         y_binary_all_ones, distributions_all_ones
     )
@@ -243,7 +240,11 @@ end
 
     # Test 4: Edge case with all zeros in y_binary
     y_binary_all_zeros = [0, 0, 0]
-    distributions_all_zeros = [Distributions.Bernoulli(0.7); Distributions.Bernoulli(0.7); Distributions.Bernoulli(0.3)]
+    distributions_all_zeros = [
+        Distributions.Bernoulli(0.7)
+        Distributions.Bernoulli(0.7)
+        Distributions.Bernoulli(0.3)
+    ]
     mean_class_one_all_zeros, mean_class_zero_all_zeros = sharpness_classification(
         y_binary_all_zeros, distributions_all_zeros
     )
@@ -265,7 +266,6 @@ end
     @test length(bin_centers) == n_bins
 
     # Test 2: Check the function with a known input
-    
 
     #to do
 
@@ -283,6 +283,3 @@ end
         Y_cal, distributions, n_bins=0
     )
 end
-
-
-

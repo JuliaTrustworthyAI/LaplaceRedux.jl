@@ -141,7 +141,6 @@ function sharpness_classification(y_binary, sampled_distributions)
     return mean_class_one, mean_class_zero
 end
 
-
 @doc raw""" 
     sharpness_regression(distributions::Distributions.Normal)
 Dispatched version for Normal distributions
@@ -159,7 +158,6 @@ function sharpness_regression(distributions::Distributions.Normal)
     sharpness = mean(var.(distributions))
     return sharpness
 end
-
 
 @doc raw""" 
     empirical_frequency_regression(Y_cal, distributions::Distributions.Normal, n_bins=20)
@@ -181,7 +179,9 @@ Inputs: \
 Outputs:\
     - `counts`: an array cointaining the empirical frequencies for each quantile interval.
 """
-function empirical_frequency_regression(Y_cal, distributions::Distributions.Normal; n_bins::Int=20)
+function empirical_frequency_regression(
+    Y_cal, distributions::Distributions.Normal; n_bins::Int=20
+)
     println(n_bins)
     if n_bins <= 0
         throw(ArgumentError("n_bins must be a positive integer"))
@@ -189,9 +189,7 @@ function empirical_frequency_regression(Y_cal, distributions::Distributions.Norm
     n_edges = n_bins + 1
     quantiles = collect(range(0; stop=1, length=n_edges))
     println(quantiles)
-    quantiles_matrix = hcat(
-        [quantile(distr, quantiles) for distr in distributions]...
-    )
+    quantiles_matrix = hcat([quantile(distr, quantiles) for distr in distributions]...)
     n_rows = size(quantiles_matrix, 1)
     counts = Float64[]
 
@@ -219,11 +217,10 @@ Outputs:  \
 
 """
 function sharpness_classification(y_binary, distributions::Vector{Bernoulli{Float64}})
-    mean_class_one = mean(mean.(distributions[ findall(y_binary .== 1)]))
-    mean_class_zero = mean(1 .- mean.(distributions[ findall(y_binary .== 0)]))
+    mean_class_one = mean(mean.(distributions[findall(y_binary .== 1)]))
+    mean_class_zero = mean(1 .- mean.(distributions[findall(y_binary .== 0)]))
     return mean_class_one, mean_class_zero
 end
-
 
 @doc raw""" 
     empirical_frequency_classification(y_binary, distributions::Distributions.Bernoulli)
