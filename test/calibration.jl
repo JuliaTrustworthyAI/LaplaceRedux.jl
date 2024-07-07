@@ -4,6 +4,7 @@ using Distributions
 using Trapz
 
 @testset "sharpness_classification sampled distributions tests" begin
+    @info " testing sharpness_classification with SAMPLED distributions"
 
     # Test 1: Check that the function runs without errors and returns two scalars for a simple case
     y_binary = [1, 0, 1, 0, 1]
@@ -47,6 +48,7 @@ end
 
 # Test for `sharpness_regression` function
 @testset "sharpness_regression sampled distributions tests" begin
+    @info " testing sharpness_regression with SAMPLED distributions"
 
     # Test 1: Check that the function runs without errors and returns a scalar for a simple case
     sampled_distributions = [randn(100) for _ in 1:10]  # Create 10 distributions, each with 100 samples
@@ -69,6 +71,7 @@ end
 
 # Test for `empirical_frequency_regression` function
 @testset "empirical_frequency_regression sampled distributions tests" begin
+    @info " testing empirical_frequency_regression with SAMPLED distributions"
     # Test 1: Check that the function runs without errors and returns an array for a simple case
     Y_cal = [0.5, 1.5, 2.5, 3.5, 4.5]
     n_bins = 10
@@ -112,6 +115,7 @@ end
 
 # Test for `empirical_frequency_binary_classification` function
 @testset "empirical_frequency_binary_classification sampled distributions tests" begin
+    @info " testing empirical_frequency_binary_classification with SAMPLED distributions"
     # Test 1: Check that the function runs without errors and returns an array for a simple case
     y_binary = rand(0:1, 10)
     sampled_distributions = rand(2, 10)
@@ -124,8 +128,27 @@ end
     @test length(bin_centers) == n_bins
 
     # Test 2: Check the function with a known input
+    #Note to the reader: this is a weak test because it only check if the final average is close to 0.5, but it is a necessary condition.
 
-    #to do
+    #step 1: generate random probabilities
+    target_class_probabilities = rand(5000)
+    null_class_probabilities = 1 .- target_class_probabilities
+    sampled_distributions = transpose(
+        hcat(target_class_probabilities, null_class_probabilities)
+    )
+    #step 2: generate perfectly calibrated synthetic output 
+    y_binary = []
+    for el in sampled_distributions[1, :]
+        push!(y_binary, rand(Distributions.Bernoulli(el), 1))
+    end
+    #step 3: convert to an array of 0 and 1
+    y_int = [Int64(first(inner_vector)) for inner_vector in y_binary]
+    #step 4: compute empirical average
+    num_p_per_interval, emp_avg, bin_centers = empirical_frequency_binary_classification(
+        y_int, sampled_distributions; n_bins=20
+    )
+
+    @test isapprox(mean(emp_avg), 0.5; atol=0.01)
 
     # Test 3: Invalid Y_cal input
     Y_cal = [0, 1, 0, 1.2, 4]
@@ -144,6 +167,7 @@ end
 
 # Test for `sharpness_regression` function
 @testset "sharpness_regression distributions tests" begin
+    @info " testing sharpness_regression with distributions"
 
     # Test 1: Check that the function runs without errors and returns a scalar for a simple case
     distributions = [Distributions.Normal.(1, 0.01) for _ in 1:10]  # Create 10 distributions, each with 100 samples
@@ -162,6 +186,7 @@ end
 end
 # Test for `empirical_frequency_regression` function
 @testset "empirical_frequency_regression distributions tests" begin
+    @info " testing empirical_frequency_regression with distributions"
     # Test 1: Check that the function runs without errors and returns an array for a simple case
     Y_cal = [0.5, 1.5, 2.5, 3.5, 4.5]
     n_bins = 10
@@ -199,6 +224,7 @@ end
     )
 end
 @testset "sharpness_classification distributions tests" begin
+    @info " testing sharpness_classification with distributions"
 
     # Test 1: Check that the function runs without errors and returns two scalars for a simple case
     y_binary = [1, 0, 1, 0]
@@ -254,6 +280,7 @@ end
 
 # Test for `empirical_frequency_binary_classification` function
 @testset "empirical_frequency_binary_classification distributions tests" begin
+    @info " testing empirical_frequency_classification with distributions"
     # Test 1: Check that the function runs without errors and returns an array for a simple case
     y_binary = rand(0:1, 10)
     distributions = [Distributions.Bernoulli(0.7) for _ in 1:10]
@@ -266,8 +293,23 @@ end
     @test length(bin_centers) == n_bins
 
     # Test 2: Check the function with a known input
+    #Note to the reader: this is a weak test because it only check if the final average is close to 0.5, but it is a necessary condition.
+    #step 1: generate random probabilities
+    target_class_probabilities = rand(5000)
+    distributions = map(x -> Distributions.Bernoulli(x), target_class_probabilities)
+    #step 2: generate perfectly calibrated synthetic output 
+    y_binary = []
+    for el in distributions
+        push!(y_binary, rand(el, 1))
+    end
+    #step 3: convert to an array of 0 and 1
+    y_int = [Int64(first(inner_vector)) for inner_vector in y_binary]
+    #step 4: compute empirical average
+    num_p_per_interval, emp_avg, bin_centers = empirical_frequency_binary_classification(
+        y_int, distributions; n_bins=20
+    )
 
-    #to do
+    @test isapprox(mean(emp_avg), 0.5; atol=0.1)
 
     # Test 3: Invalid Y_cal input
     Y_cal = [0, 1, 0, 1.2, 4]

@@ -27,11 +27,13 @@ function empirical_frequency_regression(Y_cal, sampled_distributions; n_bins::In
     n_edges = n_bins + 1
     quantiles = collect(range(0; stop=1, length=n_edges))
     quantiles_matrix = hcat(
-        [quantile(samples, quantiles) for samples in sampled_distributions]...
+        [
+            map(Base.Fix1(quantile, samples), quantiles) for
+            samples in sampled_distributions
+        ]...,
     )
     n_rows = size(quantiles_matrix, 1)
     counts = Float64[]
-
     for i in 1:n_rows
         push!(counts, sum(Y_cal .<= quantiles_matrix[i, :]) / length(Y_cal))
     end
@@ -100,14 +102,14 @@ function empirical_frequency_binary_classification(
     class_probs = sampled_distributions[1, :]
     # iterate over the bins
     for j in 1:n_bins
-        push!(num_p_per_interval, sum(int_bds[j] .< class_probs .< int_bds[j + 1]))
+        push!(num_p_per_interval, sum(int_bds[j] .< class_probs .<= int_bds[j + 1]))
         if num_p_per_interval[j] == 0
             push!(emp_avg, 0)
             push!(pred_avg, bin_centers[j])
 
         else
             # find the indices fo all istances for which class_probs fall withing the j-th interval
-            indices = findall(x -> int_bds[j] < x < int_bds[j + 1], class_probs)
+            indices = findall(x -> int_bds[j] < x <= int_bds[j + 1], class_probs)
             #compute the empirical average and saved it in emp_avg in the j-th position
             push!(emp_avg, 1 / num_p_per_interval[j] * sum(y_binary[indices]))
             #TO DO: maybe substitute to bin_Centers?
@@ -154,7 +156,7 @@ Inputs: \
 Outputs: \
     - `sharpness`: a scalar that measure the level of sharpness of the regressor
 """
-function sharpness_regression(distributions::Distributions.Normal)
+function sharpness_regression(distributions::Vector{Normal{Float64}})
     sharpness = mean(var.(distributions))
     return sharpness
 end
@@ -180,16 +182,16 @@ Outputs:\
     - `counts`: an array cointaining the empirical frequencies for each quantile interval.
 """
 function empirical_frequency_regression(
-    Y_cal, distributions::Distributions.Normal; n_bins::Int=20
+    Y_cal, distributions::Vector{Normal{Float64}}; n_bins::Int=20
 )
-    println(n_bins)
     if n_bins <= 0
         throw(ArgumentError("n_bins must be a positive integer"))
     end
     n_edges = n_bins + 1
     quantiles = collect(range(0; stop=1, length=n_edges))
-    println(quantiles)
-    quantiles_matrix = hcat([quantile(distr, quantiles) for distr in distributions]...)
+    quantiles_matrix = hcat(
+        [map(Base.Fix1(quantile, distr), quantiles) for distr in distributions]...
+    )#warning deprecated, need to change in not sure what
     n_rows = size(quantiles_matrix, 1)
     counts = Float64[]
 
@@ -265,14 +267,14 @@ function empirical_frequency_binary_classification(
     class_probs = mean.(distributions)
     # iterate over the bins
     for j in 1:n_bins
-        push!(num_p_per_interval, sum(int_bds[j] .< class_probs .< int_bds[j + 1]))
+        push!(num_p_per_interval, sum(int_bds[j] .< class_probs .<= int_bds[j + 1]))
         if num_p_per_interval[j] == 0
             push!(emp_avg, 0)
             push!(pred_avg, bin_centers[j])
 
         else
             # find the indices fo all istances for which class_probs fall withing the j-th interval
-            indices = findall(x -> int_bds[j] < x < int_bds[j + 1], class_probs)
+            indices = findall(x -> int_bds[j] < x <= int_bds[j + 1], class_probs)
             #compute the empirical average and saved it in emp_avg in the j-th position
             push!(emp_avg, 1 / num_p_per_interval[j] * sum(y_binary[indices]))
             #TO DO: maybe substitute to bin_Centers?
