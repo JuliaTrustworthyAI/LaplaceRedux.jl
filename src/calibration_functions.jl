@@ -14,7 +14,7 @@ Source: [Kuleshov, Fenner, Ermon 2018](https://arxiv.org/abs/1807.00263)
 
 Inputs: \
     - `Y_cal`: a vector of values ``y_t``\
-    - `sampled_distributions`:a Vector{Vector{Float64}} of sampled distributions stacked row-wise.\
+    - `sampled_distributions`: a Vector{Vector{Float64}} of sampled distributions stacked row-wise.\
         For example [rand(distr,50) for distr in LaplaceRedux.predict(la,X)]
     - `n_bins`: number of equally spaced bins to use.\
 Outputs:\
@@ -283,4 +283,22 @@ function empirical_frequency_binary_classification(
     end
     #return the tuple
     return (num_p_per_interval, emp_avg, bin_centers)
+end
+
+
+
+
+
+
+function sigma_scaling(la::Laplace, x_cal::Vector{Float64}, y_cal::Vector{Float64})
+
+    y_pred = LaplaceRedux.predict(la,x_cal)
+
+    
+
+    assert(la.likelihood=:distribution, "this method works only for regression tasks ")
+    println("testing sigma_scaling")
+
+
+
 end
