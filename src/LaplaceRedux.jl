@@ -1,7 +1,7 @@
 module LaplaceRedux
 include("calibration_functions.jl")
 export empirical_frequency_binary_classification,
-    sharpness_classification, empirical_frequency_regression, sharpness_regression
+    sharpness_classification, empirical_frequency_regression, sharpness_regression, sigma_scaling
 
 include("utils.jl")
 

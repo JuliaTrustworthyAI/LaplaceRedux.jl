@@ -1,5 +1,5 @@
 using Statistics
-using Distributions
+using Distributions: Normal, Bernoulli
 @doc raw""" 
     empirical_frequency_regression(Y_cal, sampled_distributions, n_bins=20)
 
@@ -288,17 +288,43 @@ end
 
 
 
+function extract_mean_and_variance(distr::Vector{Normal{Float64}})
+
+    means= mean.(distr)
+    variances= var.(distr)
+
+    return means, variances
+
+end
+
+function sigma_scaling(y_pred::Vector{Normal{Float64}}, y_cal::Vector{Float64})
+
+    lenght_y_cal= length(y_cal)
 
 
-function sigma_scaling(la::Laplace, x_cal::Vector{Float64}, y_cal::Vector{Float64})
+    means, variances= extract_mean_and_variance(y_pred)
 
-    y_pred = LaplaceRedux.predict(la,x_cal)
 
-    
+    sigma = sqrt( 1 / lenght_y_cal *  sum(  norm.( y_cal .- means) ./variances   ) )
 
-    assert(la.likelihood=:distribution, "this method works only for regression tasks ")
-    println("testing sigma_scaling")
 
+    return sigma
+
+
+end
+
+function sigma_scaling(la, x_cal::Vector{Float64}, y_cal::Vector{Float64})
+
+    lenght_y_cal= length(y_cal)
+
+
+    _, means, variances= glm_predictive_distribution(la, x_cal)
+
+
+    sigma = sqrt( 1 / lenght_y_cal *  sum(  norm.( y_cal .- means) ./variances   ) )
+
+
+    return sigma
 
 
 end
