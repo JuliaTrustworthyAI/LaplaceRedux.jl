@@ -1,5 +1,6 @@
 using Statistics
 using Distributions: Normal, Bernoulli
+#using Distributions
 @doc raw""" 
     empirical_frequency_regression(Y_cal, sampled_distributions, n_bins=20)
 
@@ -288,7 +289,19 @@ end
 
 
 
-function extract_mean_and_variance(distr::Vector{Normal{Float64}})
+
+@doc """ 
+    extract_mean_and_variance(distr::Vector{Normal{<: AbstractFloat}})
+Extract the mean and the variance of each distributions and return them in two separate lists.
+
+Inputs: \
+    - `distributions`: a Vector of Normal distributions \
+
+Outputs: \
+    - `means`: the list of the means \
+    - `variances`:  the list of the variances 
+"""
+function extract_mean_and_variance(distr::Vector{Normal{T}}) where T <: AbstractFloat
 
     means= mean.(distr)
     variances= var.(distr)
@@ -297,31 +310,62 @@ function extract_mean_and_variance(distr::Vector{Normal{Float64}})
 
 end
 
-function sigma_scaling(y_pred::Vector{Normal{Float64}}, y_cal::Vector{Float64})
-
-    lenght_y_cal= length(y_cal)
 
 
-    means, variances= extract_mean_and_variance(y_pred)
+@doc raw""" 
+    sigma_scaling(distr::Vector{Normal{T}}, y_cal::Vector{<:AbstractFloat}) where T <: AbstractFloat
+
+Compute the value of  Σ that maximize the conditional log-likelihood:
+```math
+ m ln(Σ) +1/2 * Σ^{-2} ∑_{i=1}^{i=m} || y_cal_i -   ̄y_mean_i ||^2 / σ^2_i 
+```
+where m is the number of elements in the calibration set (x_cal,y_cal). \
+Source: [Laves,Ihler,Fast, Kahrs, Ortmaier,2020](https://proceedings.mlr.press/v121/laves20a.html)
+Inputs: \
+    - `distr`: a Vector of Normal distributions \
+    - `y_cal`: a Vector of true results.
+
+Outputs: \
+    - `sigma`: the scalar that maximize the likelihood.
+"""
+function sigma_scaling(distr::Vector{Normal{T}}, y_cal::Vector{<:AbstractFloat}) where T <: AbstractFloat
 
 
-    sigma = sqrt( 1 / lenght_y_cal *  sum(  norm.( y_cal .- means) ./variances   ) )
+
+    means, variances= extract_mean_and_variance(distr)
+
+
+    sigma =  sqrt( 1 /length(y_cal) *  sum(  norm.( y_cal .- means) ./variances   ) )
 
 
     return sigma
 
 
 end
+@doc raw""" 
+    sigma_scaling(la::Laplace, x_cal::Vector{<:AbstractFloat}, y_cal::Vector{<:AbstractFloat})
 
-function sigma_scaling(la, x_cal::Vector{Float64}, y_cal::Vector{Float64})
+Compute the value of  Σ that maximize the conditional log-likelihood:
+```math
+m ln(Σ) +1/2 * Σ^{-2} ∑_{i=1}^{i=m} || y_cal_i -   ̄y_mean_i ||^2 / σ^2_i 
+```
+where m is the number of elements in the calibration set (x_cal,y_cal). \
+Source: [Laves,Ihler,Fast, Kahrs, Ortmaier,2020](https://proceedings.mlr.press/v121/laves20a.html)
+Inputs: \
+    - `la`: the Laplace object \
+    - `x_cal`: a Vector of inputs. \
+    - `y_cal`: a Vector of true results.
 
-    lenght_y_cal= length(y_cal)
+Outputs: \
+    - `sigma`: the scalar that maximize the likelihood.
+"""
+function sigma_scaling(la::Laplace, x_cal::Vector{<:AbstractFloat}, y_cal::Vector{<:AbstractFloat})
 
 
-    _, means, variances= glm_predictive_distribution(la, x_cal)
+    distrs, means, variances= glm_predictive_distribution(la, x_cal')
 
 
-    sigma = sqrt( 1 / lenght_y_cal *  sum(  norm.( y_cal .- means) ./variances   ) )
+    sigma = sigma_scaling(distrs, y_cal)
 
 
     return sigma
