@@ -1,4 +1,4 @@
-using Distributions
+using Distributions: Normal, Bernoulli, Categorical
 using Flux
 
 """
@@ -64,7 +64,7 @@ function glm_predictive_distribution(la::AbstractLaplace, X::AbstractArray)
     fvar = functional_variance(la, 𝐉)
     fvar = reshape(fvar, size(fμ)...)
     fstd = sqrt.(fvar)
-    normal_distr = [Distributions.Normal(fμ[i], fstd[i]) for i in 1:size(fμ, 2)]
+    normal_distr = [Normal(fμ[i], fstd[i]) for i in 1:size(fμ, 2)]
     return (normal_distr, fμ, fvar)
 end
 
