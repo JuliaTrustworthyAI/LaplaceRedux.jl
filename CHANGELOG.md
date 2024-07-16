@@ -6,6 +6,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 *Note*: We try to adhere to these practices as of version [v0.2.1].
 
+
+## Version [0.3.0] - 2024-07-16
+
+### Changed
+
+-Changed the behavior of the `predict` function so that it now gives the user the possibility to get distributions from the Distributions.jl package as output. [#99]
+
+### Added
+
+- Added new keyword parameter ret_distr::Bool=false to predict. [#99]
+
 ## Version [0.2.1] - 2024-05-29
 
 ### Changed
