@@ -6,24 +6,46 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 *Note*: We try to adhere to these practices as of version [v0.2.1].
 
-## Version [0.3.1] - 2024-06-22
+## Version [1.0.0] - 2024-07-01
 
 ### Changed
 
-- Changed `glm_predictive_distribution` so that return a tuple(Normal distribution,fμ, fvar) rather than the tuple (mean,variance). [#90]
+- Calling a Laplace object on an array, `(la::AbstractLaplace)(X::AbstractArray)` now simply calls the underlying neural network on data. In other words, it returns the generic predictions, not LA predictions. This was implemented to facilitate better interplay with `MLJFlux`. [#39] 
+- Moving straight to `1.0.0` now for package, because zero major versions cause compat headaches with other packages in Taija ecosystem. [#39]
+- Removed support for `v1.7`, now `v1.9` as lower bound. This is because we are now overloading the `MLJFlux.train` and `MLJFlux.train_epoch` functions, which were added in version `v0.5.0` of that package, which is lower-bounded at `v1.9`. [#39]
+- Updated codecov workflow in CI.yml. [#39]
+- fixed test functions [#39]
+- adapted the LaplaceClassification and the LaplaceRegression struct to use the new @mlj_model macro from MLJBase.[#39]
+- Changed the fit! method arguments. [#39]
+- Changed the predict functions for both LaplaceClassification and  LaplaceRegression.[#39]
 
-## Version [0.3.0] - 2024-06-21
+### Removed
+
+- Removed the shape, build and clean! functions.[#39]
+- Removed Review dog for code format suggestions. [#39]
+
+## Version [0.2.3] - 2024-05-31
 
 ### Changed
 
-- Changed `glm_predictive_distribution` so that return a Normal distribution rather than the tuple (mean,variance). [#90]
-- Changed `predict` so that return directly a Normal distribution  in the case of regression. [#90]
+- Removed the link_approx parameter in LaplaceRegression since it is not required.
+- Changed MMI.clean! to check the value of link_approx only in the case likelihood is set to `:classification`
+- Now the likelihood type in LaplaceClassification and LaplaceRegression is automatically set by the inner constructor. The user is not required to provide it as a parameter anymore.
+
+
+
+
+## Version [0.2.2] - 2024-05-30
+
+### Changed
+
+- Unified duplicated function MMI.clean!: previously MMI.clean! consisted of two separate functions for handling :classification and :regression types respectively. Now, a single MMI.clean! function handles both cases efficiently.[#39]
+- Split LaplaceApproximation struct in two different structs:LaplaceClassification and LaplaceRegression  [#39] 
+- Unified the MLJFlux.shape and the MLJFlux.build functions to handle both :classification and :regression tasks. In particular, shape now handles multi-output regression cases too [[#39](https://github.com/JuliaTrustworthyAI/LaplaceRedux.jl/issues/39)]
+- Changed model metadata for LaplaceClassification and LaplaceRegression
 
 ### Added
-
-- Added functions to compute the average empirical frequency for both classification and regression problems in utils.jl. [#90]
-
-
+ Added Distributions to LaplaceRedux dependency ( needed for MMI.predict(model::LaplaceRegression, fitresult, Xnew) )
 
 
 

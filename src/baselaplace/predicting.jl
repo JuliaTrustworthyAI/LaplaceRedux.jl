@@ -1,27 +1,5 @@
-using Distributions
-using Flux
-
-"""
-    has_softmax_or_sigmoid_final_layer(model::Flux.Chain)
-
-Check if the FLux model ends with a sigmoid or with a softmax layer
-
-Input:
-    - `model`: the Flux Chain object that represent the neural network.
-Return:
-    - `has_finaliser`: true if the check is positive, false otherwise.
-
-"""
-function has_softmax_or_sigmoid_final_layer(model::Flux.Chain)
-    # Get the last layer of the model
-    last_layer = last(model.layers)
-
-    # Check if the last layer is either softmax or sigmoid
-    has_finaliser = (last_layer == Flux.sigmoid || last_layer == Flux.softmax)
-
-    return has_finaliser
-end
-
+using Distributions: Distributions
+using Statistics: mean, var
 """
     functional_variance(la::AbstractLaplace, 𝐉::AbstractArray)
 
@@ -64,8 +42,13 @@ function glm_predictive_distribution(la::AbstractLaplace, X::AbstractArray)
     fvar = functional_variance(la, 𝐉)
     fvar = reshape(fvar, size(fμ)...)
     fstd = sqrt.(fvar)
-    normal_distr = [Distributions.Normal(fμ[i], fstd[i]) for i in 1:size(fμ, 2)]
-    return (normal_distr, fμ, fvar)
+    normal_distr = [
+        Distributions.Normal(fμ[i, j], fstd[i, j]) for i in 1:size(fμ, 1),
+        j in 1:size(fμ, 2)
+    ]
+    #normal_distr = [
+    #Distributions.Normal(fμ[i], fstd[i]) for i in 1:size(fμ, 1)] maybe this one is the correct one
+    return normal_distr
 end
 
 """
@@ -110,7 +93,8 @@ function predict(
     predict_proba::Bool=true,
     ret_distr::Bool=false,
 )
-    normal_distr, fμ, fvar = glm_predictive_distribution(la, X)
+    normal_distr = glm_predictive_distribution(la, X)
+    fμ, fvar = mean.(normal_distr), var.(normal_distr)
 
     # Regression:
     if la.likelihood == :regression
@@ -184,10 +168,10 @@ function probit(fμ::AbstractArray, fvar::AbstractArray)
 end
 
 """
-    (la::AbstractLaplace)(X::AbstractArray; kwrgs...)
+    (la::AbstractLaplace)(X::AbstractArray)
 
 Calling a model with Laplace Approximation on an array of inputs is equivalent to explicitly calling the `predict` function.
 """
-function (la::AbstractLaplace)(X::AbstractArray; kwrgs...)
-    return predict(la, X; kwrgs...)
+function (la::AbstractLaplace)(X::AbstractArray)
+    return la.model(X)
 end
