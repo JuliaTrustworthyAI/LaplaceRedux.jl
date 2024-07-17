@@ -128,6 +128,27 @@ end
     predict(la, x[1]; ret_distr=true, predict_proba=false)
 end
 
+
+#include("src\baselaplace\predicting.jl")
+
+@testset "Softmax/sigmoid layer" begin
+    # Generate synthetic data
+    Random.seed!(123) # For reproducibility
+    X = randn(Float32, 5, 30) # 30 data points with 5 features each
+    y = rand(1:3, 30)         # Random labels from 1 to 3 for each data point
+
+    # Adapt synthetic data
+    Y = onehotbatch(y, 1:3) # One-hot encode the labels
+    # Define the neural network
+    model = Chain(
+    Dense(5, 10, relu), # Input layer with 5 features, hidden layer with 10 neurons
+    Dense(10, 3),       # Output layer with 3 neurons (for 3 classes)
+    softmax             # Softmax activation function
+    )
+    @test has_softmax_or_sigmoid_final_layer(model)== true
+
+end
+
 function train_nn(val::Dict; verbose=false)
     # Unpack:
     X = val[:X]
