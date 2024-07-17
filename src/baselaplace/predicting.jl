@@ -1,5 +1,6 @@
 using Distributions: Normal, Bernoulli, Categorical
 using Flux
+using Statistics: mean, var
 
 """
     has_softmax_or_sigmoid_final_layer(model::Flux.Chain)
