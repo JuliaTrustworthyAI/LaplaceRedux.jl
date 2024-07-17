@@ -104,21 +104,28 @@ end
 
 # We know the analytical expression for the Hessian of logit binary cross entropy loss for a single-layer neural net with sigmoid activation just corresponds to the Hessian in logistic regression (see for example: https://www.paltmeyer.com/blog/posts/bayesian-logit/): ∇ℓ=(μ-y)(μ(1-μ)xx'). With a weight-penalty (Gaussian prior), the Hessian becomes: ∇ℓ=∑(μ-y)(μ(1-μ)xx')+P₀. We can use this analytical expression to see if we get the expected results.
 
-@testset "Fitting" begin
-    nn = Chain(Dense([0 0]))
-    la = Laplace(nn; likelihood=:classification)
+# Setup global scope:
+nn = Chain(Dense([0 0]))
+la = Laplace(nn; likelihood=:classification)
+function hessian_exact(x, target)
+    return (nn(x) .- target) .* (nn(x) .* (1 .- nn(x)) .* x * x') + la.prior.P₀[1:2, 1:2]
+end
+target = [1]
+x = [[0, 0]]
 
-    function hessian_exact(x, target)
-        return (nn(x) .- target) .* (nn(x) .* (1 .- nn(x)) .* x * x') +
-               la.prior.P₀[1:2, 1:2]
-    end
-
+@testset "Fitting" begin   
     @testset "Empirical Fisher - full" begin
-        target = [1]
-        x = [[0, 0]]
+        
         fit!(la, zip(x, target))
         @test la.posterior.P[1:2, 1:2] == hessian_exact(x[1], target[1])
     end
+end
+
+@testset "Predicting" begin
+    predict(la, x[1])
+    predict(la, x[1]; link_approx=:plugin)
+    predict(la, x[1]; ret_distr=true)
+    predict(la, x[1]; ret_distr=true, predict_proba=false)
 end
 
 function train_nn(val::Dict; verbose=false)
