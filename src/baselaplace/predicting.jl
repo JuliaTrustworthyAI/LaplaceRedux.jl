@@ -115,13 +115,14 @@ function predict(
 
     # Regression:
     if la.likelihood == :regression
-        return normal_distr
+        return reshape(normal_distr,(:,1))
     end
 
     # Classification:
     if la.likelihood == :classification
         has_finaliser = has_softmax_or_sigmoid_final_layer(la.model)
 
+        # case when no softmax/sigmoid  function is applied
         if has_finaliser == false
 
             # Probit approximation
@@ -138,7 +139,7 @@ function predict(
                 if la.posterior.n_out == 1
                     p = Flux.sigmoid(z)
                     if ret_distr
-                        p = map(x -> Bernoulli(x), z)
+                        p = map(x -> Bernoulli(x), p)
                     end
 
                 else
@@ -149,13 +150,13 @@ function predict(
                 end
             else
                 if ret_distr
-                    @warn " the model does not produce pseudo-probabilities. ret_distr will not work if predict_proba is set to false"
+                    @warn "the model does not produce pseudo-probabilities. ret_distr will not work if predict_proba is set to false."
                 end
                 p = z
             end
         else # case when has_finaliser is true 
             if predict_proba == false
-                @warn " the model already produce pseudo-probabilities since it has either sigmoid or a softmax layer as a final layer."
+                @warn "the model already produce pseudo-probabilities since it has either sigmoid or a softmax layer as a final layer."
             end
             if ret_distr
                 if la.posterior.n_out == 1
