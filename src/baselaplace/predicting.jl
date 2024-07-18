@@ -1,5 +1,28 @@
-using Distributions: Distributions
+using Distributions: Normal, Bernoulli, Categorical
+using Flux
 using Statistics: mean, var
+
+"""
+    has_softmax_or_sigmoid_final_layer(model::Flux.Chain)
+
+Check if the FLux model ends with a sigmoid or with a softmax layer
+
+Input:
+    - `model`: the Flux Chain object that represent the neural network.
+Return:
+    - `has_finaliser`: true if the check is positive, false otherwise.
+
+"""
+function has_softmax_or_sigmoid_final_layer(model::Flux.Chain)
+    # Get the last layer of the model
+    last_layer = last(model.layers)
+
+    # Check if the last layer is either softmax or sigmoid
+    has_finaliser = (last_layer == Flux.sigmoid || last_layer == Flux.softmax)
+
+    return has_finaliser
+end
+
 """
     functional_variance(la::AbstractLaplace, 𝐉::AbstractArray)
 
@@ -20,7 +43,7 @@ Computes the linearized GLM predictive.
 - `X::AbstractArray`: Input data.
 
 # Returns
-
+- `normal_distr` A normal distribution N(fμ,fvar) approximating the predictive distribution p(y|X) given the input data X.
 - `fμ::AbstractArray`: Mean of the predictive distribution. The output shape is column-major as in Flux.
 - `fvar::AbstractArray`: Variance of the predictive distribution. The output shape is column-major as in Flux.
 
@@ -42,13 +65,8 @@ function glm_predictive_distribution(la::AbstractLaplace, X::AbstractArray)
     fvar = functional_variance(la, 𝐉)
     fvar = reshape(fvar, size(fμ)...)
     fstd = sqrt.(fvar)
-    normal_distr = [
-        Distributions.Normal(fμ[i, j], fstd[i, j]) for i in 1:size(fμ, 1),
-        j in 1:size(fμ, 2)
-    ]
-    #normal_distr = [
-    #Distributions.Normal(fμ[i], fstd[i]) for i in 1:size(fμ, 1)] maybe this one is the correct one
-    return normal_distr
+    normal_distr = [Normal(fμ[i], fstd[i]) for i in 1:size(fμ, 2)]
+    return (normal_distr, fμ, fvar)
 end
 
 """
@@ -61,13 +79,18 @@ Computes predictions from Bayesian neural network.
 - `la::AbstractLaplace`: A Laplace object.
 - `X::AbstractArray`: Input data.
 - `link_approx::Symbol=:probit`: Link function approximation. Options are `:probit` and `:plugin`.
-- `predict_proba::Bool=true`: If `true` (default), returns probabilities for classification tasks.
+- `predict_proba::Bool=true`: If `true` (default) apply a sigmoid or a softmax function to the output of the Flux model.
+- `return_distr::Bool=false`: if `false` (default), the function output either the direct output of the chain or pseudo-probabilities (if predict_proba= true).
+    if `true` predict return a Bernoulli distribution in binary classification tasks and a categorical distribution in multiclassification tasks.
 
 # Returns
-
-- `fμ::AbstractArray`: Mean of the predictive distribution if link function is set to `:plugin`, otherwise the probit approximation. The output shape is column-major as in Flux.
-- `fvar::AbstractArray`: If regression, it also returns the variance of the predictive distribution. The output shape is column-major as in Flux.
-
+For classification tasks, LaplaceRedux provides different options:
+if ret_distr is false:
+    - `fμ::AbstractArray`: Mean of the predictive distribution if link function is set to `:plugin`, otherwise the probit approximation. The output shape is column-major as in Flux.
+if ret_distr is true:
+    - a Bernoulli distribution in binary classification tasks and a categorical distribution in multiclassification tasks.
+For regression tasks:
+- `normal_distr::Distributions.Normal`:the array of Normal distributions computed by glm_predictive_distribution. 
 # Examples
 
 ```julia-repl
@@ -82,37 +105,69 @@ predict(la, hcat(x...))
 ```
 """
 function predict(
-    la::AbstractLaplace, X::AbstractArray; link_approx=:probit, predict_proba::Bool=true
+    la::AbstractLaplace,
+    X::AbstractArray;
+    link_approx=:probit,
+    predict_proba::Bool=true,
+    ret_distr::Bool=false,
 )
-    normal_distr = glm_predictive_distribution(la, X)
-    fμ, fvar = mean.(normal_distr), var.(normal_distr)
+    normal_distr, fμ, fvar = glm_predictive_distribution(la, X)
 
     # Regression:
     if la.likelihood == :regression
-        return normal_distr
+        return reshape(normal_distr, (:, 1))
     end
 
     # Classification:
     if la.likelihood == :classification
+        has_finaliser = has_softmax_or_sigmoid_final_layer(la.model)
 
-        # Probit approximation
-        if link_approx == :probit
-            z = probit(fμ, fvar)
-        end
+        # case when no softmax/sigmoid  function is applied
+        if has_finaliser == false
 
-        if link_approx == :plugin
-            z = fμ
-        end
-
-        # Sigmoid/Softmax
-        if predict_proba
-            if la.posterior.n_out == 1
-                p = Flux.sigmoid(z)
-            else
-                p = Flux.softmax(z; dims=1)
+            # Probit approximation
+            if link_approx == :probit
+                z = probit(fμ, fvar)
             end
-        else
-            p = z
+
+            if link_approx == :plugin
+                z = fμ
+            end
+
+            # Sigmoid/Softmax
+            if predict_proba
+                if la.posterior.n_out == 1
+                    p = Flux.sigmoid(z)
+                    if ret_distr
+                        p = map(x -> Bernoulli(x), p)
+                    end
+
+                else
+                    p = Flux.softmax(z; dims=1)
+                    if ret_distr
+                        p = mapslices(col -> Categorical(col), p; dims=1)
+                    end
+                end
+            else
+                if ret_distr
+                    @warn "the model does not produce pseudo-probabilities. ret_distr will not work if predict_proba is set to false."
+                end
+                p = z
+            end
+        else # case when has_finaliser is true 
+            if predict_proba == false
+                @warn "the model already produce pseudo-probabilities since it has either sigmoid or a softmax layer as a final layer."
+            end
+            if ret_distr
+                if la.posterior.n_out == 1
+                    p = map(x -> Bernoulli(x), fμ)
+                else
+                    p = mapslices(col -> Categorical(col), fμ; dims=1)
+                end
+
+            else
+                p = fμ
+            end
         end
 
         return p

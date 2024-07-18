@@ -6,10 +6,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 *Note*: We try to adhere to these practices as of version [v0.2.1].
 
-## Version [1.0.0] - 2024-07-01
+## Version [1.0.0] - 2024-07-17
 
 ### Changed
 
+- Changed the behavior of the `predict` function so that it now gives the user the possibility to get distributions from the Distributions.jl package as output. [#99]
 - Calling a Laplace object on an array, `(la::AbstractLaplace)(X::AbstractArray)` now simply calls the underlying neural network on data. In other words, it returns the generic predictions, not LA predictions. This was implemented to facilitate better interplay with `MLJFlux`. [#39] 
 - Moving straight to `1.0.0` now for package, because zero major versions cause compat headaches with other packages in Taija ecosystem. [#39]
 - Removed support for `v1.7`, now `v1.9` as lower bound. This is because we are now overloading the `MLJFlux.train` and `MLJFlux.train_epoch` functions, which were added in version `v0.5.0` of that package, which is lower-bounded at `v1.9`. [#39]
@@ -17,12 +18,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - fixed test functions [#39]
 - adapted the LaplaceClassification and the LaplaceRegression struct to use the new @mlj_model macro from MLJBase.[#39]
 - Changed the fit! method arguments. [#39]
-- Changed the predict functions for both LaplaceClassification and  LaplaceRegression.[#39]
+- Changed the predict functions for both LaplaceClassification and LaplaceRegression.[#39]
 
 ### Removed
 
 - Removed the shape, build and clean! functions.[#39]
 - Removed Review dog for code format suggestions. [#39]
+
+### Added
+
+- Added new keyword parameter ret_distr::Bool=false to predict. [#99]
 
 ## Version [0.2.3] - 2024-05-31
 
@@ -31,9 +36,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - Removed the link_approx parameter in LaplaceRegression since it is not required.
 - Changed MMI.clean! to check the value of link_approx only in the case likelihood is set to `:classification`
 - Now the likelihood type in LaplaceClassification and LaplaceRegression is automatically set by the inner constructor. The user is not required to provide it as a parameter anymore.
-
-
-
 
 ## Version [0.2.2] - 2024-05-30
 
@@ -48,6 +50,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
  Added Distributions to LaplaceRedux dependency ( needed for MMI.predict(model::LaplaceRegression, fitresult, Xnew) )
 
 
+>>>>>>> main
 
 ## Version [0.2.1] - 2024-05-29
 
