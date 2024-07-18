@@ -115,7 +115,11 @@ function predict(
 
     # Regression:
     if la.likelihood == :regression
-        return reshape(normal_distr, (:, 1))
+        if ret_distr
+            return reshape(normal_distr, (:, 1))
+        else
+            return  fμ, fvar
+        end
     end
 
     # Classification:
