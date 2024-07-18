@@ -117,123 +117,119 @@ end
 target = [1]
 x = [[0, 0]]
 
-@testset "Fitting" begin   
+@testset "Fitting" begin
     @testset "Empirical Fisher - full" begin
-        
         fit!(la, zip(x, target))
         @test la.posterior.P[1:2, 1:2] == hessian_exact(x[1], target[1])
     end
 end
 
-
-
 #testing the predict function
 @testset "Predicting" begin
     #classification case
-        # case multiclass
-            # Generate synthetic data
-            #Random.seed!(123) # For reproducibility
-            x, y = Data.toy_data_multi(50)
-            X = hcat(x...)
-            y_train = Flux.onehotbatch(y, unique(y))
-            y_train = Flux.unstack(y_train',1)
-            data = zip(x,y_train)
-            n_hidden = 3
-            D = size(X,1)
-            out_dim = length(unique(y))
-            # Case: softmax activation function
-            nn = Chain(
-                Dense(D, n_hidden, σ),
-                Dense(n_hidden, out_dim),softmax)
+    # case multiclass
+    # Generate synthetic data
+    #Random.seed!(123) # For reproducibility
+    x, y = Data.toy_data_multi(50)
+    X = hcat(x...)
+    y_train = Flux.onehotbatch(y, unique(y))
+    y_train = Flux.unstack(y_train', 1)
+    data = zip(x, y_train)
+    n_hidden = 3
+    D = size(X, 1)
+    out_dim = length(unique(y))
+    # Case: softmax activation function
+    nn = Chain(Dense(D, n_hidden, σ), Dense(n_hidden, out_dim), softmax)
 
-                #define laplace object
-                la = Laplace(nn; likelihood=:classification)
-                #fit laplace object
-                fit!(la, data)
-                upper_bound_categorical = Matrix{Categorical{T, Vector{T}}} where {T <: AbstractFloat}
+    #define laplace object
+    la = Laplace(nn; likelihood=:classification)
+    #fit laplace object
+    fit!(la, data)
+    upper_bound_categorical = Matrix{Categorical{T,Vector{T}}} where {T<:AbstractFloat}
 
-                @test typeof(predict(la, X; predict_proba=true, ret_distr = true)) <: upper_bound_categorical
+    @test typeof(predict(la, X; predict_proba=true, ret_distr=true)) <:
+        upper_bound_categorical
 
-                #case when predict_proba is set to false but ret_distr is still true
-                @test_logs (:warn,"the model already produce pseudo-probabilities since it has either sigmoid or a softmax layer as a final layer.") predict(la, X; predict_proba=false, ret_distr = true)  
+    #case when predict_proba is set to false but ret_distr is still true
+    @test_logs (
+        :warn,
+        "the model already produce pseudo-probabilities since it has either sigmoid or a softmax layer as a final layer.",
+    ) predict(la, X; predict_proba=false, ret_distr=true)
 
-            # Case: still multiclass but no activation function
-            nn = Chain(
-                Dense(D, n_hidden, σ),
-                Dense(n_hidden, out_dim))
+    # Case: still multiclass but no activation function
+    nn = Chain(Dense(D, n_hidden, σ), Dense(n_hidden, out_dim))
 
-                #define laplace object
-                la = Laplace(nn; likelihood=:classification)
-                #fit laplace object
-                fit!(la, data)
-                upper_bound_categorical = Matrix{Categorical{T, Vector{T}}} where {T <: AbstractFloat}
+    #define laplace object
+    la = Laplace(nn; likelihood=:classification)
+    #fit laplace object
+    fit!(la, data)
+    upper_bound_categorical = Matrix{Categorical{T,Vector{T}}} where {T<:AbstractFloat}
 
-                @test typeof(predict(la, X; predict_proba=true, ret_distr = true)) <: upper_bound_categorical
+    @test typeof(predict(la, X; predict_proba=true, ret_distr=true)) <:
+        upper_bound_categorical
 
-                #case when predict_proba is set to false but ret_distr is still true
-                @test_logs (:warn,"the model does not produce pseudo-probabilities. ret_distr will not work if predict_proba is set to false.") predict(la, X; predict_proba=false, ret_distr = true)  
+    #case when predict_proba is set to false but ret_distr is still true
+    @test_logs (
+        :warn,
+        "the model does not produce pseudo-probabilities. ret_distr will not work if predict_proba is set to false.",
+    ) predict(la, X; predict_proba=false, ret_distr=true)
 
+    # Case: binary classification
+    # Generate synthetic data
+    #Random.seed!(123) # For reproducibility
+    xs, ys = LaplaceRedux.Data.toy_data_non_linear(50)
+    X = hcat(xs...) # bring into tabular format
+    data = zip(xs, ys)
+    n_hidden = 10
+    D = size(X, 1)
 
-        # Case: binary classification
-            # Generate synthetic data
-            #Random.seed!(123) # For reproducibility
-            xs, ys = LaplaceRedux.Data.toy_data_non_linear(50)
-            X = hcat(xs...) # bring into tabular format
-            data = zip(xs,ys)
-            n_hidden = 10
-            D = size(X,1)
+    #case with sigmoid function
+    nn = Chain(Dense(D, n_hidden, relu), Dense(n_hidden, 1), NNlib.sigmoid)
+    #define laplace object
+    la = Laplace(nn; likelihood=:classification)
+    #fit laplace object
+    fit!(la, data)
+    upper_bound_bernoulli = Matrix{Bernoulli{T}} where {T<:AbstractFloat}
 
+    @test typeof(predict(la, X; predict_proba=true, ret_distr=true)) <:
+        upper_bound_bernoulli
+    #case when predict_proba is set to false but ret_distr is still true
+    @test_logs (
+        :warn,
+        "the model already produce pseudo-probabilities since it has either sigmoid or a softmax layer as a final layer.",
+    ) predict(la, X; predict_proba=false, ret_distr=true)
 
-            #case with sigmoid function
-            nn = Chain(
-                Dense(D, n_hidden, relu),
-                Dense(n_hidden, 1),NNlib.sigmoid
-            )  
-            #define laplace object
-            la = Laplace(nn; likelihood=:classification)
-            #fit laplace object
-            fit!(la, data)
-            upper_bound_bernoulli = Matrix{Bernoulli{T}} where {T <: AbstractFloat}
+    #case WITHOUT sigmoid function
+    nn = Chain(Dense(D, n_hidden, relu), Dense(n_hidden, 1))
+    #define laplace object
+    la = Laplace(nn; likelihood=:classification)
+    #fit laplace object
+    fit!(la, data)
+    upper_bound_bernoulli = Matrix{Bernoulli{T}} where {T<:AbstractFloat}
 
-            @test typeof(predict(la, X; predict_proba=true, ret_distr = true)) <: upper_bound_bernoulli
-            #case when predict_proba is set to false but ret_distr is still true
-            @test_logs (:warn,"the model already produce pseudo-probabilities since it has either sigmoid or a softmax layer as a final layer.") predict(la, X; predict_proba=false, ret_distr = true)  
-            
-            #case WITHOUT sigmoid function
-            nn = Chain(
-                Dense(D, n_hidden, relu),
-                Dense(n_hidden, 1)
-            )  
-            #define laplace object
-            la = Laplace(nn; likelihood=:classification)
-            #fit laplace object
-            fit!(la, data)
-            upper_bound_bernoulli = Matrix{Bernoulli{T}} where {T <: AbstractFloat}
-
-            @test typeof(predict(la, X; predict_proba=true, ret_distr = true)) <: upper_bound_bernoulli
-            #case when predict_proba is set to false but ret_distr is still true
-            @test_logs (:warn,"the model does not produce pseudo-probabilities. ret_distr will not work if predict_proba is set to false.") predict(la, X; predict_proba=false, ret_distr = true)  
+    @test typeof(predict(la, X; predict_proba=true, ret_distr=true)) <:
+        upper_bound_bernoulli
+    #case when predict_proba is set to false but ret_distr is still true
+    @test_logs (
+        :warn,
+        "the model does not produce pseudo-probabilities. ret_distr will not work if predict_proba is set to false.",
+    ) predict(la, X; predict_proba=false, ret_distr=true)
 
     # case Regression
     n = 30       # number of observations
     σtrue = 0.30  # true observational noise
-    x, y = Data.toy_data_regression(n;noise=σtrue)
+    x, y = Data.toy_data_regression(n; noise=σtrue)
     xs = [[x] for x in x]
     X = permutedims(x)
-    data = zip(xs,y)
+    data = zip(xs, y)
     n_hidden = 50
-    D = size(X,1)
-    nn = Chain(
-        Dense(D, n_hidden, tanh),
-        Dense(n_hidden, 1)
-    )  
+    D = size(X, 1)
+    nn = Chain(Dense(D, n_hidden, tanh), Dense(n_hidden, 1))
     subset_w = :all
     la = Laplace(nn; likelihood=:regression, subset_of_weights=subset_w)
     fit!(la, data)
-    matrix_normals = Matrix{Normal{T}} where {T <: AbstractFloat}
+    matrix_normals = Matrix{Normal{T}} where {T<:AbstractFloat}
     @test typeof(predict(la, X)) <: matrix_normals
-
-
 
     #predict(la, X[1]; link_approx=:plugin)
     #predict(la, X[1]; link_approx=:probit)
@@ -241,36 +237,31 @@ end
     #predict(la, X[1]; ret_distr=true, predict_proba=false)
 end
 
-
-
-
 #testing the function LaplaceRedux.has_softmax_or_sigmoid_final_layer
 @testset "Softmax/sigmoid layer" begin
 
     # Define the neural network
     model = Chain(
-    Dense(5, 10, relu),  
-    Dense(10, 3),        
-    softmax        # Softmax activation function
+        Dense(5, 10, relu),
+        Dense(10, 3),
+        softmax,        # Softmax activation function
     )
-    @test LaplaceRedux.has_softmax_or_sigmoid_final_layer(model)== true
-
+    @test LaplaceRedux.has_softmax_or_sigmoid_final_layer(model) == true
 
     # Define the neural network
     model = Chain(
-        Dense(5, 10, relu),  
-        Dense(10, 1),        
-        MLUtils.NNlib.sigmoid    #sigmoid activation function
-        )
-    @test LaplaceRedux.has_softmax_or_sigmoid_final_layer(model)== true
+        Dense(5, 10, relu),
+        Dense(10, 1),
+        MLUtils.NNlib.sigmoid,    #sigmoid activation function
+    )
+    @test LaplaceRedux.has_softmax_or_sigmoid_final_layer(model) == true
 
-        # Define the neural network
+    # Define the neural network
     model = Chain(
-        Dense(5, 10, relu),  
-        Dense(10, 1)       # Output layer with 1 neurons, no activation function.  
-        )
-    @test LaplaceRedux.has_softmax_or_sigmoid_final_layer(model)== false
-
+        Dense(5, 10, relu),
+        Dense(10, 1),       # Output layer with 1 neurons, no activation function.  
+    )
+    @test LaplaceRedux.has_softmax_or_sigmoid_final_layer(model) == false
 end
 
 function train_nn(val::Dict; verbose=false)
