@@ -280,17 +280,13 @@ Predict the output for new input data using a Laplace regression model.
 - `Xnew`: The new input data.
 
 # Returns
-- The predicted output for the new input data.
+- Either a   Normal distribution(if ret_distr=true) or the predicted mean and variance for the new input data.
 
 """
 function MLJFlux.predict(model::LaplaceRegression, fitresult, Xnew)
     Xnew = MLJBase.matrix(Xnew)
-
     model = fitresult[1]
-    #convert in a vector of vectors because MLJ ask to do so
-    X_vec = [vec(row) for row in eachrow(Xnew)]
-    # Predict using Laplace and collect the predictions
-    yhat = [map(x->LaplaceRedux.predict(la, x;  ret_distr = model.ret_distr) ,X_vec)...]
+    yhat= LaplaceRedux.predict(la, eachrow(Xnew);  ret_distr = model.ret_distr)
     return yhat
 end
 
@@ -450,20 +446,14 @@ Predicts the class labels for new data using the LaplaceClassification model.
 - `Xnew`: The new data to make predictions on.
 
 # Returns
-An array of predicted class labels.
+Either an array of Categorical/Bernoulli distributions (if ret_distr = true) or an array of predicted class labels (if ret_distr = false).
 
 """
 function MLJFlux.predict(model::LaplaceClassification, fitresult, Xnew)
     la = fitresult[1]
     Xnew = MLJBase.matrix(Xnew)
-    #convert in a vector of vectors because Laplace ask to do so
-    X_vec = [vec(row) for row in eachrow(Xnew)]
-
-
-    predictions = [map(x->LaplaceRedux.predict(la, x; link_approx=model.link_approx, predict_proba=model.predict_proba, ret_distr = model.ret_distr) ,X_vec)...]
-
-    
-
+    X_vec = collect(eachrow(Xnew))
+    predictions = [map(x->LaplaceRedux.predict(la, x; link_approx=model.link_approx, predict_proba=model.predict_proba, ret_distr = model.ret_distr), X_vec)...]  
     return predictions
 end
 
