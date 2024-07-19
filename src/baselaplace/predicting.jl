@@ -118,7 +118,7 @@ function predict(
         if ret_distr
             return reshape(normal_distr, (:, 1))
         else
-            return  fμ, fvar
+            return fμ, fvar
         end
     end
 

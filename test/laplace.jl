@@ -229,8 +229,7 @@ end
     la = Laplace(nn; likelihood=:regression, subset_of_weights=subset_w)
     fit!(la, data)
     matrix_normals = Matrix{Normal{T}} where {T<:AbstractFloat}
-    @test typeof(predict(la, X; ret_distr= true)) <: matrix_normals
-
+    @test typeof(predict(la, X; ret_distr=true)) <: matrix_normals
 end
 
 #testing the function LaplaceRedux.has_softmax_or_sigmoid_final_layer
