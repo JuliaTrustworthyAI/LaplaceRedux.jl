@@ -280,13 +280,13 @@ Predict the output for new input data using a Laplace regression model.
 - `Xnew`: The new input data.
 
 # Returns
-- Either a   Normal distribution(if ret_distr=true) or the predicted mean and variance for the new input data.
+- Either a   Normal distribution(if ret_distr = true) or the predicted mean and variance for the new input data.
 
 """
 function MLJFlux.predict(model::LaplaceRegression, fitresult, Xnew)
     Xnew = MLJBase.matrix(Xnew)
     model = fitresult[1]
-    yhat = LaplaceRedux.predict(la, eachrow(Xnew); ret_distr=model.ret_distr)
+    yhat = LaplaceRedux.predict(la, eachrow(Xnew); ret_distr = model.ret_distr)
     return yhat
 end
 
