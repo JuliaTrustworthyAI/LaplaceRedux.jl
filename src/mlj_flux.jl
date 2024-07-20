@@ -38,7 +38,6 @@ The model also has the following parameters, which are specific to the Laplace a
 - `σ`: the standard deviation of the prior distribution.
 - `μ₀`: the mean of the prior distribution.
 - `P₀`: the covariance matrix of the prior distribution.
-- `ret_distr`: a boolean that tells predict to either return distributions (true) objects from Distributions.jl or just the probabilities.
 - `fit_prior_nsteps`: the number of steps used to fit the priors.
 """
 MLJBase.@mlj_model mutable struct LaplaceRegression <: MLJFlux.MLJFluxProbabilistic
@@ -60,7 +59,6 @@ MLJBase.@mlj_model mutable struct LaplaceRegression <: MLJFlux.MLJFluxProbabilis
     σ::Float64 = 1.0
     μ₀::Float64 = 0.0
     P₀::Union{AbstractMatrix,UniformScaling,Nothing} = nothing
-    ret_distr::Bool = false::(_ in (true, false))
     fit_prior_nsteps::Int = 100::(_ > 0)
 end
 
@@ -93,7 +91,6 @@ The model also has the following parameters, which are specific to the Laplace a
 - `μ₀`: the mean of the prior distribution.
 - `P₀`: the covariance matrix of the prior distribution.
 - `link_approx`: the link approximation to use, either `:probit` or `:plugin`.
-- `ret_distr`: a boolean that tells predict to either return distributions (true) objects from Distributions.jl or just the probabilities.
 - `fit_prior_nsteps`: the number of steps used to fit the priors.
 """
 MLJBase.@mlj_model mutable struct LaplaceClassification <: MLJFlux.MLJFluxProbabilistic
@@ -118,7 +115,6 @@ MLJBase.@mlj_model mutable struct LaplaceClassification <: MLJFlux.MLJFluxProbab
     P₀::Union{AbstractMatrix,UniformScaling,Nothing} = nothing
     link_approx::Symbol = :probit::(_ in (:probit, :plugin))
     predict_proba::Bool = true::(_ in (true, false))
-    ret_distr::Bool = false::(_ in (true, false))
     fit_prior_nsteps::Int = 100::(_ > 0)
 end
 
@@ -286,11 +282,11 @@ Predict the output for new input data using a Laplace regression model.
 function MLJFlux.predict(model::LaplaceRegression, fitresult, Xnew)
     Xnew = MLJBase.matrix(Xnew)
 
-    model = fitresult[1]
+    la = fitresult[1]
     #convert in a vector of vectors because MLJ ask to do so
     X_vec = [vec(row) for row in eachrow(Xnew)]
     # Predict using Laplace and collect the predictions
-    yhat = [map(x->LaplaceRedux.predict(la, x;  ret_distr = model.ret_distr) ,X_vec)...]
+    yhat = [map(x->LaplaceRedux.predict(la, x) ,X_vec)...]
     return yhat
 end
 
@@ -460,7 +456,7 @@ function MLJFlux.predict(model::LaplaceClassification, fitresult, Xnew)
     X_vec = [vec(row) for row in eachrow(Xnew)]
 
 
-    predictions = [map(x->LaplaceRedux.predict(la, x; link_approx=model.link_approx, predict_proba=model.predict_proba, ret_distr = model.ret_distr) ,X_vec)...]
+    predictions = [map(x->LaplaceRedux.predict(la, x; link_approx=model.link_approx, predict_proba=model.predict_proba) ,X_vec)...]
 
     
 
