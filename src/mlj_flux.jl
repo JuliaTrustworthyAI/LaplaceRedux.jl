@@ -286,13 +286,11 @@ Predict the output for new input data using a Laplace regression model.
 """
 function MLJFlux.predict(model::LaplaceRegression, fitresult, Xnew)
     Xnew = MLJBase.matrix(Xnew)
-
     la = fitresult[1]
     #convert in a vector of vectors because MLJ ask to do so
     X_vec = collect(eachrow(Xnew))
     # Predict using Laplace and collect the predictions
     yhat = [map(x -> LaplaceRedux.predict(la, x; ret_distr=model.ret_distr), X_vec)...]
-    #yhat = LaplaceRedux.predict(la, eachrow(Xnew); ret_distr = model.ret_distr)
     return yhat
 end
 
