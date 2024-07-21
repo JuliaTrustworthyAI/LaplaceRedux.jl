@@ -24,6 +24,7 @@ using StableRNGs
             subset_of_weights=:incorrect,
             hessian_structure=:incorrect,
             backend=:incorrect,
+            ret_distr=true,
         )
 
         fitresult, cache, _report = MLJBase.fit(model, 0, X, y)
