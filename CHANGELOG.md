@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 *Note*: We try to adhere to these practices as of version [v0.2.1].
 
+## Version [1.0.1] - 2024-07-19
+
+### Changed
+- added the option to return meand and variance to predict in the case of regression[[#101](https://github.com/JuliaTrustworthyAI/LaplaceRedux.jl/issues/101)]
+- modified mlj_flux.jl by adding the ret_distr parameter and fixed mljflux.predict both for classification and regression tasks. 
+
 ## Version [1.0.0] - 2024-07-17
 
 ### Changed
