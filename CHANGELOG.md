@@ -6,16 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 *Note*: We try to adhere to these practices as of version [v0.2.1].
 
-## Version [1.0.1] - 2024-07-19
+## Version [1.0.0] - 2024-07-22
 
 ### Changed
+
 - added the option to return meand and variance to predict in the case of regression[[#101](https://github.com/JuliaTrustworthyAI/LaplaceRedux.jl/issues/101)]
 - modified mlj_flux.jl by adding the ret_distr parameter and fixed mljflux.predict both for classification and regression tasks. 
-
-## Version [1.0.0] - 2024-07-17
-
-### Changed
-
 - Changed the behavior of the `predict` function so that it now gives the user the possibility to get distributions from the Distributions.jl package as output. [#99]
 - Calling a Laplace object on an array, `(la::AbstractLaplace)(X::AbstractArray)` now simply calls the underlying neural network on data. In other words, it returns the generic predictions, not LA predictions. This was implemented to facilitate better interplay with `MLJFlux`. [#39] 
 - Moving straight to `1.0.0` now for package, because zero major versions cause compat headaches with other packages in Taija ecosystem. [#39]
