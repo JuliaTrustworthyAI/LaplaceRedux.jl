@@ -18,11 +18,21 @@ We first generate some synthetic data:
 
 ```{julia}
 using LaplaceRedux.Data
-n = 300       # number of observations
+n = 3000       # number of observations
 σtrue = 0.30  # true observational noise
 x, y = Data.toy_data_regression(n;noise=σtrue)
 xs = [[x] for x in x]
 X = permutedims(x)
+```
+
+Together with the training data we also generate a synthetic calibration dataset that we will use at the end to show how Calibration Plots works.
+```{julia}
+using LaplaceRedux.Data
+n = 300       # number of observations
+σtrue = 0.30  # true observational noise
+x_cal, y_cal = Data.toy_data_regression(n;noise=σtrue)
+xs_cal = [[x_cal] for x_cal in x_cal]
+X_cal = permutedims(x_cal)
 ```
 
 ## MLP
@@ -84,4 +94,31 @@ Next we optimize the prior precision $P_0$ and and observational noise $\sigma$ 
 optimize_prior!(la; verbose=true)
 plot(la, X, y; zoom=-5, size=(400,400))
 ```
+
+## Calibration Plot
+Once the prior precision has been optimized it is possible to evaluate the quality of the predictive distribution 
+obtained through a calibration plot [Link text Here](https://link-url-here.org) and a calibration dataset (y_cal, X_cal). 
+
+First, we apply the trained network on the calibration dataset (y_cal, X_cal) and collect the neural network's predicted distributions 
+```{julia}
+#| output: true
+predicted_distributions= predict(la, X_cal)
+``` 
+
+then we can plot the calibration plot of our neural model
+
+```{julia}
+#| output: true
+Calibration_Plot(la,y_cal,predicted_distributions)
+``` 
+
+and compute the sharpness of the predictive distribution
+
+```{julia}
+#| output: true
+sharpness_regression(predicted_distributions)
+``` 
+
+
+
 

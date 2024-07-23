@@ -1,4 +1,5 @@
 using Flux
+using Statistics
 
 """
     get_loss_fun(likelihood::Symbol)

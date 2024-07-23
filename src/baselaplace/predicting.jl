@@ -43,7 +43,7 @@ Computes the linearized GLM predictive.
 - `X::AbstractArray`: Input data.
 
 # Returns
-- `normal_distr` A normal distribution N(fμ,fvar) approximating the predictive distribution p(y|X) given the input data X.
+- `normal_distr` A normal distribution N(fμ,fvar) approximating the predictive distribution p(y|X) given the input data X.- `normal_distr` A normal distribution N(fμ,fvar) approximating the predictive distribution p(y|X) given the input data X.
 - `fμ::AbstractArray`: Mean of the predictive distribution. The output shape is column-major as in Flux.
 - `fvar::AbstractArray`: Variance of the predictive distribution. The output shape is column-major as in Flux.
 

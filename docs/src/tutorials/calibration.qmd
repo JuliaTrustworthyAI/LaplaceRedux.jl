@@ -1,0 +1,16 @@
+
+
+``` @meta
+CurrentModule = LaplaceRedux
+```
+
+# Uncertainty Calibration
+
+## The issue of calibrated uncertainty distributions
+
+Bayesian methods offer a general framework for quantifying uncertainty. However, due to model misspecification and the use of approximate inference, Bayesian uncertainty estimates are often inaccurate: for example, a 90% credible interval may not contain the true outcome 90% of the time. A model is considered calibrated when uncertainty estimates accurately reflect the true likelihood of outcomes, thereby indicating the reliability and accuracy of the inference method. Perfect calibration
+
+## Calibration Plots
+
+yadda yadda
+
