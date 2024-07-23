@@ -15,7 +15,8 @@ using Optimisers: Optimisers
 
 A mutable struct representing a Laplace regression model that extends the `MLJFlux.MLJFluxProbabilistic` abstract type.
 It uses Laplace approximation to estimate the posterior distribution of the weights of a neural network. 
-The model is trained using the `fit!` method. The model is defined by the following default parameters:
+
+The model is defined by the following default parameters for all `MLJFlux` models:
 
 - `builder`: a Flux model that constructs the neural network.
 - `optimiser`: a Flux optimiser.
@@ -27,6 +28,9 @@ The model is trained using the `fit!` method. The model is defined by the follow
 - `rng`: a random number generator.
 - `optimiser_changes_trigger_retraining`: a boolean indicating whether changes in the optimiser trigger retraining.
 - `acceleration`: the computational resource to use.
+
+The model also has the following parameters, which are specific to the Laplace approximation:
+
 - `subset_of_weights`: the subset of weights to use, either `:all`, `:last_layer`, or `:subnetwork`.
 - `subnetwork_indices`: the indices of the subnetworks.
 - `hessian_structure`: the structure of the Hessian matrix, either `:full` or `:diagonal`.
@@ -34,6 +38,7 @@ The model is trained using the `fit!` method. The model is defined by the follow
 - `σ`: the standard deviation of the prior distribution.
 - `μ₀`: the mean of the prior distribution.
 - `P₀`: the covariance matrix of the prior distribution.
+- `ret_distr`: a boolean that tells predict to either return distributions (true) objects from Distributions.jl or just the probabilities.
 - `fit_prior_nsteps`: the number of steps used to fit the priors.
 """
 MLJBase.@mlj_model mutable struct LaplaceRegression <: MLJFlux.MLJFluxProbabilistic
@@ -55,6 +60,7 @@ MLJBase.@mlj_model mutable struct LaplaceRegression <: MLJFlux.MLJFluxProbabilis
     σ::Float64 = 1.0
     μ₀::Float64 = 0.0
     P₀::Union{AbstractMatrix,UniformScaling,Nothing} = nothing
+    ret_distr::Bool = false::(_ in (true, false))
     fit_prior_nsteps::Int = 100::(_ > 0)
 end
 
@@ -62,9 +68,9 @@ end
     MLJBase.@mlj_model mutable struct LaplaceClassification <: MLJFlux.MLJFluxProbabilistic
 
 A mutable struct representing a Laplace Classification model that extends the MLJFluxProbabilistic abstract type.
-    It uses Laplace approximation to estimate the posterior distribution of the weights of a neural network. 
-    The model is trained using the `fit!` method. The model is defined by the following default parameters:
+It uses Laplace approximation to estimate the posterior distribution of the weights of a neural network. 
 
+The model is defined by the following default parameters for all `MLJFlux` models:
 - `builder`: a Flux model that constructs the neural network.
 - `finaliser`: a Flux model that processes the output of the neural network.
 - `optimiser`: a Flux optimiser.
@@ -76,6 +82,9 @@ A mutable struct representing a Laplace Classification model that extends the ML
 - `rng`: a random number generator.
 - `optimiser_changes_trigger_retraining`: a boolean indicating whether changes in the optimiser trigger retraining.
 - `acceleration`: the computational resource to use.
+
+The model also has the following parameters, which are specific to the Laplace approximation:
+
 - `subset_of_weights`: the subset of weights to use, either `:all`, `:last_layer`, or `:subnetwork`.
 - `subnetwork_indices`: the indices of the subnetworks.
 - `hessian_structure`: the structure of the Hessian matrix, either `:full` or `:diagonal`.
@@ -83,6 +92,9 @@ A mutable struct representing a Laplace Classification model that extends the ML
 - `σ`: the standard deviation of the prior distribution.
 - `μ₀`: the mean of the prior distribution.
 - `P₀`: the covariance matrix of the prior distribution.
+- `link_approx`: the link approximation to use, either `:probit` or `:plugin`.
+- `predict_proba`: a boolean that select whether to predict probabilities or not.
+- `ret_distr`: a boolean that tells predict to either return distributions (true) objects from Distributions.jl or just the probabilities.
 - `fit_prior_nsteps`: the number of steps used to fit the priors.
 """
 MLJBase.@mlj_model mutable struct LaplaceClassification <: MLJFlux.MLJFluxProbabilistic
@@ -107,6 +119,7 @@ MLJBase.@mlj_model mutable struct LaplaceClassification <: MLJFlux.MLJFluxProbab
     P₀::Union{AbstractMatrix,UniformScaling,Nothing} = nothing
     link_approx::Symbol = :probit::(_ in (:probit, :plugin))
     predict_proba::Bool = true::(_ in (true, false))
+    ret_distr::Bool = false::(_ in (true, false))
     fit_prior_nsteps::Int = 100::(_ > 0)
 end
 
@@ -273,15 +286,11 @@ Predict the output for new input data using a Laplace regression model.
 """
 function MLJFlux.predict(model::LaplaceRegression, fitresult, Xnew)
     Xnew = MLJBase.matrix(Xnew)
-
-    model = fitresult[1]
+    la = fitresult[1]
     #convert in a vector of vectors because MLJ ask to do so
-    X_vec = [Xnew[i, :] for i in 1:size(Xnew, 1)]
-    #inizialize output vector yhat
-    yhat = []
+    X_vec = collect(eachrow(Xnew))
     # Predict using Laplace and collect the predictions
-    yhat = [glm_predictive_distribution(model, x_vec) for x_vec in X_vec]
-
+    yhat = [map(x -> LaplaceRedux.predict(la, x; ret_distr=model.ret_distr), X_vec)...]
     return yhat
 end
 
@@ -448,13 +457,18 @@ function MLJFlux.predict(model::LaplaceClassification, fitresult, Xnew)
     la = fitresult[1]
     Xnew = MLJBase.matrix(Xnew)
     #convert in a vector of vectors because Laplace ask to do so
-    X_vec = X_vec = [Xnew[i, :] for i in 1:size(Xnew, 1)]
-
-    # Predict using Laplace and collect the predictions
+    X_vec = collect(eachrow(Xnew))
     predictions = [
-        LaplaceRedux.predict(
-            la, x; link_approx=model.link_approx, predict_proba=model.predict_proba
-        ) for x in X_vec
+        map(
+            x -> LaplaceRedux.predict(
+                la,
+                x;
+                link_approx=model.link_approx,
+                predict_proba=model.predict_proba,
+                ret_distr=model.ret_distr,
+            ),
+            X_vec,
+        )...,
     ]
 
     return predictions

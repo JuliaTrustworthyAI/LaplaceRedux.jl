@@ -1,5 +1,28 @@
-using Distributions: Distributions
+using Distributions: Normal, Bernoulli, Categorical
+using Flux
 using Statistics: mean, var
+
+"""
+    has_softmax_or_sigmoid_final_layer(model::Flux.Chain)
+
+Check if the FLux model ends with a sigmoid or with a softmax layer
+
+Input:
+    - `model`: the Flux Chain object that represent the neural network.
+Return:
+    - `has_finaliser`: true if the check is positive, false otherwise.
+
+"""
+function has_softmax_or_sigmoid_final_layer(model::Flux.Chain)
+    # Get the last layer of the model
+    last_layer = last(model.layers)
+
+    # Check if the last layer is either softmax or sigmoid
+    has_finaliser = (last_layer == Flux.sigmoid || last_layer == Flux.softmax)
+
+    return has_finaliser
+end
+
 """
     functional_variance(la::AbstractLaplace, 𝐉::AbstractArray)
 
@@ -20,7 +43,7 @@ Computes the linearized GLM predictive.
 - `X::AbstractArray`: Input data.
 
 # Returns
-- `normal_distr` A normal distribution N(fμ,fvar) approximating the predictive distribution p(y|X) given the input data X.
+- `normal_distr` A normal distribution N(fμ,fvar) approximating the predictive distribution p(y|X) given the input data X.- `normal_distr` A normal distribution N(fμ,fvar) approximating the predictive distribution p(y|X) given the input data X.
 - `fμ::AbstractArray`: Mean of the predictive distribution. The output shape is column-major as in Flux.
 - `fvar::AbstractArray`: Variance of the predictive distribution. The output shape is column-major as in Flux.
 
@@ -42,13 +65,8 @@ function glm_predictive_distribution(la::AbstractLaplace, X::AbstractArray)
     fvar = functional_variance(la, 𝐉)
     fvar = reshape(fvar, size(fμ)...)
     fstd = sqrt.(fvar)
-    normal_distr = [
-        Distributions.Normal(fμ[i, j], fstd[i, j]) for i in 1:size(fμ, 1),
-        j in 1:size(fμ, 2)
-    ]
-    #normal_distr = [
-    #Distributions.Normal(fμ[i], fstd[i]) for i in 1:size(fμ, 1)] maybe this one is the correct one
-    return normal_distr
+    normal_distr = [Normal(fμ[i], fstd[i]) for i in 1:size(fμ, 2)]
+    return (normal_distr, fμ, fvar)
 end
 
 """
@@ -93,18 +111,22 @@ function predict(
     predict_proba::Bool=true,
     ret_distr::Bool=false,
 )
-    normal_distr = glm_predictive_distribution(la, X)
-    fμ, fvar = mean.(normal_distr), var.(normal_distr)
+    normal_distr, fμ, fvar = glm_predictive_distribution(la, X)
 
     # Regression:
     if la.likelihood == :regression
-        return normal_distr
+        if ret_distr
+            return reshape(normal_distr, (:, 1))
+        else
+            return fμ, fvar
+        end
     end
 
     # Classification:
     if la.likelihood == :classification
         has_finaliser = has_softmax_or_sigmoid_final_layer(la.model)
 
+        # case when no softmax/sigmoid  function is applied
         if has_finaliser == false
 
             # Probit approximation
@@ -121,7 +143,7 @@ function predict(
                 if la.posterior.n_out == 1
                     p = Flux.sigmoid(z)
                     if ret_distr
-                        p = map(x -> Bernoulli(x), z)
+                        p = map(x -> Bernoulli(x), p)
                     end
 
                 else
@@ -132,13 +154,13 @@ function predict(
                 end
             else
                 if ret_distr
-                    @warn " the model does not produce pseudo-probabilities. ret_distr will not work if predict_proba is set to false"
+                    @warn "the model does not produce pseudo-probabilities. ret_distr will not work if predict_proba is set to false."
                 end
                 p = z
             end
         else # case when has_finaliser is true 
             if predict_proba == false
-                @warn " the model already produce pseudo-probabilities since it has either sigmoid or a softmax layer as a final layer."
+                @warn "the model already produce pseudo-probabilities since it has either sigmoid or a softmax layer as a final layer."
             end
             if ret_distr
                 if la.posterior.n_out == 1

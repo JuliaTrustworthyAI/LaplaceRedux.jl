@@ -24,6 +24,7 @@ using StableRNGs
             subset_of_weights=:incorrect,
             hessian_structure=:incorrect,
             backend=:incorrect,
+            ret_distr=true,
         )
 
         fitresult, cache, _report = MLJBase.fit(model, 0, X, y)
@@ -45,6 +46,8 @@ using StableRNGs
 
         history = _report.training_losses
         @test length(history) == model.epochs + 1
+
+        yhat = MLJBase.predict(model, fitresult, X)
 
         # start fresh with small epochs:
         model = LaplaceRegression(;
@@ -88,13 +91,10 @@ using StableRNGs
     N = 300
     X = MLJBase.table(rand(Float32, N, 4))
     ycont = 2 * X.x1 - X.x3 + 0.1 * rand(N)
-
     builder = MLJFlux.MLP(; hidden=(16, 8), σ=Flux.relu)
     optimiser = Flux.Optimise.Adam(0.03)
 
-    y = ycont
-
-    @test basictest_regression(X, y, builder, optimiser, 0.9)
+    @test basictest_regression(X, ycont, builder, optimiser, 0.9)
 end
 
 @testset "Classification" begin
