@@ -326,34 +326,33 @@ end
     )
 end
 
-
 # Test for `empirical_frequency_binary_classification` function
 @testset "sigma scaling" begin
     @info "testing sigma scaling technique"
     # Test 1: testing function extract_mean_and_variance
-        # Create 3 different Normal distributions with known means and variances
-        known_distributions = [Normal(0.0, 1.0), Normal(2.0, 3.0), Normal(-1.0, 0.5)]
-        expected_means = [0.0, 2.0, -1.0]
-        expected_variances = [1.0, 9.0, 0.25]
-        # Execution: Call the function
-        actual_means, actual_variances = extract_mean_and_variance(known_distributions)
-        @test actual_means ≈ expected_means
-        @test actual_variances ≈ expected_variances
+    # Create 3 different Normal distributions with known means and variances
+    known_distributions = [Normal(0.0, 1.0), Normal(2.0, 3.0), Normal(-1.0, 0.5)]
+    expected_means = [0.0, 2.0, -1.0]
+    expected_variances = [1.0, 9.0, 0.25]
+    # Execution: Call the function
+    actual_means, actual_variances = extract_mean_and_variance(known_distributions)
+    @test actual_means ≈ expected_means
+    @test actual_variances ≈ expected_variances
     # Test 2: testing sigma_scaling 
-        # Step 1: Define the parameters for the sine wave
-        start_point = 0.0  # Start of the interval
-        end_point = 2 * π  # End of the interval, 2π for a full sine wave cycle
-        sample_points = 2000  # Number of sample points between 0 and 2π
+    # Step 1: Define the parameters for the sine wave
+    start_point = 0.0  # Start of the interval
+    end_point = 2 * π  # End of the interval, 2π for a full sine wave cycle
+    sample_points = 2000  # Number of sample points between 0 and 2π
 
-        # Step 2: Generate the sample points
-        x = LinRange(start_point, end_point, sample_points)
+    # Step 2: Generate the sample points
+    x = LinRange(start_point, end_point, sample_points)
 
-        # Step 3: Generate the sine wave data
-        y = sin.(x)
-        distrs = Distributions.Normal.(y, 0.01)
-        #fake  miscalibrated predictions 
-        predicted_elements = rand.(distrs) .+ rand((1,2))
- 
-        sigma = sigma_scaling( distrs ,predicted_elements)
-        @test typeof(sigma) <: Number 
+    # Step 3: Generate the sine wave data
+    y = sin.(x)
+    distrs = Distributions.Normal.(y, 0.01)
+    #fake  miscalibrated predictions 
+    predicted_elements = rand.(distrs) .+ rand((1, 2))
+
+    sigma = sigma_scaling(distrs, predicted_elements)
+    @test typeof(sigma) <: Number
 end
