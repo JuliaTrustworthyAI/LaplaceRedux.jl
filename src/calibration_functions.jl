@@ -286,10 +286,6 @@ function empirical_frequency_binary_classification(
     return (num_p_per_interval, emp_avg, bin_centers)
 end
 
-
-
-
-
 @doc """ 
     extract_mean_and_variance(distr::Vector{Normal{<: AbstractFloat}})
 Extract the mean and the variance of each distributions and return them in two separate lists.
@@ -301,16 +297,12 @@ Outputs: \
     - `means`: the list of the means \
     - `variances`:  the list of the variances 
 """
-function extract_mean_and_variance(distr::Vector{Normal{T}}) where T <: AbstractFloat
-
-    means= mean.(distr)
-    variances= var.(distr)
+function extract_mean_and_variance(distr::Vector{Normal{T}}) where {T<:AbstractFloat}
+    means = mean.(distr)
+    variances = var.(distr)
 
     return means, variances
-
 end
-
-
 
 @doc raw""" 
     sigma_scaling(distr::Vector{Normal{T}}, y_cal::Vector{<:AbstractFloat}) where T <: AbstractFloat
@@ -328,19 +320,14 @@ Inputs: \
 Outputs: \
     - `sigma`: the scalar that maximize the likelihood.
 """
-function sigma_scaling(distr::Vector{Normal{T}}, y_cal::Vector{<:AbstractFloat}) where T <: AbstractFloat
+function sigma_scaling(
+    distr::Vector{Normal{T}}, y_cal::Vector{<:AbstractFloat}
+) where {T<:AbstractFloat}
+    means, variances = extract_mean_and_variance(distr)
 
-
-
-    means, variances= extract_mean_and_variance(distr)
-
-
-    sigma =  sqrt( 1 /length(y_cal) *  sum(  norm.( y_cal .- means) ./variances   ) )
-
+    sigma = sqrt(1 / length(y_cal) * sum(norm.(y_cal .- means) ./ variances))
 
     return sigma
-
-
 end
 @doc raw""" 
     sigma_scaling(la::Laplace, x_cal::Vector{<:AbstractFloat}, y_cal::Vector{<:AbstractFloat})
@@ -359,16 +346,12 @@ Inputs: \
 Outputs: \
     - `sigma`: the scalar that maximize the likelihood.
 """
-function sigma_scaling(la::Laplace, x_cal::Vector{<:AbstractFloat}, y_cal::Vector{<:AbstractFloat})
-
-
-    distrs, means, variances= glm_predictive_distribution(la, x_cal')
-
+function sigma_scaling(
+    la::Laplace, x_cal::Vector{<:AbstractFloat}, y_cal::Vector{<:AbstractFloat}
+)
+    distrs, means, variances = glm_predictive_distribution(la, x_cal')
 
     sigma = sigma_scaling(distrs, y_cal)
 
-
     return sigma
-
-
 end
