@@ -329,29 +329,3 @@ function sigma_scaling(
 
     return sigma
 end
-@doc raw""" 
-    sigma_scaling(la::Laplace, x_cal::Vector{<:AbstractFloat}, y_cal::Vector{<:AbstractFloat})
-
-Compute the value of  Σ that maximize the conditional log-likelihood:
-```math
-m ln(Σ) +1/2 * Σ^{-2} ∑_{i=1}^{i=m} || y_cal_i -   ̄y_mean_i ||^2 / σ^2_i 
-```
-where m is the number of elements in the calibration set (x_cal,y_cal). \
-Source: [Laves,Ihler,Fast, Kahrs, Ortmaier,2020](https://proceedings.mlr.press/v121/laves20a.html)
-Inputs: \
-    - `la`: the Laplace object \
-    - `x_cal`: a Vector of inputs. \
-    - `y_cal`: a Vector of true results.
-
-Outputs: \
-    - `sigma`: the scalar that maximize the likelihood.
-"""
-function sigma_scaling(
-    la::Laplace, x_cal::Vector{<:AbstractFloat}, y_cal::Vector{<:AbstractFloat}
-)
-    distrs, means, variances = glm_predictive_distribution(la, x_cal')
-
-    sigma = sigma_scaling(distrs, y_cal)
-
-    return sigma
-end
