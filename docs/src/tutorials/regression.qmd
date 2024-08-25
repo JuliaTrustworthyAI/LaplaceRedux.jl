@@ -146,7 +146,6 @@ sharpness_regression(predicted_distributions)
 Finally, if you have set apart a calibration dataset like we did we can either perform a post training calibration procedure on top of prior optimization or avoid the prior optimization step completely and use sigma scaling to calibrate the predictive distribution.
 ```{julia}
 #| output: true
-
 predicted_distributions_calibrationset= predict(la, X_test,ret_distr=true)
 sigma= sigma_scaling(predicted_distributions_calibrationset,y_cal)
 ``` 
