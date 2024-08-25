@@ -329,3 +329,18 @@ function sigma_scaling(
 
     return sigma
 end
+
+"""
+    rescale_stddev(distr::Vector{Normal{T}}, s::T) where {T<:AbstractFloat}
+Rescale the standard deviation of the Normal distributions received as argument and return a vector of rescaled Normal distributions.
+Inputs: 
+    - `distr`: a Vector of Normal distributions 
+    - `s`: a scale factor of type T.
+
+Outputs: 
+    - `Vector{Normal{T}}`: a Vector of rescaled Normal distributions.
+"""
+function rescale_stddev(distr::Vector{Normal{T}}, s::T) where {T<:AbstractFloat}
+    rescaled_distr = [Normal(mean(d), std(d) * s) for d in distr]
+    return rescaled_distr
+end

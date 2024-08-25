@@ -25,14 +25,38 @@ xs = [[x] for x in x]
 X = permutedims(x)
 ```
 
-Together with the training data we also generate a synthetic calibration dataset that we will use at the end to show how Calibration Plots works.
+e split them in a training set, a test set and a calibration set.
 ```{julia}
-using LaplaceRedux.Data
-n = 300       # number of observations
-σtrue = 0.30  # true observational noise
-x_cal, y_cal = Data.toy_data_regression(n;noise=σtrue)
-xs_cal = [[x_cal] for x_cal in x_cal]
-X_cal = permutedims(x_cal)
+# Shuffle the data
+Random.seed!(1234)  # Set a seed for reproducibility
+shuffle_indices = shuffle(1:n)
+
+# Define split ratios
+train_ratio = 0.6
+test_ratio = 0.2
+calibration_ratio = 0.2
+
+# Calculate split indices
+train_end = Int(floor(train_ratio * n))
+test_end = train_end + Int(floor(test_ratio * n))
+
+# Split the data
+train_indices = shuffle_indices[1:train_end]
+test_indices = shuffle_indices[train_end+1:test_end]
+calibration_indices = shuffle_indices[test_end+1:end]
+
+# Create the splits
+x_train, y_train = x[train_indices], y[train_indices]
+x_test, y_test = x[test_indices], y[test_indices]
+x_calibration, y_calibration = x[calibration_indices], y[calibration_indices]
+
+# Optional: Convert to desired format
+xs_train = [[x] for x in x_train]
+xs_test = [[x] for x in x_test]
+xs_calibration = [[x] for x in x_calibration]
+X_train = permutedims(x_train)
+X_test = permutedims(x_test)
+X_calibration = permutedims(x_calibration)
 ```
 
 ## MLP
@@ -40,7 +64,7 @@ X_cal = permutedims(x_cal)
 We set up a model and loss with weight regularization:
 
 ```{julia}
-data = zip(xs,y)
+train_data = zip(xs_train,y_train)
 n_hidden = 50
 D = size(X,1)
 nn = Chain(
@@ -56,11 +80,11 @@ We train the model:
 using Flux.Optimise: update!, Adam
 opt = Adam(1e-3)
 epochs = 1000
-avg_loss(data) = mean(map(d -> loss(d[1],d[2]), data))
+avg_loss(train_data) = mean(map(d -> loss(d[1],d[2]), train_data))
 show_every = epochs/10
 
 for epoch = 1:epochs
-  for d in data
+  for d in train_data
     gs = gradient(Flux.params(nn)) do
       l = loss(d...)
     end
@@ -68,7 +92,7 @@ for epoch = 1:epochs
   end
   if epoch % show_every == 0
     println("Epoch " * string(epoch))
-    @show avg_loss(data)
+    @show avg_loss(train_data)
   end
 end
 ```
@@ -82,8 +106,8 @@ Laplace approximation can be implemented as follows:
 
 subset_w = :all
 la = Laplace(nn; likelihood=:regression, subset_of_weights=subset_w)
-fit!(la, data)
-plot(la, X, y; zoom=-5, size=(400,400))
+fit!(la, train_data)
+plot(la, X_train, y_train; zoom=-5, size=(400,400))
 ```
 
 Next we optimize the prior precision $P_0$ and and observational noise $\sigma$ using Empirical Bayes:
@@ -92,24 +116,24 @@ Next we optimize the prior precision $P_0$ and and observational noise $\sigma$ 
 #| output: true
 
 optimize_prior!(la; verbose=true)
-plot(la, X, y; zoom=-5, size=(400,400))
+plot(la, X_train, y_train; zoom=-5, size=(400,400))
 ```
 
 ## Calibration Plot
 Once the prior precision has been optimized it is possible to evaluate the quality of the predictive distribution 
-obtained through a calibration plot [Link text Here](https://link-url-here.org) and a calibration dataset (y_cal, X_cal). 
+obtained through a calibration plot and a test dataset (y_test, X_test). 
 
-First, we apply the trained network on the calibration dataset (y_cal, X_cal) and collect the neural network's predicted distributions 
+First, we apply the trained network on the test dataset (y_test, X_test) and collect the neural network's predicted distributions 
 ```{julia}
 #| output: true
-predicted_distributions= predict(la, X_cal,ret_distr=true)
+predicted_distributions= predict(la, X_test,ret_distr=true)
 ``` 
 
 then we can plot the calibration plot of our neural model
 
 ```{julia}
 #| output: true
-Calibration_Plot(la,y_cal,predicted_distributions)
+Calibration_Plot(la,y_test,predicted_distributions)
 ``` 
 
 and compute the sharpness of the predictive distribution
@@ -119,6 +143,23 @@ and compute the sharpness of the predictive distribution
 sharpness_regression(predicted_distributions)
 ``` 
 
+Finally, if you have set apart a calibration dataset like we did we can either perform a post training calibration procedure on top of prior optimization or avoid the prior optimization step completely and use sigma scaling to calibrate the predictive distribution.
+```{julia}
+#| output: true
 
+predicted_distributions_calibrationset= predict(la, X_test,ret_distr=true)
+sigma= sigma_scaling(predicted_distributions_calibrationset,y_cal)
+``` 
 
+We can now test the level of calibration achieved by the neural network with the the rescaled standard deviations.
+```{julia}
+#| output: true
+rescaled_distributions = rescale_stddev(predicted_distributions, sigma)  
+Calibration_Plot(la,y_test,rescaled_distributions)
+```   
 
+with the new sharpness score
+```{julia}
+#| output: true
+sharpness_regression(rescaled_distributions)
+```
