@@ -102,7 +102,7 @@ obtained through a calibration plot [Link text Here](https://link-url-here.org) 
 First, we apply the trained network on the calibration dataset (y_cal, X_cal) and collect the neural network's predicted distributions 
 ```{julia}
 #| output: true
-predicted_distributions= predict(la, X_cal)
+predicted_distributions= predict(la, X_cal,ret_distr=true)
 ``` 
 
 then we can plot the calibration plot of our neural model
