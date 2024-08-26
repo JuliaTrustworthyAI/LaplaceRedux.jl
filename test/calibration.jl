@@ -196,3 +196,9 @@ end
     sigma = sigma_scaling(distrs, predicted_elements)
     @test typeof(sigma) <: Number
 end
+
+@testset "rescale_stddev" begin
+    distributions = [Normal(0, 1), Normal(2, 1), Normal(4, 1)]
+    rescaled_distr = rescale_stddev(distributions, 2.0)
+    @test rescaled_distr == [Normal(0, 2), Normal(2, 2), Normal(4, 2)]
+end

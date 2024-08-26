@@ -128,13 +128,13 @@ then we can plot the calibration plot of our neural model
 
 ```{julia}
 #| output: true
-Calibration_Plot(la,y_test,predicted_distributions;n_bins = 20)
+Calibration_Plot(la,y_test,vec(predicted_distributions);n_bins = 20)
 ``` 
 
 and compute the sharpness of the predictive distribution
 
 ```{julia}
 #| output: true
-sharpness_regression(predicted_distributions)
+sharpness_regression(vec(predicted_distributions))
 ``` 
 
