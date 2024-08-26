@@ -98,7 +98,7 @@ fit!(la, data)
 optimize_prior!(la; verbose=true, n_steps=100)
 ```
 
-probit approximation:
+with either the probit approximation:
 
 ```{julia}
 #| output: true
@@ -112,7 +112,7 @@ end
 plot(plt_list...)
 ```
 
-plugin approximation:
+ or the plugin approximation:
 
 ```{julia}
 #| output: true
@@ -126,27 +126,39 @@ end
 plot(plt_list...)
 ```
 
-## Calibration Plot for each class
+## Calibration Plots
+
+In the case of multiclass classification tasks, we cannot plot directly the calibration plots since they can only be used in the binary classification case. However, we can use them to plot the calibration of the predictions for 1 class against all the others. To do so, we first have to collect the predicted categorical distributions
 
 ```{julia}
 #| output: true
 predicted_distributions= predict(la, X_test,ret_distr=true)
 ```
 
-
+then we transform the categorical distributions into Bernoulli distributions by taking only the probability of the class of interest, for example the third one. 
 ```{julia}
 #| output: true
 using Distributions
-plt_list = []
-num_labels = length(unique(y))
-for i in 1:num_labels
-    bernoulli_distributions = [Bernoulli(p.p[i]) for p in vec(predicted_distributions)]
-
-    plt = Calibration_Plot(la,hcat(y_onehot_test...)[i,:],bernoulli_distributions;n_bins = 20);
-    #plot(plt)
-        push!(plt_list, plt)
-end
-plot(plt_list..., layout = (2, 2))
+bernoulli_distributions = [Bernoulli(p.p[3]) for p in vec(predicted_distributions)]
 ```
 
- 
+Now we can use the calibration Plot to see the level of calibration of the neural network
+```{julia}
+#| output: true
+plt = Calibration_Plot(la,hcat(y_onehot_test...)[3,:],bernoulli_distributions;n_bins = 20);
+
+```
+
+The plot is peaked around 0.7, and This may be due to various reasons.
+
+A possible reason is that class 3 is relatively easy for the model to identify from the other classes. The network is able to  correctly identify examples belonging to class 3, although he remains a bit underconfident in its predictions. 
+Another reason for the peak however may be the lack of cases where the predicted probability is lower (e.g., around 0.5), which could indicate that the network  has not encountered ambiguous or difficult-to-classify examples for class 3.  This once again might be because either class 3 has distinct features that the model can easily learn, leading to fewer uncertain predictions, or is a consequence of the limited dataset. 
+
+ We can measure how sharp is the neural network by computing the sharpness score
+ ```{julia}
+#| output: true
+sharpness_classification(hcat(y_onehot_test...)[3,:],bernoulli_distributions)
+
+```
+
+The neural network seems to be able to correctly classify the majority of samples with  a relative high confidence, although not to the level of the binary case. This is most likely due to the greater difficulty in classifying 4 different classes when compared to having to classify only two classes.

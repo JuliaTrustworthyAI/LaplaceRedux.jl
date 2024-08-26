@@ -2,6 +2,9 @@ project:
   title: "LaplaceRedux.jl"
   execute-dir: project
 
+render:
+    - "!docs/src/*.md"
+
 crossref:
   fig-prefix: Figure
   tbl-prefix: Table
@@ -16,6 +19,7 @@ execute:
 
 jupyter: julia-1.10
   
+
 
 
 

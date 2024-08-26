@@ -157,7 +157,7 @@ Inputs: \
 Outputs: \
     - `sharpness`: a scalar that measure the level of sharpness of the regressor
 """
-function sharpness_regression(distributions::Vector{Normal{T}}) where {T<:AbstractFloat}
+function sharpness_regression(distributions::Vector{Normal{Float64}})
     sharpness = mean(var.(distributions))
     return sharpness
 end
@@ -176,15 +176,15 @@ Source: [Kuleshov, Fenner, Ermon 2018](https://arxiv.org/abs/1807.00263)
 
 Inputs: \
     - `Y_cal`: a vector of values ``y_t``\
-    - `distributions`:a Vector{Distributions.Normal{Float}} of distributions stacked row-wise.\
-        For example the output of LaplaceRedux.predict(la,X_cal)
+    - `distributions`:a Vector{Distributions.Normal{Float64}} of distributions stacked row-wise.\
+        For example the output of LaplaceRedux.predict(la,X_cal). \
     - `n_bins`: number of equally spaced bins to use.\
 Outputs:\
     - `counts`: an array cointaining the empirical frequencies for each quantile interval.
 """
 function empirical_frequency_regression(
-    Y_cal, distributions::Vector{Normal{T}}; n_bins::Int=20
-)where {T<:AbstractFloat}
+    Y_cal, distributions::Vector{Normal{Float64}}; n_bins::Int=20
+)
     if n_bins <= 0
         throw(ArgumentError("n_bins must be a positive integer"))
     end
@@ -219,14 +219,14 @@ Outputs:  \
     -  `mean_class_zero`: a scalar that measure the average prediction for the null class  
 
 """
-function sharpness_classification(y_binary, distributions::Vector{Bernoulli{T}})where {T<:AbstractFloat}
+function sharpness_classification(y_binary, distributions::Vector{Bernoulli{Float64}})
     mean_class_one = mean(mean.(distributions[findall(y_binary .== 1)]))
     mean_class_zero = mean( mean.(distributions[findall(y_binary .== 0)]))
-    return mean_class_zero, mean_class_one
+    return mean_class_one, mean_class_zero
 end
 
 @doc raw""" 
-    empirical_frequency_binary_classification(y_binary, distributions::Distributions.Bernoulli)
+    empirical_frequency_binary_classification(y_binary, distributions::Vector{Bernoulli{Float64}}; n_bins::Int=20)
 dispatched for Bernoulli Distributions
 FOR BINARY CLASSIFICATION MODELS.\
 Given a calibration dataset ``(x_t, y_t)`` for ``i ∈ {1,...,T}`` let ``p_t= H(x_t)∈[0,1]`` be the forecasted probability. \
@@ -246,8 +246,8 @@ Outputs: \
 
 """
 function empirical_frequency_binary_classification(
-    y_binary, distributions::Vector{Bernoulli{T}}; n_bins::Int=20
-) where {T<:AbstractFloat}
+    y_binary, distributions::Vector{Bernoulli{Float64}}; n_bins::Int=20
+)
     if n_bins <= 0
         throw(ArgumentError("n_bins must be a positive integer"))
     elseif !all(x -> x == 0 || x == 1, y_binary)
