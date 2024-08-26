@@ -12,6 +12,7 @@ using Flux, Plots, TaijaPlotting, Random, Statistics, LaplaceRedux
 theme(:wong)
 ```
 
+
 ## Data
 
 We first generate some synthetic data:
@@ -25,38 +26,32 @@ xs = [[x] for x in x]
 X = permutedims(x)
 ```
 
-e split them in a training set, a test set and a calibration set.
+and split them in a training set  and a test set
 ```{julia}
 # Shuffle the data
 Random.seed!(1234)  # Set a seed for reproducibility
 shuffle_indices = shuffle(1:n)
 
 # Define split ratios
-train_ratio = 0.6
+train_ratio = 0.8
 test_ratio = 0.2
-calibration_ratio = 0.2
 
 # Calculate split indices
 train_end = Int(floor(train_ratio * n))
-test_end = train_end + Int(floor(test_ratio * n))
 
 # Split the data
 train_indices = shuffle_indices[1:train_end]
-test_indices = shuffle_indices[train_end+1:test_end]
-calibration_indices = shuffle_indices[test_end+1:end]
+test_indices = shuffle_indices[train_end+1:end]
 
 # Create the splits
 x_train, y_train = x[train_indices], y[train_indices]
 x_test, y_test = x[test_indices], y[test_indices]
-x_calibration, y_calibration = x[calibration_indices], y[calibration_indices]
 
 # Optional: Convert to desired format
 xs_train = [[x] for x in x_train]
 xs_test = [[x] for x in x_test]
-xs_calibration = [[x] for x in x_calibration]
 X_train = permutedims(x_train)
 X_test = permutedims(x_test)
-X_calibration = permutedims(x_calibration)
 ```
 
 ## MLP
@@ -133,7 +128,7 @@ then we can plot the calibration plot of our neural model
 
 ```{julia}
 #| output: true
-Calibration_Plot(la,y_test,predicted_distributions)
+Calibration_Plot(la,y_test,predicted_distributions;n_bins = 20)
 ``` 
 
 and compute the sharpness of the predictive distribution
@@ -143,22 +138,3 @@ and compute the sharpness of the predictive distribution
 sharpness_regression(predicted_distributions)
 ``` 
 
-Finally, if you have set apart a calibration dataset like we did we can either perform a post training calibration procedure on top of prior optimization or avoid the prior optimization step completely and use sigma scaling to calibrate the predictive distribution.
-```{julia}
-#| output: true
-predicted_distributions_calibrationset= predict(la, X_test,ret_distr=true)
-sigma= sigma_scaling(predicted_distributions_calibrationset,y_cal)
-``` 
-
-We can now test the level of calibration achieved by the neural network with the the rescaled standard deviations.
-```{julia}
-#| output: true
-rescaled_distributions = rescale_stddev(predicted_distributions, sigma)  
-Calibration_Plot(la,y_test,rescaled_distributions)
-```   
-
-with the new sharpness score
-```{julia}
-#| output: true
-sharpness_regression(rescaled_distributions)
-```

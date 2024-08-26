@@ -221,12 +221,12 @@ Outputs:  \
 """
 function sharpness_classification(y_binary, distributions::Vector{Bernoulli{T}})where {T<:AbstractFloat}
     mean_class_one = mean(mean.(distributions[findall(y_binary .== 1)]))
-    mean_class_zero = mean(1 .- mean.(distributions[findall(y_binary .== 0)]))
-    return mean_class_one, mean_class_zero
+    mean_class_zero = mean( mean.(distributions[findall(y_binary .== 0)]))
+    return mean_class_zero, mean_class_one
 end
 
 @doc raw""" 
-    empirical_frequency_classification(y_binary, distributions::Distributions.Bernoulli)
+    empirical_frequency_binary_classification(y_binary, distributions::Distributions.Bernoulli)
 dispatched for Bernoulli Distributions
 FOR BINARY CLASSIFICATION MODELS.\
 Given a calibration dataset ``(x_t, y_t)`` for ``i ∈ {1,...,T}`` let ``p_t= H(x_t)∈[0,1]`` be the forecasted probability. \
@@ -320,9 +320,8 @@ Inputs: \
 Outputs: \
     - `sigma`: the scalar that maximize the likelihood.
 """
-function sigma_scaling(
-    distr::Vector{Normal{T}}, y_cal::Vector{<:AbstractFloat}
-) where {T<:AbstractFloat}
+function sigma_scaling(distr::Vector{Normal{T}}, y_cal::Vector{<:AbstractFloat}
+    ) where T <: AbstractFloat
     means, variances = extract_mean_and_variance(distr)
 
     sigma = sqrt(1 / length(y_cal) * sum(norm.(y_cal .- means) ./ variances))
