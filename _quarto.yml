@@ -1,8 +1,10 @@
 project:
+  render:
+    - "*.qmd"
+    - "!/docs/src/*.md"
   title: "LaplaceRedux.jl"
   execute-dir: project
-  render:
-      - "!docs/src/*.md"
+
 
 crossref:
   fig-prefix: Figure
