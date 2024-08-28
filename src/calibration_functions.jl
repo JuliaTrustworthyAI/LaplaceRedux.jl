@@ -85,7 +85,6 @@ end
 
 @doc raw""" 
     empirical_frequency_binary_classification(y_binary, distributions::Vector{Bernoulli{Float64}}; n_bins::Int=20)
-dispatched for Bernoulli Distributions
 FOR BINARY CLASSIFICATION MODELS.\
 Given a calibration dataset ``(x_t, y_t)`` for ``i ∈ {1,...,T}`` let ``p_t= H(x_t)∈[0,1]`` be the forecasted probability. \
 We group the ``p_t`` into intervals ``I_j`` for ``j= 1,2,...,m`` that form a partition of [0,1]. 
@@ -149,7 +148,7 @@ end
 Extract the mean and the variance of each distributions and return them in two separate lists.
 
 Inputs: \
-    - `distributions`: a Vector of Normal distributions \
+    - `distributions`: a Vector of Normal distributions 
 
 Outputs: \
     - `means`: the list of the means \
@@ -187,7 +186,7 @@ function sigma_scaling(distr::Vector{Normal{T}}, y_cal::Vector{<:AbstractFloat}
     return sigma
 end
 
-"""
+@doc"""
     rescale_stddev(distr::Vector{Normal{T}}, s::T) where {T<:AbstractFloat}
 Rescale the standard deviation of the Normal distributions received as argument and return a vector of rescaled Normal distributions.
 Inputs: 
