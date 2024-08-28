@@ -78,7 +78,6 @@ Outputs:  \
 """
 function sharpness_classification(y_binary, distributions::Vector{Bernoulli{Float64}})
     mean_class_one = mean(mean.(distributions[findall(y_binary .== 1)]))
-    println(mean.(distributions[findall(y_binary .== 0)]))
     mean_class_zero = mean( 1 .- mean.(distributions[findall(y_binary .== 0)]))
     return mean_class_one, mean_class_zero
 end

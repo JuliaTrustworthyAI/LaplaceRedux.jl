@@ -135,7 +135,7 @@ predicted_distributions= predict(la, X_test,ret_distr=true)
 ```
 
     1×20 Matrix{Distributions.Categorical{Float64, Vector{Float64}}}:
-     Distributions.Categorical{Float64, Vector{Float64}}(support=Base.OneTo(4), p=[0.140083, 0.199747, 0.0472689, 0.612902])  …  Distributions.Categorical{Float64, Vector{Float64}}(support=Base.OneTo(4), p=[0.169446, 0.142313, 0.632689, 0.0555532])
+     Distributions.Categorical{Float64, Vector{Float64}}(support=Base.OneTo(4), p=[0.0606099, 0.20902, 0.679074, 0.0512963])  …  Distributions.Categorical{Float64, Vector{Float64}}(support=Base.OneTo(4), p=[0.689946, 0.0350869, 0.0724973, 0.20247])
 
 then we transform the categorical distributions into Bernoulli distributions by taking only the probability of the class of interest, for example the third one.
 
@@ -145,26 +145,26 @@ bernoulli_distributions = [Bernoulli(p.p[3]) for p in vec(predicted_distribution
 ```
 
     20-element Vector{Bernoulli{Float64}}:
-     Bernoulli{Float64}(p=0.04726889839796923)
-     Bernoulli{Float64}(p=0.6325006536908965)
-     Bernoulli{Float64}(p=0.6329213747846654)
-     Bernoulli{Float64}(p=0.6329283901552134)
-     Bernoulli{Float64}(p=0.6329274576399208)
-     Bernoulli{Float64}(p=0.11407134196161652)
-     Bernoulli{Float64}(p=0.07443370075892711)
-     Bernoulli{Float64}(p=0.04726895211688907)
-     Bernoulli{Float64}(p=0.0472878075395924)
-     Bernoulli{Float64}(p=0.124932372185342)
-     Bernoulli{Float64}(p=0.5953343787683067)
-     Bernoulli{Float64}(p=0.11393687744897499)
-     Bernoulli{Float64}(p=0.047270394369989546)
-     Bernoulli{Float64}(p=0.047666105698753646)
-     Bernoulli{Float64}(p=0.11354041980506939)
-     Bernoulli{Float64}(p=0.6329137647522137)
-     Bernoulli{Float64}(p=0.11424546087204039)
-     Bernoulli{Float64}(p=0.6315295103998452)
-     Bernoulli{Float64}(p=0.632874431578329)
-     Bernoulli{Float64}(p=0.6326886059013725)
+     Bernoulli{Float64}(p=0.6790739905321873)
+     Bernoulli{Float64}(p=0.06405315296920158)
+     Bernoulli{Float64}(p=0.05779567581016376)
+     Bernoulli{Float64}(p=0.03923878439021406)
+     Bernoulli{Float64}(p=0.6790734887741628)
+     Bernoulli{Float64}(p=0.6774839517291442)
+     Bernoulli{Float64}(p=0.6789934103303344)
+     Bernoulli{Float64}(p=0.0367303564017112)
+     Bernoulli{Float64}(p=0.05835631238345832)
+     Bernoulli{Float64}(p=0.6790364506842016)
+     Bernoulli{Float64}(p=0.05790045584855931)
+     Bernoulli{Float64}(p=0.03685476954503873)
+     Bernoulli{Float64}(p=0.17889050596529465)
+     Bernoulli{Float64}(p=0.05592189560506221)
+     Bernoulli{Float64}(p=0.679058428511121)
+     Bernoulli{Float64}(p=0.18352445192013103)
+     Bernoulli{Float64}(p=0.6790760167014648)
+     Bernoulli{Float64}(p=0.04372311832887724)
+     Bernoulli{Float64}(p=0.06345185570983326)
+     Bernoulli{Float64}(p=0.07249734723514518)
 
 Now we can use the calibration Plot to see the level of calibration of the neural network
 
@@ -181,7 +181,7 @@ Another reason for the peak however may be the lack of cases where the predicted
 
 We can measure how sharp is the neural network by computing the sharpness score
 
-sharpness_classification(hcat(y_onehot_test…)\[3,:\],bernoulli_distributions)
+sharpness_classification(hcat(y_onehot_test…)\[3,:\],vec(bernoulli_distributions))
 
 \`\`\`
 

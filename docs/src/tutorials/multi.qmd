@@ -157,7 +157,7 @@ Another reason for the peak however may be the lack of cases where the predicted
  We can measure how sharp is the neural network by computing the sharpness score
  ```{julia}
 #| output: true
-sharpness_classification(hcat(y_onehot_test...)[3,:],bernoulli_distributions)
+sharpness_classification(hcat(y_onehot_test...)[3,:],vec(bernoulli_distributions))
 
 ```
 
