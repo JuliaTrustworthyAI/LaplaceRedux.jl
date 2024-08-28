@@ -117,7 +117,7 @@ First we collect the predicted results over the test dataset
 ```
 
     1×20 Matrix{Distributions.Bernoulli{Float64}}:
-     Distributions.Bernoulli{Float64}(p=0.934229)  …  Distributions.Bernoulli{Float64}(p=0.956306)
+     Distributions.Bernoulli{Float64}(p=0.967233)  …  Distributions.Bernoulli{Float64}(p=0.914255)
 
 then we plot the calibration plot
 
@@ -133,6 +133,6 @@ as we can see, although the network is extremely accurate it doesn’t seem to b
 sharpness_classification(ys_test,vec(predicted_distributions))
 ```
 
-    [0.09644810608890983, 0.053549171124299674, 0.10369228858496811, 0.0732611908275755, 0.028385721617265925, 0.04282207117312594, 0.16436441177389768, 0.05148854111138075, 0.04007948012876794, 0.06442239979214916]
+    [0.06683468971570633, 0.09302258990939861, 0.04710001907982482, 0.03008829594669629, 0.06989057905539901, 0.23767498750256882, 0.018801990756895485, 0.01980662885791489, 0.024503167113718475]
 
-    (0.9147158838621141, 0.9281486617777659)
+    (0.9061756256800884, 0.9324752280068752)

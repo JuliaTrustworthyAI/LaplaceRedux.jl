@@ -135,7 +135,7 @@ predicted_distributions= predict(la, X_test,ret_distr=true)
 ```
 
     1×20 Matrix{Distributions.Categorical{Float64, Vector{Float64}}}:
-     Distributions.Categorical{Float64, Vector{Float64}}(support=Base.OneTo(4), p=[0.677436, 0.0384923, 0.118736, 0.165336])  …  Distributions.Categorical{Float64, Vector{Float64}}(support=Base.OneTo(4), p=[0.0261611, 0.688918, 0.199687, 0.085234])
+     Distributions.Categorical{Float64, Vector{Float64}}(support=Base.OneTo(4), p=[0.140083, 0.199747, 0.0472689, 0.612902])  …  Distributions.Categorical{Float64, Vector{Float64}}(support=Base.OneTo(4), p=[0.169446, 0.142313, 0.632689, 0.0555532])
 
 then we transform the categorical distributions into Bernoulli distributions by taking only the probability of the class of interest, for example the third one.
 
@@ -145,26 +145,26 @@ bernoulli_distributions = [Bernoulli(p.p[3]) for p in vec(predicted_distribution
 ```
 
     20-element Vector{Bernoulli{Float64}}:
-     Bernoulli{Float64}(p=0.11873558300173745)
-     Bernoulli{Float64}(p=0.11498061136134086)
-     Bernoulli{Float64}(p=0.6674405629824905)
-     Bernoulli{Float64}(p=0.03286998149953749)
-     Bernoulli{Float64}(p=0.6574893211057788)
-     Bernoulli{Float64}(p=0.1133413386424115)
-     Bernoulli{Float64}(p=0.11387611100108382)
-     Bernoulli{Float64}(p=0.03241056796828973)
-     Bernoulli{Float64}(p=0.6674299268262424)
-     Bernoulli{Float64}(p=0.19985404101512141)
-     Bernoulli{Float64}(p=0.03324098746202494)
-     Bernoulli{Float64}(p=0.20007441459444497)
-     Bernoulli{Float64}(p=0.19922259256089178)
-     Bernoulli{Float64}(p=0.6697881738458813)
-     Bernoulli{Float64}(p=0.03258399908041036)
-     Bernoulli{Float64}(p=0.11381645240815817)
-     Bernoulli{Float64}(p=0.03379412786302275)
-     Bernoulli{Float64}(p=0.19994807070245754)
-     Bernoulli{Float64}(p=0.11396233020534376)
-     Bernoulli{Float64}(p=0.19968706593359128)
+     Bernoulli{Float64}(p=0.04726889839796923)
+     Bernoulli{Float64}(p=0.6325006536908965)
+     Bernoulli{Float64}(p=0.6329213747846654)
+     Bernoulli{Float64}(p=0.6329283901552134)
+     Bernoulli{Float64}(p=0.6329274576399208)
+     Bernoulli{Float64}(p=0.11407134196161652)
+     Bernoulli{Float64}(p=0.07443370075892711)
+     Bernoulli{Float64}(p=0.04726895211688907)
+     Bernoulli{Float64}(p=0.0472878075395924)
+     Bernoulli{Float64}(p=0.124932372185342)
+     Bernoulli{Float64}(p=0.5953343787683067)
+     Bernoulli{Float64}(p=0.11393687744897499)
+     Bernoulli{Float64}(p=0.047270394369989546)
+     Bernoulli{Float64}(p=0.047666105698753646)
+     Bernoulli{Float64}(p=0.11354041980506939)
+     Bernoulli{Float64}(p=0.6329137647522137)
+     Bernoulli{Float64}(p=0.11424546087204039)
+     Bernoulli{Float64}(p=0.6315295103998452)
+     Bernoulli{Float64}(p=0.632874431578329)
+     Bernoulli{Float64}(p=0.6326886059013725)
 
 Now we can use the calibration Plot to see the level of calibration of the neural network
 

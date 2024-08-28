@@ -115,50 +115,50 @@ optimize_prior!(la; verbose=true)
 plot(la, X_train, y_train; zoom=-5, size=(400,400))
 ```
 
-    loss(exp.(logP₀), exp.(logσ)) = 699.4614071578686
-    Log likelihood: -650.5288616722523
-    Log det ratio: 66.18989615253814
-    Scatter: 31.675194818694376
-    loss(exp.(logP₀), exp.(logσ)) = 758.1137287674911
-    Log likelihood: -713.3275341047802
-    Log det ratio: 73.58411353906541
-    Scatter: 15.98827578635654
-    loss(exp.(logP₀), exp.(logσ)) = 623.1232220351936
-    Log likelihood: -578.7313039580287
-    Log det ratio: 77.76098439481223
-    Scatter: 11.022851759517634
-
-    loss(exp.(logP₀), exp.(logσ)) = 612.9000913546312
-    Log likelihood: -568.4300289112797
-    Log det ratio: 79.33032526731489
-    Scatter: 9.609799619388047
-    loss(exp.(logP₀), exp.(logσ)) = 612.980624661215
-    Log likelihood: -568.5099348866323
-    Log det ratio: 79.33795872667935
-    Scatter: 9.603420822486008
-
-    loss(exp.(logP₀), exp.(logσ)) = 606.4185627905605
-    Log likelihood: -561.9934406760827
-    Log det ratio: 78.67976558586915
-    Scatter: 10.17047864308627
-    loss(exp.(logP₀), exp.(logσ)) = 605.2983263524043
-    Log likelihood: -560.9025071929581
-    Log det ratio: 77.9541387818727
-    Scatter: 10.83749953701965
-    loss(exp.(logP₀), exp.(logσ)) = 605.464398184884
-    Log likelihood: -561.0751506853986
-    Log det ratio: 77.46246992569823
-    Scatter: 11.316025073272467
+    loss(exp.(logP₀), exp.(logσ)) = 702.3984988592939
+    Log likelihood: -655.4226779297866
+    Log det ratio: 63.636037890555485
+    Scatter: 30.315603968459115
+    loss(exp.(logP₀), exp.(logσ)) = 762.3739203559888
+    Log likelihood: -719.2893446531043
+    Log det ratio: 70.83089414166076
+    Scatter: 15.338257264108307
+    loss(exp.(logP₀), exp.(logσ)) = 628.966608466347
+    Log likelihood: -586.2236101292576
+    Log det ratio: 74.86014124914948
+    Scatter: 10.625855425029199
 
 
-    loss(exp.(logP₀), exp.(logσ)) = 605.4020214804258
-    Log likelihood: -561.0122284359471
-    Log det ratio: 77.26250383495702
-    Scatter: 11.517082254000224
-    loss(exp.(logP₀), exp.(logσ)) = 605.3141710440409
-    Log likelihood: -560.924396603449
-    Log det ratio: 77.2650076170082
-    Scatter: 11.514541264175579
+    loss(exp.(logP₀), exp.(logσ)) = 618.1490551810743
+    Log likelihood: -575.3262768621464
+    Log det ratio: 76.32699108193992
+    Scatter: 9.318565555915965
+    loss(exp.(logP₀), exp.(logσ)) = 618.4368182243323
+    Log likelihood: -575.6185033852381
+    Log det ratio: 76.27376400937706
+    Scatter: 9.362865668811326
+
+    loss(exp.(logP₀), exp.(logσ)) = 611.9419028847238
+    Log likelihood: -569.1706791963551
+    Log det ratio: 75.59010798146141
+    Scatter: 9.952339395276015
+    loss(exp.(logP₀), exp.(logσ)) = 610.7840744675561
+    Log likelihood: -568.0409279734597
+    Log det ratio: 74.8667416715335
+    Scatter: 10.619551316659306
+    loss(exp.(logP₀), exp.(logσ)) = 610.9475830180504
+    Log likelihood: -568.2098996989031
+    Log det ratio: 74.39427933020599
+    Scatter: 11.081087308088774
+
+    loss(exp.(logP₀), exp.(logσ)) = 610.8918867270929
+    Log likelihood: -568.1535043639661
+    Log det ratio: 74.21729022268943
+    Scatter: 11.259474503564268
+    loss(exp.(logP₀), exp.(logσ)) = 610.8059882464455
+    Log likelihood: -568.0677514294256
+    Log det ratio: 74.23591352633076
+    Scatter: 11.24056010770908
 
 ![](regression_files/figure-commonmark/cell-8-output-5.svg)
 
@@ -174,32 +174,32 @@ predicted_distributions= predict(la, X_test,ret_distr=true)
 ```
 
     600×1 Matrix{Distributions.Normal{Float64}}:
-     Distributions.Normal{Float64}(μ=-0.4196469187736511, σ=0.0679738666764263)
-     Distributions.Normal{Float64}(μ=-0.39177197217941284, σ=0.06890169312970602)
-     Distributions.Normal{Float64}(μ=0.776796281337738, σ=0.06074957252594663)
-     Distributions.Normal{Float64}(μ=0.6933168172836304, σ=0.08344435466780176)
-     Distributions.Normal{Float64}(μ=0.832196831703186, σ=0.08084460912585997)
-     Distributions.Normal{Float64}(μ=-0.050286442041397095, σ=0.06884885797502903)
-     Distributions.Normal{Float64}(μ=-0.5049006938934326, σ=0.06568541695736727)
-     Distributions.Normal{Float64}(μ=-0.06951528787612915, σ=0.05514742556492769)
-     Distributions.Normal{Float64}(μ=0.7513407468795776, σ=0.05183199458344559)
-     Distributions.Normal{Float64}(μ=-0.3874087929725647, σ=0.06904606151969317)
-     Distributions.Normal{Float64}(μ=-0.9113342761993408, σ=0.06564413451854467)
-     Distributions.Normal{Float64}(μ=-0.24987715482711792, σ=0.05616188450864741)
-     Distributions.Normal{Float64}(μ=0.9503012299537659, σ=0.05509250127866398)
+     Distributions.Normal{Float64}(μ=0.9150201678276062, σ=0.0712698621939572)
+     Distributions.Normal{Float64}(μ=0.2141074538230896, σ=0.08509629880573434)
+     Distributions.Normal{Float64}(μ=0.43884706497192383, σ=0.05711459300259106)
+     Distributions.Normal{Float64}(μ=-0.696795642375946, σ=0.0528907494338802)
+     Distributions.Normal{Float64}(μ=-0.4487711787223816, σ=0.05667919814727773)
+     Distributions.Normal{Float64}(μ=1.0599703788757324, σ=0.07331830051512468)
+     Distributions.Normal{Float64}(μ=-0.6711699366569519, σ=0.0531862091132709)
+     Distributions.Normal{Float64}(μ=0.7063796520233154, σ=0.07448023253385215)
+     Distributions.Normal{Float64}(μ=-0.5376694798469543, σ=0.05548268083704169)
+     Distributions.Normal{Float64}(μ=-0.4553452730178833, σ=0.06913082294474085)
+     Distributions.Normal{Float64}(μ=-0.7690489888191223, σ=0.0528685253654398)
+     Distributions.Normal{Float64}(μ=-0.7591468691825867, σ=0.06655473146173639)
+     Distributions.Normal{Float64}(μ=0.09281894564628601, σ=0.13290530919567922)
      ⋮
-     Distributions.Normal{Float64}(μ=-0.5406216979026794, σ=0.055769675132711756)
-     Distributions.Normal{Float64}(μ=0.31152284145355225, σ=0.05454183352368205)
-     Distributions.Normal{Float64}(μ=1.061593770980835, σ=0.07329565553777241)
-     Distributions.Normal{Float64}(μ=0.12588687241077423, σ=0.06686624669227054)
-     Distributions.Normal{Float64}(μ=0.058063820004463196, σ=0.11908083025214214)
-     Distributions.Normal{Float64}(μ=1.028564691543579, σ=0.06796776553390338)
-     Distributions.Normal{Float64}(μ=0.6847273111343384, σ=0.06322761308748256)
-     Distributions.Normal{Float64}(μ=1.0285106897354126, σ=0.06796223500400367)
-     Distributions.Normal{Float64}(μ=0.05158938467502594, σ=0.12225229033768022)
-     Distributions.Normal{Float64}(μ=-0.06038850545883179, σ=0.055088019072815825)
-     Distributions.Normal{Float64}(μ=0.8001070022583008, σ=0.06048200018805775)
-     Distributions.Normal{Float64}(μ=0.5859723091125488, σ=0.0863628028315014)
+     Distributions.Normal{Float64}(μ=-0.8616088032722473, σ=0.05546205318284079)
+     Distributions.Normal{Float64}(μ=-0.593717634677887, σ=0.07036250789010345)
+     Distributions.Normal{Float64}(μ=-0.9107488989830017, σ=0.05602522103411315)
+     Distributions.Normal{Float64}(μ=0.687362790107727, σ=0.07600257202140666)
+     Distributions.Normal{Float64}(μ=0.15490028262138367, σ=0.05495145734017776)
+     Distributions.Normal{Float64}(μ=-0.807168185710907, σ=0.05354646272047298)
+     Distributions.Normal{Float64}(μ=-0.28883808851242065, σ=0.06961852085326199)
+     Distributions.Normal{Float64}(μ=0.8665060997009277, σ=0.050668256164857886)
+     Distributions.Normal{Float64}(μ=0.053950488567352295, σ=0.07557626514837819)
+     Distributions.Normal{Float64}(μ=0.10951238870620728, σ=0.0750927300730865)
+     Distributions.Normal{Float64}(μ=0.41646575927734375, σ=0.08247027059087846)
+     Distributions.Normal{Float64}(μ=-0.30292409658432007, σ=0.05713547559568841)
 
 then we can plot the calibration plot of our neural model
 
@@ -215,4 +215,4 @@ and compute the sharpness of the predictive distribution
 sharpness_regression(vec(predicted_distributions))
 ```
 
-    0.004975154105351387
+    0.004653979376388681
