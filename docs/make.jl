@@ -24,6 +24,7 @@ makedocs(;
             "Calibrated forecasts" => "tutorials/calibration.md",
         ],
         "Reference" => "reference.md",
+        "MLJ interface"=> "mlj_interface.md",
         "Additional Resources" => "resources/_resources.md",
     ],
 )
