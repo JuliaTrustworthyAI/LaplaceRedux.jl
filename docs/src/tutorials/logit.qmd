@@ -121,7 +121,7 @@ then we plot the calibration plot
 Calibration_Plot(la,ys_test,vec(predicted_distributions);n_bins = 20)
 ``` 
 
-as we can see, although the network is extremely accurate it doesn't seem to be calibrated well. This is however an effect of the extreme accuracy reached by the neural network which causes the lack of predictions with  high uncertainty(low certainty), rather than a defect of the laplace approximation. We can see this by looking at the level of sharpness for the two classes which are extremely close to   1, indicating the high level of trust that the neural network has in the predictions.
+as we can see from the plot, although extremely accurate, the neural network doesn't seem to be calibrated well. This is however an effect of the extreme accuracy reached by the neural network which causes the lack of predictions with  high uncertainty(low certainty), rather than a defect of the laplace approximation. We can see this by looking at the level of sharpness for the two classes which are extremely close to 1, indicating the high level of trust that the neural network has in the predictions.
 
 ```{julia} 
 #| output: true
