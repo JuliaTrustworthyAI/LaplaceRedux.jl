@@ -85,7 +85,7 @@ toy_data_multi()
 ```
 
 """
-function toy_data_multi(;N=100, seed=nothing)
+function toy_data_multi(N=100; seed=nothing)
 
     #set seed if available
     if seed !== nothing
