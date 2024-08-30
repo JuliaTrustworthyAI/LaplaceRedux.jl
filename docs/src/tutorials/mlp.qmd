@@ -18,8 +18,11 @@ theme(:lime)
 This time we use a synthetic dataset containing samples that are not linearly separable:
 
 ```{julia}
+#set seed
+seed = 1234
+Random.seed!(seed)
 # Number of points to generate.
-xs, ys = LaplaceRedux.Data.toy_data_non_linear(400)
+xs, ys = LaplaceRedux.Data.toy_data_non_linear(400, seed= seed)
 # Shuffle the data
 n = length(ys)
 indices = randperm(n)

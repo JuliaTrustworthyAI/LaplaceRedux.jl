@@ -21,7 +21,7 @@ We first generate some synthetic data:
 using LaplaceRedux.Data
 n = 3000       # number of observations
 σtrue = 0.30  # true observational noise
-x, y = Data.toy_data_regression(n;noise=σtrue)
+x, y = Data.toy_data_regression(n;noise=σtrue,seed=1234)
 xs = [[x] for x in x]
 X = permutedims(x)
 ```

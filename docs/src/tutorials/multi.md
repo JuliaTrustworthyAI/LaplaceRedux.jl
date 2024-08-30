@@ -14,7 +14,8 @@ theme(:lime)
 
 ``` julia
 using LaplaceRedux.Data
-x, y = Data.toy_data_multi()
+seed = 1234
+x, y = Data.toy_data_multi(seed=seed)
 X = hcat(x...)
 y_onehot = Flux.onehotbatch(y, unique(y))
 y_onehot = Flux.unstack(y_onehot',1)
@@ -24,6 +25,7 @@ split in training and test datasets
 
 ``` julia
 # Shuffle the data
+Random.seed!(seed)
 n = length(y)
 indices = randperm(n)
 
@@ -135,7 +137,7 @@ predicted_distributions= predict(la, X_test,ret_distr=true)
 ```
 
     1×20 Matrix{Distributions.Categorical{Float64, Vector{Float64}}}:
-     Distributions.Categorical{Float64, Vector{Float64}}(support=Base.OneTo(4), p=[0.0606099, 0.20902, 0.679074, 0.0512963])  …  Distributions.Categorical{Float64, Vector{Float64}}(support=Base.OneTo(4), p=[0.689946, 0.0350869, 0.0724973, 0.20247])
+     Distributions.Categorical{Float64, Vector{Float64}}(support=Base.OneTo(4), p=[0.0569184, 0.196066, 0.0296796, 0.717336])  …  Distributions.Categorical{Float64, Vector{Float64}}(support=Base.OneTo(4), p=[0.0569634, 0.195727, 0.0296449, 0.717665])
 
 then we transform the categorical distributions into Bernoulli distributions by taking only the probability of the class of interest, for example the third one.
 
@@ -145,31 +147,31 @@ bernoulli_distributions = [Bernoulli(p.p[3]) for p in vec(predicted_distribution
 ```
 
     20-element Vector{Bernoulli{Float64}}:
-     Bernoulli{Float64}(p=0.6790739905321873)
-     Bernoulli{Float64}(p=0.06405315296920158)
-     Bernoulli{Float64}(p=0.05779567581016376)
-     Bernoulli{Float64}(p=0.03923878439021406)
-     Bernoulli{Float64}(p=0.6790734887741628)
-     Bernoulli{Float64}(p=0.6774839517291442)
-     Bernoulli{Float64}(p=0.6789934103303344)
-     Bernoulli{Float64}(p=0.0367303564017112)
-     Bernoulli{Float64}(p=0.05835631238345832)
-     Bernoulli{Float64}(p=0.6790364506842016)
-     Bernoulli{Float64}(p=0.05790045584855931)
-     Bernoulli{Float64}(p=0.03685476954503873)
-     Bernoulli{Float64}(p=0.17889050596529465)
-     Bernoulli{Float64}(p=0.05592189560506221)
-     Bernoulli{Float64}(p=0.679058428511121)
-     Bernoulli{Float64}(p=0.18352445192013103)
-     Bernoulli{Float64}(p=0.6790760167014648)
-     Bernoulli{Float64}(p=0.04372311832887724)
-     Bernoulli{Float64}(p=0.06345185570983326)
-     Bernoulli{Float64}(p=0.07249734723514518)
+     Bernoulli{Float64}(p=0.029679590887034743)
+     Bernoulli{Float64}(p=0.6682373773598078)
+     Bernoulli{Float64}(p=0.20912995228011141)
+     Bernoulli{Float64}(p=0.20913322913224044)
+     Bernoulli{Float64}(p=0.02971989045895732)
+     Bernoulli{Float64}(p=0.668431087463204)
+     Bernoulli{Float64}(p=0.03311710703617972)
+     Bernoulli{Float64}(p=0.20912981531862682)
+     Bernoulli{Float64}(p=0.11273726979027407)
+     Bernoulli{Float64}(p=0.2490744632745955)
+     Bernoulli{Float64}(p=0.029886357844211404)
+     Bernoulli{Float64}(p=0.02965323602487074)
+     Bernoulli{Float64}(p=0.1126799374664026)
+     Bernoulli{Float64}(p=0.11278538625980777)
+     Bernoulli{Float64}(p=0.6683139127616431)
+     Bernoulli{Float64}(p=0.029644435143197145)
+     Bernoulli{Float64}(p=0.11324691083703237)
+     Bernoulli{Float64}(p=0.6681422555922787)
+     Bernoulli{Float64}(p=0.668424345470233)
+     Bernoulli{Float64}(p=0.029644891255330787)
 
 Now we can use the calibration Plot to see the level of calibration of the neural network
 
 ``` julia
-plt = Calibration_Plot(la,hcat(y_onehot_test...)[3,:],bernoulli_distributions;n_bins = 20);
+plt = Calibration_Plot(la,hcat(y_onehot_test...)[3,:],bernoulli_distributions;n_bins = 10);
 ```
 
 ![](multi_files/figure-commonmark/cell-12-output-1.svg)
@@ -177,7 +179,7 @@ plt = Calibration_Plot(la,hcat(y_onehot_test...)[3,:],bernoulli_distributions;n_
 The plot is peaked around 0.7, and This may be due to various reasons.
 
 A possible reason is that class 3 is relatively easy for the model to identify from the other classes. The network is able to correctly identify examples belonging to class 3, although he remains a bit underconfident in its predictions.
-Another reason for the peak however may be the lack of cases where the predicted probability is lower (e.g., around 0.5), which could indicate that the network has not encountered ambiguous or difficult-to-classify examples for class 3. This once again might be because either class 3 has distinct features that the model can easily learn, leading to fewer uncertain predictions, or is a consequence of the limited dataset.
+Another reason for the peak however may be the lack of cases where the predicted probability is lower (e.g., around 0.5), which could indicate that the network has not encountered ambiguous or difficult-to-classify examples for such class. This once again might be because either class 3 has distinct features that the model can easily learn, leading to fewer uncertain predictions, or is a consequence of the limited dataset.
 
 We can measure how sharp is the neural network by computing the sharpness score
 
@@ -185,4 +187,4 @@ sharpness_classification(hcat(y_onehot_test…)\[3,:\],vec(bernoulli_distributio
 
 \`\`\`
 
-The neural network seems to be able to correctly classify the majority of samples with a relative high confidence, although not to the level of the binary case. This is most likely due to the greater difficulty in classifying 4 different classes when compared to having to classify only two classes.
+The neural network seems to be able to correctly classify the majority of samples not belonging to class 3 with a relative high confidence, but remains more uncertain when he encounter examples belonging to class 3.

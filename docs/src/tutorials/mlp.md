@@ -20,8 +20,11 @@ theme(:lime)
 This time we use a synthetic dataset containing samples that are not linearly separable:
 
 ``` julia
+#set seed
+seed = 1234
+Random.seed!(seed)
 # Number of points to generate.
-xs, ys = LaplaceRedux.Data.toy_data_non_linear(900)
+xs, ys = LaplaceRedux.Data.toy_data_non_linear(400, seed= seed)
 # Shuffle the data
 n = length(ys)
 indices = randperm(n)
@@ -122,7 +125,7 @@ We plot now the calibration plot to assess the level of average calibration reac
 
 ``` julia
 predicted_distributions= predict(la, X_test,ret_distr=true)
-Calibration_Plot(la,ys_test,vec(predicted_distributions);n_bins = 5)
+Calibration_Plot(la,ys_test,vec(predicted_distributions);n_bins = 10)
 ```
 
 ![](mlp_files/figure-commonmark/cell-9-output-1.svg)
@@ -133,4 +136,4 @@ and the sharpness score
 sharpness_classification(ys_test,vec(predicted_distributions))
 ```
 
-    (0.958894868121355, 0.9573168457043797)
+    (0.9277189055456709, 0.9196132560599691)

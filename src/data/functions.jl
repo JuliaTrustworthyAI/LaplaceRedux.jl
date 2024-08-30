@@ -1,3 +1,5 @@
+import Random
+
 """
     toy_data_linear(N=100)
 
@@ -8,7 +10,11 @@ toy_data_linear()
 ```
 
 """
-function toy_data_linear(N=100)
+function toy_data_linear(N=100; seed=nothing)
+    #set seed if available
+    if seed !== nothing
+        Random.seed!(seed)
+    end
     # Number of points to generate.
     M = round(Int, N / 2)
 
@@ -36,7 +42,13 @@ toy_data_non_linear()
 ```
 
 """
-function toy_data_non_linear(N=100)
+function toy_data_non_linear( N=100; seed=nothing)
+
+    #set seed if available
+    if seed !== nothing
+        Random.seed!(seed)
+    end
+
     # Number of points to generate.
     M = round(Int, N / 4)
 
@@ -73,7 +85,13 @@ toy_data_multi()
 ```
 
 """
-function toy_data_multi(N=100)
+function toy_data_multi(;N=100, seed=nothing)
+
+    #set seed if available
+    if seed !== nothing
+        Random.seed!(seed)
+    end
+
     # Number of points to generate.
     M = round(Int, N / 4)
 
@@ -112,7 +130,11 @@ function toy_data_regression(
     fun::Function=f(x) = sin(x),
     xmax::AbstractFloat=8.0,
     center_origin=false,
+    seed=nothing,
 )
+    if seed !== nothing
+        Random.seed!(seed)
+    end
     X = rand(N) * xmax
     X = center_origin ? X .- xmax / 2 : X
     X = Float32.(X)

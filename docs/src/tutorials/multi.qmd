@@ -12,7 +12,8 @@ theme(:lime)
 
 ```{julia}
 using LaplaceRedux.Data
-x, y = Data.toy_data_multi()
+seed = 1234
+x, y = Data.toy_data_multi(seed=seed)
 X = hcat(x...)
 y_onehot = Flux.onehotbatch(y, unique(y))
 y_onehot = Flux.unstack(y_onehot',1)
@@ -23,6 +24,7 @@ split in training and test datasets
 
 ```{julia}
 # Shuffle the data
+Random.seed!(seed)
 n = length(y)
 indices = randperm(n)
 
@@ -145,14 +147,14 @@ bernoulli_distributions = [Bernoulli(p.p[3]) for p in vec(predicted_distribution
 Now we can use the calibration Plot to see the level of calibration of the neural network
 ```{julia}
 #| output: true
-plt = Calibration_Plot(la,hcat(y_onehot_test...)[3,:],bernoulli_distributions;n_bins = 20);
+plt = Calibration_Plot(la,hcat(y_onehot_test...)[3,:],bernoulli_distributions;n_bins = 10);
 
 ```
 
 The plot is peaked around 0.7, and This may be due to various reasons.
 
 A possible reason is that class 3 is relatively easy for the model to identify from the other classes. The network is able to  correctly identify examples belonging to class 3, although he remains a bit underconfident in its predictions. 
-Another reason for the peak however may be the lack of cases where the predicted probability is lower (e.g., around 0.5), which could indicate that the network  has not encountered ambiguous or difficult-to-classify examples for class 3.  This once again might be because either class 3 has distinct features that the model can easily learn, leading to fewer uncertain predictions, or is a consequence of the limited dataset. 
+Another reason for the peak however may be the lack of cases where the predicted probability is lower (e.g., around 0.5), which could indicate that the network  has not encountered ambiguous or difficult-to-classify examples for such class.  This once again might be because either class 3 has distinct features that the model can easily learn, leading to fewer uncertain predictions, or is a consequence of the limited dataset. 
 
  We can measure how sharp is the neural network by computing the sharpness score
  ```{julia}
@@ -161,4 +163,4 @@ sharpness_classification(hcat(y_onehot_test...)[3,:],vec(bernoulli_distributions
 
 ```
 
-The neural network seems to be able to correctly classify the majority of samples with  a relative high confidence, although not to the level of the binary case. This is most likely due to the greater difficulty in classifying 4 different classes when compared to having to classify only two classes.
+The neural network seems to be able to correctly classify the majority of samples not belonging to class 3  with  a relative high confidence, but remains more uncertain when he encounter examples belonging to class 3.
