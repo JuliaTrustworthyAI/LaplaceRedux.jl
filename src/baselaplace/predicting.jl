@@ -64,9 +64,10 @@ function glm_predictive_distribution(la::AbstractLaplace, X::AbstractArray)
     fμ = reshape(fμ, Flux.outputsize(la.model, size(X)))
     fvar = functional_variance(la, 𝐉)
     fvar = reshape(fvar, size(fμ)...)
-    fstd = sqrt.(fvar)
+    pred_fvar = fvar .^ 2 .+ la.prior.σ^2
+    fstd = sqrt.(pred_fvar)
     normal_distr = [Normal(fμ[i], fstd[i]) for i in 1:size(fμ, 2)]
-    return (normal_distr, fμ, fvar)
+    return (normal_distr, fμ, pred_fvar)
 end
 
 """
