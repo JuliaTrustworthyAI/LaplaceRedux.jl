@@ -24,7 +24,7 @@ This time we use a synthetic dataset containing samples that are not linearly se
 seed = 1234
 Random.seed!(seed)
 # Number of points to generate.
-xs, ys = LaplaceRedux.Data.toy_data_non_linear(400, seed= seed)
+xs, ys = LaplaceRedux.Data.toy_data_non_linear(400; seed = seed)
 # Shuffle the data
 n = length(ys)
 indices = randperm(n)

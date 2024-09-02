@@ -130,7 +130,7 @@ Calibration_Plot(la,ys_test,vec(predicted_distributions);n_bins = 10)
 
 ![](logit_files/figure-commonmark/cell-10-output-1.svg)
 
-as we can see from the plot, although extremely accurate, the neural network doesn’t seem to be calibrated well. This is however an effect of the extreme accuracy reached by the neural network which causes the lack of predictions with high uncertainty (low certainty). We can see this by looking at the level of sharpness for the two classes which are extremely close to 1, indicating the high level of trust that the neural network has in the predictions.
+as we can see from the plot, although extremely accurate, the neural network does not seem to be calibrated well. This is, however, an effect of the extreme accuracy reached by the neural network which causes the lack of predictions with high uncertainty (low certainty). We can see this by looking at the level of sharpness for the two classes which are extremely close to 1, indicating the high level of trust that the neural network has in the predictions.
 
 ``` julia
 sharpness_classification(ys_test,vec(predicted_distributions))

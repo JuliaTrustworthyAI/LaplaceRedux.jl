@@ -125,23 +125,25 @@ plot(la, X_train, y_train; zoom=-5, size=(400,400))
     Scatter: 15.775280921580569
     loss(exp.(logP₀), exp.(logσ)) = 574.605864472924
     Log likelihood: -528.694286608232
+
+
     Log det ratio: 80.73114330857285
     Scatter: 11.092012420811196
-
-
     loss(exp.(logP₀), exp.(logσ)) = 568.4433850825203
     Log likelihood: -522.4407550111031
     Log det ratio: 82.10089958560243
     Scatter: 9.90436055723207
+
+
     loss(exp.(logP₀), exp.(logσ)) = 566.9485255672008
     Log likelihood: -520.9682443835385
     Log det ratio: 81.84516297272847
     Scatter: 10.11539939459612
-
     loss(exp.(logP₀), exp.(logσ)) = 559.9852101992792
     Log likelihood: -514.0625630685765
     Log det ratio: 80.97813304453496
     Scatter: 10.867161216870441
+
     loss(exp.(logP₀), exp.(logσ)) = 559.1404593114019
     Log likelihood: -513.2449017869876
     Log det ratio: 80.16026747795866
@@ -150,6 +152,7 @@ plot(la, X_train, y_train; zoom=-5, size=(400,400))
     Log likelihood: -513.4273312363501
     Log det ratio: 79.68892769076004
     Scatter: 12.096688349008877
+
 
     loss(exp.(logP₀), exp.(logσ)) = 559.2111983983311
     Log likelihood: -513.3174948065804
@@ -160,7 +163,7 @@ plot(la, X_train, y_train; zoom=-5, size=(400,400))
     Log det ratio: 79.63946732368183
     Scatter: 12.146708569351494
 
-![](regression_files/figure-commonmark/cell-8-output-5.svg)
+![](regression_files/figure-commonmark/cell-8-output-6.svg)
 
 ## Calibration Plot
 
