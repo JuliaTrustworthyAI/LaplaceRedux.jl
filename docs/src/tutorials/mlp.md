@@ -20,10 +20,32 @@ theme(:lime)
 This time we use a synthetic dataset containing samples that are not linearly separable:
 
 ``` julia
+#set seed
+seed = 1234
+Random.seed!(seed)
 # Number of points to generate.
-xs, ys = LaplaceRedux.Data.toy_data_non_linear(200)
-X = hcat(xs...) # bring into tabular format
-data = zip(xs,ys)
+xs, ys = LaplaceRedux.Data.toy_data_non_linear(400; seed = seed)
+# Shuffle the data
+n = length(ys)
+indices = randperm(n)
+
+# Define the split ratio
+split_ratio = 0.8
+split_index = Int(floor(split_ratio * n))
+
+# Split the data into training and test sets
+train_indices = indices[1:split_index]
+test_indices = indices[split_index+1:end]
+
+xs_train = xs[train_indices]
+xs_test = xs[test_indices]
+ys_train = ys[train_indices]
+ys_test = ys[test_indices]
+# bring into tabular format
+X_train = hcat(xs_train...) 
+X_test = hcat(xs_test...) 
+
+data = zip(xs_train,ys_train)
 ```
 
 ## Model
@@ -32,7 +54,7 @@ For the classification task we build a neural network with weight decay composed
 
 ``` julia
 n_hidden = 10
-D = size(X,1)
+D = size(X_train,1)
 nn = Chain(
     Dense(D, n_hidden, σ),
     Dense(n_hidden, 1)
@@ -79,9 +101,9 @@ The plot below shows the resulting posterior predictive surface for the plugin e
 ``` julia
 # Plot the posterior distribution with a contour plot.
 zoom=0
-p_plugin = plot(la, X, ys; title="Plugin", link_approx=:plugin, clim=(0,1))
-p_untuned = plot(la_untuned, X, ys; title="LA - raw (λ=$(unique(diag(la_untuned.prior.P₀))[1]))", clim=(0,1), zoom=zoom)
-p_laplace = plot(la, X, ys; title="LA - tuned (λ=$(round(unique(diag(la.prior.P₀))[1],digits=2)))", clim=(0,1), zoom=zoom)
+p_plugin = plot(la, X_train, ys_train; title="Plugin", link_approx=:plugin, clim=(0,1))
+p_untuned = plot(la_untuned, X_train, ys_train; title="LA - raw (λ=$(unique(diag(la_untuned.prior.P₀))[1]))", clim=(0,1), zoom=zoom)
+p_laplace = plot(la, X_train, ys_train; title="LA - tuned (λ=$(round(unique(diag(la.prior.P₀))[1],digits=2)))", clim=(0,1), zoom=zoom)
 plot(p_plugin, p_untuned, p_laplace, layout=(1,3), size=(1700,400))
 ```
 
@@ -91,10 +113,27 @@ Zooming out we can note that the plugin estimator produces high-confidence estim
 
 ``` julia
 zoom=-50
-p_plugin = plot(la, X, ys; title="Plugin", link_approx=:plugin, clim=(0,1))
-p_untuned = plot(la_untuned, X, ys; title="LA - raw (λ=$(unique(diag(la_untuned.prior.P₀))[1]))", clim=(0,1), zoom=zoom)
-p_laplace = plot(la, X, ys; title="LA - tuned (λ=$(round(unique(diag(la.prior.P₀))[1],digits=2)))", clim=(0,1), zoom=zoom)
+p_plugin = plot(la, X_train, ys_train; title="Plugin", link_approx=:plugin, clim=(0,1))
+p_untuned = plot(la_untuned, X_train, ys_train; title="LA - raw (λ=$(unique(diag(la_untuned.prior.P₀))[1]))", clim=(0,1), zoom=zoom)
+p_laplace = plot(la, X_train, ys_train; title="LA - tuned (λ=$(round(unique(diag(la.prior.P₀))[1],digits=2)))", clim=(0,1), zoom=zoom)
 plot(p_plugin, p_untuned, p_laplace, layout=(1,3), size=(1700,400))
 ```
 
 ![](mlp_files/figure-commonmark/cell-8-output-1.svg)
+
+We plot now the calibration plot to assess the level of average calibration reached by the neural network.
+
+``` julia
+predicted_distributions= predict(la, X_test,ret_distr=true)
+Calibration_Plot(la,ys_test,vec(predicted_distributions);n_bins = 10)
+```
+
+![](mlp_files/figure-commonmark/cell-9-output-1.svg)
+
+and the sharpness score
+
+``` julia
+sharpness_classification(ys_test,vec(predicted_distributions))
+```
+
+    (0.9277189055456709, 0.9196132560599691)

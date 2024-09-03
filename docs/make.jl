@@ -21,8 +21,10 @@ makedocs(;
             "MLP Multi-Label Classifier" => "tutorials/multi.md",
             "MLP Regression" => "tutorials/regression.md",
             "A note on the prior ..." => "tutorials/prior.md",
+            "Calibrated forecasts" => "tutorials/calibration.md",
         ],
         "Reference" => "reference.md",
+        "MLJ interface"=> "mlj_interface.md",
         "Additional Resources" => "resources/_resources.md",
     ],
 )

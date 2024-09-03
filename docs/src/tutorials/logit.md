@@ -20,10 +20,38 @@ theme(:lime)
 We will use synthetic data with linearly separable samples:
 
 ``` julia
+# set seed
+seed= 1234
+Random.seed!(seed)
 # Number of points to generate.
-xs, ys = LaplaceRedux.Data.toy_data_linear(100)
+xs, ys = LaplaceRedux.Data.toy_data_linear(100; seed=seed)
 X = hcat(xs...) # bring into tabular format
-data = zip(xs,ys)
+```
+
+split in a training and test set
+
+``` julia
+# Shuffle the data
+n = length(ys)
+indices = randperm(n)
+
+# Define the split ratio
+split_ratio = 0.8
+split_index = Int(floor(split_ratio * n))
+
+# Split the data into training and test sets
+train_indices = indices[1:split_index]
+test_indices = indices[split_index+1:end]
+
+xs_train = xs[train_indices]
+xs_test = xs[test_indices]
+ys_train = ys[train_indices]
+ys_test = ys[test_indices]
+# bring into tabular format
+X_train = hcat(xs_train...) 
+X_test = hcat(xs_test...) 
+
+data = zip(xs_train,ys_train)
 ```
 
 ## Model
@@ -81,3 +109,31 @@ p_untuned = plot(la_untuned, X, ys; title="LA - raw (λ=$(unique(diag(la_untuned
 p_laplace = plot(la, X, ys; title="LA - tuned (λ=$(round(unique(diag(la.prior.P₀))[1],digits=2)))", clim=(0,1), zoom=zoom)
 plot(p_plugin, p_untuned, p_laplace, layout=(1,3), size=(1700,400))
 ```
+
+![](logit_files/figure-commonmark/cell-8-output-1.svg)
+
+Now we can test the level of calibration of the neural network.
+First we collect the predicted results over the test dataset
+
+``` julia
+ predicted_distributions= predict(la, X_test,ret_distr=true)
+```
+
+    1×20 Matrix{Distributions.Bernoulli{Float64}}:
+     Distributions.Bernoulli{Float64}(p=0.13122)  …  Distributions.Bernoulli{Float64}(p=0.109559)
+
+then we plot the calibration plot
+
+``` julia
+Calibration_Plot(la,ys_test,vec(predicted_distributions);n_bins = 10)
+```
+
+![](logit_files/figure-commonmark/cell-10-output-1.svg)
+
+as we can see from the plot, although extremely accurate, the neural network does not seem to be calibrated well. This is, however, an effect of the extreme accuracy reached by the neural network which causes the lack of predictions with high uncertainty (low certainty). We can see this by looking at the level of sharpness for the two classes which are extremely close to 1, indicating the high level of trust that the neural network has in the predictions.
+
+``` julia
+sharpness_classification(ys_test,vec(predicted_distributions))
+```
+
+    (0.9131870336577175, 0.8865055827351365)
