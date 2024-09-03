@@ -956,9 +956,9 @@ version = "1.3.1"
 
 [[deps.LaplaceRedux]]
 deps = ["ChainRulesCore", "Compat", "ComputationalResources", "Distributions", "Flux", "LinearAlgebra", "MLJBase", "MLJFlux", "MLJModelInterface", "MLUtils", "Optimisers", "ProgressMeter", "Random", "Statistics", "Tables", "Tullio", "Zygote"]
-git-tree-sha1 = "a84b72a27c93c72a6af5d22216eb81a419b1b97a"
+git-tree-sha1 = "9e59caad99bf3a01b58c8300ea97c2d0c8014a82"
 uuid = "c52c1a26-f7c5-402b-80be-ba1e638ad478"
-version = "1.0.2"
+version = "1.1.0"
 
 [[deps.Latexify]]
 deps = ["Format", "InteractiveUtils", "LaTeXStrings", "MacroTools", "Markdown", "OrderedCollections", "Requires"]
