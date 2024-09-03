@@ -17,6 +17,9 @@ using Test
     @testset "Laplace" begin
         include("laplace.jl")
     end
+    @testset "Calibration Plots" begin
+        include("calibration.jl")
+    end
 
     if VERSION >= v"1.8.0"
         @testset "PyTorch Comparisons" begin

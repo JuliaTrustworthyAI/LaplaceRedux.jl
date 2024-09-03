@@ -1,6 +1,10 @@
 project:
+  render:
+    - "*.qmd"
+    - "!/docs/src/*.md"
   title: "LaplaceRedux.jl"
   execute-dir: project
+
 
 crossref:
   fig-prefix: Figure
@@ -16,6 +20,7 @@ execute:
 
 jupyter: julia-1.10
   
+
 
 
 
