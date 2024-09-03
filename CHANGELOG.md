@@ -6,11 +6,24 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 *Note*: We try to adhere to these practices as of version [v0.2.1].
 
+## Version [1.1.0] - 2024-09-03
+
+### Changed
+
+- Predict function now returns predictive distribution that includes observational noise estimates for regression. [#116]
+
+### Added
+
+- Adds support for calibration. [#90]
 
 ## Version [1.0.2] - 2024-08-12
-###
+
+### Added 
+
 - added TaijaPlotting to the docs env
+
 ### Changed
+
 - modified the MLJFlux.train function so that it now properly return a trained chain [[#112](https://github.com/JuliaTrustworthyAI/LaplaceRedux.jl/issues/112)]
 
 ## Version [1.0.0] - 2024-07-22
