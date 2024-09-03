@@ -133,7 +133,7 @@ function _fit!(
 end
 
 """
-functional_variance(la::Laplace, hessian_structure::KronHessian, 𝐉::Matrix)
+    functional_variance(la::Laplace, hessian_structure::KronHessian, 𝐉::Matrix)
 
 Compute functional variance for the GLM predictive: as the diagonal of the K×K predictive output covariance matrix 𝐉𝐏⁻¹𝐉ᵀ,
 where K is the number of outputs, 𝐏 is the posterior precision, and 𝐉 is the Jacobian of model output `𝐉=∇f(x;θ)|θ̂`.
