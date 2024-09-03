@@ -50,10 +50,10 @@ function _fit!(
     return la.posterior.n_data = n_data
 end
 
-"""
-functional_variance(la::Laplace,𝐉)
+@doc raw"""
+   functional_variance(la::Laplace, hessian_structure::FullHessian, 𝐉)
 
-Compute the linearized GLM predictive variance as `𝐉ₙΣ𝐉ₙ'` where `𝐉=∇f(x;θ)|θ̂` is the Jacobian evaluated at the MAP estimate and `Σ = P⁻¹`.
+Computes the functional variance for the GLM predictive as `map(j -> (j' * Σ * j), eachrow(𝐉))` which is a (output x output) predictive covariance matrix. Formally, we have ``{\mathbf{J}_{\hat\theta}}^\intercal\Sigma\mathbf{J}_{\hat\theta}`` where ``\mathbf{J}_{\hat\theta}=\nabla_{\theta}f(x;\theta)|\hat\theta`` is the Jacobian evaluated at the MAP estimate.
 """
 function functional_variance(la::Laplace, hessian_structure::FullHessian, 𝐉)
     Σ = posterior_covariance(la)
