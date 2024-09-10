@@ -38,7 +38,6 @@ The model also has the following parameters, which are specific to the Laplace a
 - `σ`: the standard deviation of the prior distribution.
 - `μ₀`: the mean of the prior distribution.
 - `P₀`: the covariance matrix of the prior distribution.
-- `ret_distr`: a boolean that tells predict to either return distributions (true) objects from Distributions.jl or just the probabilities.
 - `fit_prior_nsteps`: the number of steps used to fit the priors.
 """
 MLJBase.@mlj_model mutable struct LaplaceRegression <: MLJFlux.MLJFluxProbabilistic
@@ -60,7 +59,6 @@ MLJBase.@mlj_model mutable struct LaplaceRegression <: MLJFlux.MLJFluxProbabilis
     σ::Float64 = 1.0
     μ₀::Float64 = 0.0
     P₀::Union{AbstractMatrix,UniformScaling,Nothing} = nothing
-    ret_distr::Bool = false::(_ in (true, false))
     fit_prior_nsteps::Int = 100::(_ > 0)
 end
 
@@ -94,7 +92,6 @@ The model also has the following parameters, which are specific to the Laplace a
 - `P₀`: the covariance matrix of the prior distribution.
 - `link_approx`: the link approximation to use, either `:probit` or `:plugin`.
 - `predict_proba`: a boolean that select whether to predict probabilities or not.
-- `ret_distr`: a boolean that tells predict to either return distributions (true) objects from Distributions.jl or just the probabilities.
 - `fit_prior_nsteps`: the number of steps used to fit the priors.
 """
 MLJBase.@mlj_model mutable struct LaplaceClassification <: MLJFlux.MLJFluxProbabilistic
@@ -119,7 +116,6 @@ MLJBase.@mlj_model mutable struct LaplaceClassification <: MLJFlux.MLJFluxProbab
     P₀::Union{AbstractMatrix,UniformScaling,Nothing} = nothing
     link_approx::Symbol = :probit::(_ in (:probit, :plugin))
     predict_proba::Bool = true::(_ in (true, false))
-    ret_distr::Bool = false::(_ in (true, false))
     fit_prior_nsteps::Int = 100::(_ > 0)
 end
 
@@ -290,7 +286,7 @@ function MLJFlux.predict(model::LaplaceRegression, fitresult, Xnew)
     #convert in a vector of vectors because MLJ ask to do so
     X_vec = collect(eachrow(Xnew))
     # Predict using Laplace and collect the predictions
-    yhat = [map(x -> LaplaceRedux.predict(la, x; ret_distr=model.ret_distr), X_vec)...]
+    yhat = [map(x -> LaplaceRedux.predict(la, x; ret_distr= true), X_vec)...]
     return yhat
 end
 
@@ -464,7 +460,7 @@ function MLJFlux.predict(model::LaplaceClassification, fitresult, Xnew)
                 x;
                 link_approx=model.link_approx,
                 predict_proba=model.predict_proba,
-                ret_distr=model.ret_distr,
+                ret_distr= true,
             ),
             X_vec,
         )...,
@@ -476,30 +472,22 @@ end
 # metadata for each model,
 MLJBase.metadata_model(
     LaplaceClassification;
-    input=Union{
-        AbstractMatrix{MLJBase.Finite},
-        MLJBase.Table(MLJBase.Finite),
-        AbstractMatrix{MLJBase.Continuous},
-        MLJBase.Table(MLJBase.Continuous),
-        MLJBase.Table{AbstractVector{MLJBase.Continuous}},
-        MLJBase.Table{AbstractVector{MLJBase.Finite}},
+    input_scitype=Union{
+        AbstractMatrix{<:Union{MLJBase.Finite, MLJBase.Continuous}}, # matrix with mixed types
+        MLJBase.Table(MLJBase.Finite, MLJBase.Contintuous), # table with mixed types
     },
-    target=Union{AbstractArray{MLJBase.Finite},AbstractArray{MLJBase.Continuous}},
-    path="MLJFlux.LaplaceClassification",
+    target_scitype=AbstractArray{<:MLJBase.Finite}, # ordered factor or multiclass
+    load_path="LaplaceRedux.LaplaceClassification",
 )
 # metadata for each model,
 MLJBase.metadata_model(
     LaplaceRegression;
-    input=Union{
-        AbstractMatrix{MLJBase.Continuous},
-        MLJBase.Table(MLJBase.Continuous),
-        AbstractMatrix{MLJBase.Finite},
-        MLJBase.Table(MLJBase.Finite),
-        MLJBase.Table{AbstractVector{MLJBase.Continuous}},
-        MLJBase.Table{AbstractVector{MLJBase.Finite}},
+    input_scitype=Union{
+        AbstractMatrix{<:Union{MLJBase.Finite, MLJBase.Continuous}}, # matrix with mixed types
+        MLJBase.Table(MLJBase.Finite, MLJBase.Contintuous), # table with mixed types
     },
-    target=Union{AbstractArray{MLJBase.Finite},AbstractArray{MLJBase.Continuous}},
-    path="MLJFlux.LaplaceRegression",
+     target_scitype=AbstractArray{MLJBase.Continuous},
+    load_path="LaplaceRedux.MLJFlux.LaplaceRegression",
 )
 
 const DOC_CART = "[Laplace Approximation for regression tasks](https://proceedings.neurips.cc/paper/2021/file/a7c9585703d275249f30a088cebba0ad-Paper.pdf)"*
@@ -523,35 +511,14 @@ where
   each have one of the following element scitypes: `Continuous`,
   `Count`, or `<:OrderedFactor`; check column scitypes with `schema(X)`
 
-- `y`: is the target, which can be any `AbstractVector` whose element
-  scitype is `<:OrderedFactor` or `<:Multiclass`; check the scitype
-  with `scitype(y)`
+- `y`: ......
 
 Train the machine using `fit!(mach, rows=...)`.
 
 
 # Hyperparameters
 
-- `max_depth=-1`:          max depth of the decision tree (-1=any)
-
-- `min_samples_leaf=1`:    max number of samples each leaf needs to have
-
-- `min_samples_split=2`:   min number of samples needed for a split
-
-- `min_purity_increase=0`: min purity needed for a split
-
-- `n_subfeatures=0`: number of features to select at random (0 for all)
-
-- `post_prune=false`:      set to `true` for post-fit pruning
-
-- `merge_purity_threshold=1.0`: (post-pruning) merge leaves having
-                           combined purity `>= merge_purity_threshold`
-
-- `display_depth=5`:       max depth to show when displaying the tree
-
-- `feature_importance`: method to use for computing feature importances. One of `(:impurity,
-  :split)`
-
+- .
 - `rng=Random.GLOBAL_RNG`: random number generator or seed
 
 
@@ -569,37 +536,23 @@ Train the machine using `fit!(mach, rows=...)`.
 
 The fields of `fitted_params(mach)` are:
 
-- `raw_tree`: the raw `Node`, `Leaf` or `Root` object returned by the core DecisionTree.jl
-  algorithm
-
-- `tree`: a visualizable, wrapped version of `raw_tree` implementing the AbstractTrees.jl
-  interface; see "Examples" below
-
-- `encoding`: dictionary of target classes keyed on integers used
-  internally by DecisionTree.jl
+- not used
 
 - `features`: the names of the features encountered in training, in an
-  order consistent with the output of `print_tree` (see below)
+  order consistent with the output of `print_tree` (see below) (to implement)
 
 
 # Report
 
 The fields of `report(mach)` are:
 
-- `classes_seen`: list of target classes actually observed in training
-
-- `print_tree`: alternative method to print the fitted
-  tree, with single argument the tree depth; interpretation requires
-  internal integer-class encoding (see "Fitted parameters" above).
-
-- `features`: the names of the features encountered in training, in an
-  order consistent with the output of `print_tree` (see below)
+- notused (delete)
 
 # Accessor functions
 
 - `feature_importances(mach)` returns a vector of `(feature::Symbol => importance)` pairs;
   the type of importance is determined by the hyperparameter `feature_importance` (see
-  above)
+  above) (example useful)
 
 # Examples
 
@@ -638,6 +591,6 @@ feature_importances(mach)
 
 See also [LaplaceRedux.jl](https://github.com/JuliaTrustworthyAI/LaplaceRedux.jl) and the
 unwrapped model type
-[`MLJDecisionTreeInterface.DecisionTree.DecisionTreeClassifier`](@ref).
+[??????????](@ref).
 
 """
