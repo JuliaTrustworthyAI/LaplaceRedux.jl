@@ -454,21 +454,14 @@ An array of predicted class labels.
 """
 function MLJFlux.predict(model::LaplaceClassification, fitresult, Xnew)
     la = fitresult[1]
-    Xnew = MLJBase.matrix(Xnew)
-    #convert in a vector of vectors because Laplace ask to do so
-    X_vec = collect(eachrow(Xnew))
-    predictions = [
-        map(
-            x -> LaplaceRedux.predict(
-                la,
-                x;
-                link_approx=model.link_approx,
-                predict_proba=model.predict_proba,
-                ret_distr=model.ret_distr,
-            ),
-            X_vec,
-        )...,
-    ]
+    Xnew = MLJBase.matrix(Xnew) |> permutedims
+    predictions = LaplaceRedux.predict(
+        la,
+        Xnew;
+        link_approx=model.link_approx,
+        predict_proba=model.predict_proba,
+        ret_distr=model.ret_distr,
+    )
 
     return predictions
 end
