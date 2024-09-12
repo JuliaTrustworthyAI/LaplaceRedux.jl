@@ -247,21 +247,17 @@ function MLJFlux.train(
         push!(history, current_loss)
     end
 
-    if !isa(chain, AbstractLaplace)
-        la = LaplaceRedux.Laplace(
-            chain;
-            likelihood=:regression,
-            subset_of_weights=model.subset_of_weights,
-            subnetwork_indices=model.subnetwork_indices,
-            hessian_structure=model.hessian_structure,
-            backend=model.backend,
-            σ=model.σ,
-            μ₀=model.μ₀,
-            P₀=model.P₀,
-        )
-    else
-        la = chain
-    end
+    la = LaplaceRedux.Laplace(
+        chain;
+        likelihood=:regression,
+        subset_of_weights=model.subset_of_weights,
+        subnetwork_indices=model.subnetwork_indices,
+        hessian_structure=model.hessian_structure,
+        backend=model.backend,
+        σ=model.σ,
+        μ₀=model.μ₀,
+        P₀=model.P₀,
+    )
 
     # fit the Laplace model:
     LaplaceRedux.fit!(la, zip(X, y))
@@ -285,12 +281,9 @@ Predict the output for new input data using a Laplace regression model.
 
 """
 function MLJFlux.predict(model::LaplaceRegression, fitresult, Xnew)
-    Xnew = MLJBase.matrix(Xnew)
+    Xnew = MLJBase.matrix(Xnew) |> permutedims
     la = fitresult[1]
-    #convert in a vector of vectors because MLJ ask to do so
-    X_vec = collect(eachrow(Xnew))
-    # Predict using Laplace and collect the predictions
-    yhat = [map(x -> LaplaceRedux.predict(la, x; ret_distr=model.ret_distr), X_vec)...]
+    yhat = LaplaceRedux.predict(la, Xnew; ret_distr=model.ret_distr)
     return yhat
 end
 
@@ -416,21 +409,18 @@ function MLJFlux.train(
         push!(history, current_loss)
     end
 
-    if !isa(chain, AbstractLaplace)
-        la = LaplaceRedux.Laplace(
-            chain;
-            likelihood=:classification,
-            subset_of_weights=model.subset_of_weights,
-            subnetwork_indices=model.subnetwork_indices,
-            hessian_structure=model.hessian_structure,
-            backend=model.backend,
-            σ=model.σ,
-            μ₀=model.μ₀,
-            P₀=model.P₀,
-        )
-    else
-        la = chain
-    end
+    la = LaplaceRedux.Laplace(
+        chain;
+        likelihood=:classification,
+        subset_of_weights=model.subset_of_weights,
+        subnetwork_indices=model.subnetwork_indices,
+        hessian_structure=model.hessian_structure,
+        backend=model.backend,
+        σ=model.σ,
+        μ₀=model.μ₀,
+        P₀=model.P₀,
+    )
+
     # fit the Laplace model:
     LaplaceRedux.fit!(la, zip(X, y))
     optimize_prior!(la; verbose=verbose_laplace, n_steps=model.fit_prior_nsteps)
