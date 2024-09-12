@@ -30,4 +30,7 @@ export empirical_frequency_binary_classification,
     sharpness_regression,
     extract_mean_and_variance,
     sigma_scaling, rescale_stddev
+
+
+    include("direct_mlj.jl")
 end
