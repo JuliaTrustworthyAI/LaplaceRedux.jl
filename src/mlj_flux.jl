@@ -247,17 +247,21 @@ function MLJFlux.train(
         push!(history, current_loss)
     end
 
-    la = LaplaceRedux.Laplace(
-        chain;
-        likelihood=:regression,
-        subset_of_weights=model.subset_of_weights,
-        subnetwork_indices=model.subnetwork_indices,
-        hessian_structure=model.hessian_structure,
-        backend=model.backend,
-        σ=model.σ,
-        μ₀=model.μ₀,
-        P₀=model.P₀,
-    )
+    if !isa(chain, AbstractLaplace)
+        la = LaplaceRedux.Laplace(
+            chain;
+            likelihood=:regression,
+            subset_of_weights=model.subset_of_weights,
+            subnetwork_indices=model.subnetwork_indices,
+            hessian_structure=model.hessian_structure,
+            backend=model.backend,
+            σ=model.σ,
+            μ₀=model.μ₀,
+            P₀=model.P₀,
+        )
+    else
+        la = chain
+    end
 
     # fit the Laplace model:
     LaplaceRedux.fit!(la, zip(X, y))
@@ -409,17 +413,21 @@ function MLJFlux.train(
         push!(history, current_loss)
     end
 
-    la = LaplaceRedux.Laplace(
-        chain;
-        likelihood=:classification,
-        subset_of_weights=model.subset_of_weights,
-        subnetwork_indices=model.subnetwork_indices,
-        hessian_structure=model.hessian_structure,
-        backend=model.backend,
-        σ=model.σ,
-        μ₀=model.μ₀,
-        P₀=model.P₀,
-    )
+    if !isa(chain, AbstractLaplace)
+        la = LaplaceRedux.Laplace(
+            chain;
+            likelihood=:regression,
+            subset_of_weights=model.subset_of_weights,
+            subnetwork_indices=model.subnetwork_indices,
+            hessian_structure=model.hessian_structure,
+            backend=model.backend,
+            σ=model.σ,
+            μ₀=model.μ₀,
+            P₀=model.P₀,
+        )
+    else
+        la = chain
+    end
 
     # fit the Laplace model:
     LaplaceRedux.fit!(la, zip(X, y))
