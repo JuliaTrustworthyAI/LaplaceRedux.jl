@@ -25,7 +25,7 @@ It has the following Hyperparameters:
 - `fit_prior_nsteps`: the number of steps used to fit the priors.
 """
 MLJBase.@mlj_model mutable struct LaplaceRegressor <: MLJFlux.MLJFluxProbabilistic
-    flux_model::Flux 
+    flux_model::Flux.Chain= nothing
     subset_of_weights::Symbol = :all::(_ in (:all, :last_layer, :subnetwork))
     subnetwork_indices = nothing
     hessian_structure::Union{HessianStructure,Symbol,String} =
@@ -105,7 +105,7 @@ The model also has the following parameters:
 """
 MLJBase.@mlj_model mutable struct LaplaceClassifier <: MLJFlux.MLJFluxProbabilistic
 
-    model::Flux 
+    #model::Flux 
     subset_of_weights::Symbol = :all::(_ in (:all, :last_layer, :subnetwork))
     subnetwork_indices::Vector{Vector{Int}} = Vector{Vector{Int}}([])
     hessian_structure::Union{HessianStructure,Symbol,String} =
@@ -172,18 +172,18 @@ MLJBase.metadata_model(
     LaplaceClassifier;
     input_scitype=Union{
         AbstractMatrix{<:Union{MLJBase.Finite, MLJBase.Continuous}}, # matrix with mixed types
-        MLJBase.Table(MLJBase.Finite, MLJBase.Contintuous), # table with mixed types
+        MLJBase.Table(MLJBase.Finite, MLJBase.Continuous), # table with mixed types
     },
     target_scitype=AbstractArray{<:MLJBase.Finite}, # ordered factor or multiclass
-    load_path="LaplaceRedux.LaplaceClassification",
+    load_path="LaplaceRedux.LaplaceClassifier",
 )
 # metadata for each model,
 MLJBase.metadata_model(
     LaplaceRegressor;
     input_scitype=Union{
         AbstractMatrix{<:Union{MLJBase.Finite, MLJBase.Continuous}}, # matrix with mixed types
-        MLJBase.Table(MLJBase.Finite, MLJBase.Contintuous), # table with mixed types
+        MLJBase.Table(MLJBase.Finite, MLJBase.Continuous), # table with mixed types
     },
      target_scitype=AbstractArray{MLJBase.Continuous},
-    load_path="LaplaceRedux.MLJFlux.LaplaceRegression",
+    load_path="LaplaceRedux.LaplaceRegressor",
 )
