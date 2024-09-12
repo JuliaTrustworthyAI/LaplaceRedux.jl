@@ -285,12 +285,9 @@ Predict the output for new input data using a Laplace regression model.
 
 """
 function MLJFlux.predict(model::LaplaceRegression, fitresult, Xnew)
-    Xnew = MLJBase.matrix(Xnew)
+    Xnew = MLJBase.matrix(Xnew) |> permutedims
     la = fitresult[1]
-    #convert in a vector of vectors because MLJ ask to do so
-    X_vec = collect(eachrow(Xnew))
-    # Predict using Laplace and collect the predictions
-    yhat = [map(x -> LaplaceRedux.predict(la, x; ret_distr=model.ret_distr), X_vec)...]
+    yhat = LaplaceRedux.predict(la, Xnew; ret_distr=model.ret_distr)
     return yhat
 end
 
@@ -419,7 +416,7 @@ function MLJFlux.train(
     if !isa(chain, AbstractLaplace)
         la = LaplaceRedux.Laplace(
             chain;
-            likelihood=:classification,
+            likelihood=:regression,
             subset_of_weights=model.subset_of_weights,
             subnetwork_indices=model.subnetwork_indices,
             hessian_structure=model.hessian_structure,
@@ -431,6 +428,7 @@ function MLJFlux.train(
     else
         la = chain
     end
+
     # fit the Laplace model:
     LaplaceRedux.fit!(la, zip(X, y))
     optimize_prior!(la; verbose=verbose_laplace, n_steps=model.fit_prior_nsteps)
@@ -454,21 +452,14 @@ An array of predicted class labels.
 """
 function MLJFlux.predict(model::LaplaceClassification, fitresult, Xnew)
     la = fitresult[1]
-    Xnew = MLJBase.matrix(Xnew)
-    #convert in a vector of vectors because Laplace ask to do so
-    X_vec = collect(eachrow(Xnew))
-    predictions = [
-        map(
-            x -> LaplaceRedux.predict(
-                la,
-                x;
-                link_approx=model.link_approx,
-                predict_proba=model.predict_proba,
-                ret_distr=model.ret_distr,
-            ),
-            X_vec,
-        )...,
-    ]
+    Xnew = MLJBase.matrix(Xnew) |> permutedims
+    predictions = LaplaceRedux.predict(
+        la,
+        Xnew;
+        link_approx=model.link_approx,
+        predict_proba=model.predict_proba,
+        ret_distr=model.ret_distr,
+    )
 
     return predictions
 end

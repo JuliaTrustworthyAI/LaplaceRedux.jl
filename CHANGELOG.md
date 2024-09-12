@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 *Note*: We try to adhere to these practices as of version [v0.2.1].
 
+## Version [1.1.1] - 2024-09-12
+
+### Changed
+
+- Fixed an issue in MLJFlux implementation that led to long compute times for predictions. [#122]
+
 ## Version [1.1.0] - 2024-09-03
 
 ### Changed
