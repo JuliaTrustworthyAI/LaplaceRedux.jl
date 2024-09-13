@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>A note on the prior ... · LaplaceRedux.jl</title><meta name="title" content="A note on the prior ... · LaplaceRedux.jl"/><meta property="og:title" content="A note on the prior ... · LaplaceRedux.jl"/><meta property="twitter:title" content="A note on the prior ... · LaplaceRedux.jl"/><meta name="description" content="Documentation for LaplaceRedux.jl."/><meta property="og:description" content="Documentation for LaplaceRedux.jl."/><meta property="twitter:description" content="Documentation for LaplaceRedux.jl."/><meta property="og:url" content="https://juliatrustworthyai.github.io/LaplaceRedux.jl/tutorials/prior/"/><meta property="twitter:url" content="https://juliatrustworthyai.github.io/LaplaceRedux.jl/tutorials/prior/"/><link rel="canonical" href="https://juliatrustworthyai.github.io/LaplaceRedux.jl/tutorials/prior/"/><script data-outdated-warner src="../../assets/warner.js"></script><link href="https://cdnjs.cloudflare.com/ajax/libs/lato-font/3.0.0/css/lato-font.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/juliamono/0.050/juliamono.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.8/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="../.."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../../assets/documenter.js"></script><script src="../../search_index.js"></script><script src="../../siteinfo.js"></script><script src="../../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-mocha.css" data-theme-name="catppuccin-mocha"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-macchiato.css" data-theme-name="catppuccin-macchiato"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-frappe.css" data-theme-name="catppuccin-frappe"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-latte.css" data-theme-name="catppuccin-latte"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><a class="docs-logo" href="../../"><img src="../../assets/logo.svg" alt="LaplaceRedux.jl logo"/></a><div class="docs-package-name"><span class="docs-autofit"><a href="../../">LaplaceRedux.jl</a></span></div><button class="docs-search-query input is-rounded is-small is-clickable my-2 mx-auto py-1 px-2" id="documenter-search-query">Search docs (Ctrl + /)</button><ul class="docs-menu"><li><a class="tocitem" href="../../">Home</a></li><li><span class="tocitem">Tutorials</span><ul><li><a class="tocitem" href="../logit/">Logistic Regression</a></li><li><a class="tocitem" href="../mlp/">MLP Binary Classifier</a></li><li><a class="tocitem" href="../multi/">MLP Multi-Label Classifier</a></li><li><a class="tocitem" href="../regression/">MLP Regression</a></li><li class="is-active"><a class="tocitem" href>A note on the prior ...</a><ul class="internal"><li><a class="tocitem" href="#Libraries"><span>Libraries</span></a></li><li><a class="tocitem" href="#A-quick-note-on-the-prior"><span>A quick note on the prior</span></a></li></ul></li><li><a class="tocitem" href="../calibration/">Calibrated forecasts</a></li></ul></li><li><a class="tocitem" href="../../reference/">Reference</a></li><li><a class="tocitem" href="../../mlj_interface/">MLJ interface</a></li><li><a class="tocitem" href="../../resources/_resources/">Additional Resources</a></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><a class="docs-sidebar-button docs-navbar-link fa-solid fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a><nav class="breadcrumb"><ul class="is-hidden-mobile"><li><a class="is-disabled">Tutorials</a></li><li class="is-active"><a href>A note on the prior ...</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>A note on the prior ...</a></li></ul></nav><div class="docs-right"><a class="docs-navbar-link" href="https://github.com/JuliaTrustworthyAI/LaplaceRedux.jl/blob/main/docs/src/tutorials/prior.md#" title="Edit source on GitHub"><span class="docs-icon fa-solid"></span></a><a class="docs-settings-button docs-navbar-link fa-solid fa-gear" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-article-toggle-button fa-solid fa-chevron-up" id="documenter-article-toggle-button" href="javascript:;" title="Collapse all docstrings"></a></div></header><article class="content" id="documenter-page"><h2 id="Libraries"><a class="docs-heading-anchor" href="#Libraries">Libraries</a><a id="Libraries-1"></a><a class="docs-heading-anchor-permalink" href="#Libraries" title="Permalink"></a></h2><pre><code class="language-julia hljs">using Pkg; Pkg.activate(&quot;docs&quot;)
+# Import libraries
+using Flux, Plots, TaijaPlotting, Random, Statistics, LaplaceRedux, LinearAlgebra</code></pre><div class="admonition is-info"><header class="admonition-header">In Progress</header><div class="admonition-body"></div></div><p>    This documentation is still incomplete.</p><h2 id="A-quick-note-on-the-prior"><a class="docs-heading-anchor" href="#A-quick-note-on-the-prior">A quick note on the prior</a><a id="A-quick-note-on-the-prior-1"></a><a class="docs-heading-anchor-permalink" href="#A-quick-note-on-the-prior" title="Permalink"></a></h2><h3 id="General-Effect"><a class="docs-heading-anchor" href="#General-Effect">General Effect</a><a id="General-Effect-1"></a><a class="docs-heading-anchor-permalink" href="#General-Effect" title="Permalink"></a></h3><p>High prior precision <span>$\rightarrow$</span> only observation noise. Low prior precision <span>$\rightarrow$</span> high posterior uncertainty.</p><pre><code class="language-julia hljs">using LaplaceRedux.Data
+n = 150       # number of observations
+σtrue = 0.30  # true observational noise
+x, y = Data.toy_data_regression(n;noise=σtrue)
+xs = [[x] for x in x]
+X = permutedims(x)</code></pre><pre><code class="language-julia hljs">data = zip(xs,y)
+n_hidden = 10
+D = size(X,1)
+Λ = [1e5, nothing, 1e-5]
+plts = []
+nns = []
+opt=Flux.Adam(1e-3)
+for λ ∈ Λ
+    nn = Chain(
+        Dense(D, n_hidden, tanh),
+        Dense(n_hidden, 1)
+    )  
+    loss(x, y) = Flux.Losses.mse(nn(x), y)
+    # train
+    epochs = 1000
+    for epoch = 1:epochs
+        for d in data
+        gs = gradient(Flux.params(nn)) do
+            l = loss(d...)
+        end
+        Flux.update!(opt, Flux.params(nn), gs)
+        end
+    end
+    # laplace
+    if !isnothing(λ)
+        la = Laplace(nn; likelihood=:regression, λ=λ)
+        fit!(la, data)  
+    else
+        la = Laplace(nn; likelihood=:regression)
+        fit!(la, data)  
+        optimize_prior!(la)
+    end
+    
+    _suffix = isnothing(λ) ? &quot; (optimal)&quot; : &quot;&quot;
+    λ = unique(diag(la.prior.P₀))[1]
+    title = &quot;λ=$(round(λ,digits=2))$(_suffix)&quot;
+
+    # plot 
+    plt = plot(la, X, y; title=title, zoom=-5)
+    plts = vcat(plts..., plt)
+    nns = vcat(nns..., nn)
+end
+plot(plts..., layout=(1,3), size=(1200,300))</code></pre><p><img src="../prior_files/figure-commonmark/cell-4-output-1.svg" alt/></p><h3 id="Effect-of-Model-Size-on-Optimal-Choice"><a class="docs-heading-anchor" href="#Effect-of-Model-Size-on-Optimal-Choice">Effect of Model Size on Optimal Choice</a><a id="Effect-of-Model-Size-on-Optimal-Choice-1"></a><a class="docs-heading-anchor-permalink" href="#Effect-of-Model-Size-on-Optimal-Choice" title="Permalink"></a></h3><p>For larger models, the optimal prior precision <span>$\lambda$</span> as evaluated through Empirical Bayes tends to be smaller.</p><pre><code class="language-julia hljs">data = zip(xs,y)
+n_hiddens = [5, 10, 50]
+D = size(X,1)
+plts = []
+nns = []
+opt=Flux.Adam(1e-3)
+for n_hidden ∈ n_hiddens
+    nn = Chain(
+        Dense(D, n_hidden, tanh),
+        Dense(n_hidden, 1)
+    )  
+    loss(x, y) = Flux.Losses.mse(nn(x), y)
+    # train
+    epochs = 1000
+    for epoch = 1:epochs
+        for d in data
+        gs = gradient(Flux.params(nn)) do
+            l = loss(d...)
+        end
+        Flux.update!(opt, Flux.params(nn), gs)
+        end
+    end
+    # laplace
+    la = Laplace(nn; likelihood=:regression)
+    fit!(la, data)  
+    optimize_prior!(la)
+    
+    λ = unique(diag(la.prior.P₀))[1]
+    title = &quot;n_params=$(LaplaceRedux.n_params(la)),λ=$(round(λ,digits=2))&quot;
+
+    # plot 
+    plt = plot(la, X, y; title=title, zoom=-5)
+    plts = vcat(plts..., plt)
+    nns = vcat(nns..., nn)
+end
+plot(plts..., layout=(1,3), size=(1200,300))</code></pre><p><img src="../prior_files/figure-commonmark/cell-5-output-1.svg" alt/></p><pre><code class="language-julia hljs"># Number of points to generate.
+xs, ys = LaplaceRedux.Data.toy_data_non_linear(200)
+X = hcat(xs...) # bring into tabular format
+data = zip(xs,ys)
+
+n_hiddens = [5, 10, 50]
+D = size(X,1)
+plts = []
+nns = []
+opt=Flux.Adam(1e-3)
+for n_hidden ∈ n_hiddens
+    nn = Chain(
+        Dense(D, n_hidden, σ),
+        Dense(n_hidden, 1)
+    )  
+    loss(x, y) = Flux.Losses.mse(nn(x), y)
+    # train
+    epochs = 100
+    for epoch = 1:epochs
+        for d in data
+        gs = gradient(Flux.params(nn)) do
+            l = loss(d...)
+        end
+        Flux.update!(opt, Flux.params(nn), gs)
+        end
+    end
+    # laplace
+    la = Laplace(nn; likelihood=:classification)
+    fit!(la, data)  
+    optimize_prior!(la)
+    
+    λ = unique(diag(la.prior.P₀))[1]
+    title = &quot;n_params=$(LaplaceRedux.n_params(la)),λ=$(round(λ,digits=2))&quot;
+
+    # plot 
+    plt = plot(la, X, ys; title=title, zoom=-1, clim=(0,1))
+    plts = vcat(plts..., plt)
+    nns = vcat(nns..., nn)
+end
+plot(plts..., layout=(1,3), size=(1200,300))</code></pre><p><img src="../prior_files/figure-commonmark/cell-6-output-1.svg" alt/></p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../regression/">« MLP Regression</a><a class="docs-footer-nextpage" href="../calibration/">Calibrated forecasts »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.6.0 on <span class="colophon-date" title="Friday 13 September 2024 10:34">Friday 13 September 2024</span>. Using Julia version 1.10.5.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>

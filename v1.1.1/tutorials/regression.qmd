@@ -1,0 +1,140 @@
+```@meta
+CurrentModule = LaplaceRedux
+```
+## Libraries
+
+Import the libraries required to run this example
+
+```{julia}
+using Pkg; Pkg.activate("docs")
+# Import libraries
+using Flux, Plots, TaijaPlotting, Random, Statistics, LaplaceRedux
+theme(:wong)
+```
+
+
+## Data
+
+We first generate some synthetic data:
+
+```{julia}
+using LaplaceRedux.Data
+n = 3000       # number of observations
+σtrue = 0.30  # true observational noise
+x, y = Data.toy_data_regression(n;noise=σtrue,seed=1234)
+xs = [[x] for x in x]
+X = permutedims(x)
+```
+
+and split them in a training set  and a test set
+```{julia}
+# Shuffle the data
+Random.seed!(1234)  # Set a seed for reproducibility
+shuffle_indices = shuffle(1:n)
+
+# Define split ratios
+train_ratio = 0.8
+test_ratio = 0.2
+
+# Calculate split indices
+train_end = Int(floor(train_ratio * n))
+
+# Split the data
+train_indices = shuffle_indices[1:train_end]
+test_indices = shuffle_indices[train_end+1:end]
+
+# Create the splits
+x_train, y_train = x[train_indices], y[train_indices]
+x_test, y_test = x[test_indices], y[test_indices]
+
+# Optional: Convert to desired format
+xs_train = [[x] for x in x_train]
+xs_test = [[x] for x in x_test]
+X_train = permutedims(x_train)
+X_test = permutedims(x_test)
+```
+
+## MLP
+
+We set up a model and loss with weight regularization:
+
+```{julia}
+train_data = zip(xs_train,y_train)
+n_hidden = 50
+D = size(X,1)
+nn = Chain(
+    Dense(D, n_hidden, tanh),
+    Dense(n_hidden, 1)
+)  
+loss(x, y) = Flux.Losses.mse(nn(x), y)
+```
+
+We train the model:
+
+```{julia}
+using Flux.Optimise: update!, Adam
+opt = Adam(1e-3)
+epochs = 1000
+avg_loss(train_data) = mean(map(d -> loss(d[1],d[2]), train_data))
+show_every = epochs/10
+
+for epoch = 1:epochs
+  for d in train_data
+    gs = gradient(Flux.params(nn)) do
+      l = loss(d...)
+    end
+    update!(opt, Flux.params(nn), gs)
+  end
+  if epoch % show_every == 0
+    println("Epoch " * string(epoch))
+    @show avg_loss(train_data)
+  end
+end
+```
+
+## Laplace Approximation
+
+Laplace approximation can be implemented as follows:
+
+```{julia}
+#| output: true
+
+subset_w = :all
+la = Laplace(nn; likelihood=:regression, subset_of_weights=subset_w)
+fit!(la, train_data)
+plot(la, X_train, y_train; zoom=-5, size=(400,400))
+```
+
+Next we optimize the prior precision $P_0$ and and observational noise $\sigma$ using Empirical Bayes:
+
+```{julia}
+#| output: true
+
+optimize_prior!(la; verbose=true)
+plot(la, X_train, y_train; zoom=-5, size=(400,400))
+```
+
+## Calibration Plot
+Once the prior precision has been optimized it is possible to evaluate the quality of the predictive distribution 
+obtained through a calibration plot and a test dataset (y_test, X_test). 
+
+First, we apply the trained network on the test dataset (y_test, X_test) and collect the neural network's predicted distributions 
+```{julia}
+#| output: true
+predicted_distributions= predict(la, X_test,ret_distr=true)
+``` 
+
+then we can plot the calibration plot of our neural model
+
+```{julia}
+#| output: true
+Calibration_Plot(la,y_test,vec(predicted_distributions);n_bins = 20)
+``` 
+
+and compute the sharpness of the predictive distribution
+
+```{julia}
+#| output: true
+sharpness_regression(vec(predicted_distributions))
+``` 
+
