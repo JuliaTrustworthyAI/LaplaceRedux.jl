@@ -29,6 +29,7 @@ It has the following Hyperparameters:
 MLJBase.@mlj_model mutable struct LaplaceRegressor <: MLJFlux.MLJFluxProbabilistic
 
     flux_model::Flux.Chain = nothing
+    flux_loss = Flux.Losses.mse
     epochs::Integer = 1000::(_ > 0)
     batch_size::Integer= 32::(_ > 0)
     subset_of_weights::Symbol = :all::(_ in (:all, :last_layer, :subnetwork))
@@ -39,7 +40,7 @@ MLJBase.@mlj_model mutable struct LaplaceRegressor <: MLJFlux.MLJFluxProbabilist
     σ::Float64 = 1.0
     μ₀::Float64 = 0.0
     P₀::Union{AbstractMatrix,UniformScaling,Nothing} = nothing
-    ret_distr::Bool = false::(_ in (true, false))
+    #ret_distr::Bool = false::(_ in (true, false))
     fit_prior_nsteps::Int = 100::(_ > 0)
 end
 
@@ -51,11 +52,10 @@ function MMI.fit(m::LaplaceRegressor, verbosity, X, y)
     y = reshape(y, 1,:)
     data_loader = Flux.DataLoader((X,y), batchsize=m.batch_size)
     opt_state = Flux.setup(Adam(), m.flux_model)
-    loss(y_hat, y) = mean(Flux.Losses.mse.(y_hat, y))
 
     for epoch in 1:m.epochs
         Flux.train!(m.flux_model,data_loader, opt_state) do model, X, y
-            loss(model(X), y)
+            m.flux_loss(model(X), y)
         
         end
       end
@@ -91,7 +91,7 @@ end
 function MMI.predict(m::LaplaceRegressor, fitresult, Xnew)
     Xnew = MLJBase.matrix(Xnew) |> permutedims
     la = fitresult
-    yhat = LaplaceRedux.predict(la, Xnew; ret_distr=m.ret_distr)
+    yhat = LaplaceRedux.predict(la, Xnew; ret_distr= false)
     # Extract mean and variance matrices
     means, variances = yhat
 
@@ -130,6 +130,7 @@ The model also has the following parameters:
 MLJBase.@mlj_model mutable struct LaplaceClassifier <: MLJFlux.MLJFluxProbabilistic
 
     flux_model::Flux.Chain = nothing
+    flux_loss = Flux.Losses.logitcrossentropy
     epochs::Integer = 1000::(_ > 0)
     batch_size::Integer= 32::(_ > 0)
     subset_of_weights::Symbol = :all::(_ in (:all, :last_layer, :subnetwork))
@@ -140,12 +141,12 @@ MLJBase.@mlj_model mutable struct LaplaceClassifier <: MLJFlux.MLJFluxProbabilis
     σ::Float64 = 1.0
     μ₀::Float64 = 0.0
     P₀::Union{AbstractMatrix,UniformScaling,Nothing} = nothing
-    ret_distr::Bool = false::(_ in (true, false))
+    #ret_distr::Bool = false::(_ in (true, false))
     fit_prior_nsteps::Int = 100::(_ > 0)
     link_approx::Symbol = :probit::(_ in (:probit, :plugin))
 end
 
-#link_approx::Symbol = :probit::(_ in (:probit, :plugin))
+
 
 function MMI.fit(m::LaplaceClassifier, verbosity, X, y)
     features  = Tables.schema(X).names
@@ -156,7 +157,7 @@ function MMI.fit(m::LaplaceClassifier, verbosity, X, y)
     y_plain   = MLJBase.int(y) .- 1 # 0, 1 of type Int
 
 
-    loss(y_hat, y) =  Flux.Losses.logitcrossentropy(y_hat, y)
+    #loss(y_hat, y) =  Flux.Losses.logitcrossentropy(y_hat, y)
 
     data_loader = Flux.DataLoader((X,y_plain), batchsize=m.batch_size)
     opt_state = Flux.setup(Adam(), m.flux_model)
@@ -165,7 +166,7 @@ function MMI.fit(m::LaplaceClassifier, verbosity, X, y)
 
     for epoch in 1:m.epochs
         Flux.train!(m.flux_model,data_loader, opt_state) do model, X, y_plain
-            loss(model(X), y_plain)
+            m.flux_loss(model(X), y_plain)
         
         end
       end
@@ -204,7 +205,7 @@ function MMI.predict(m::LaplaceClassifier, (fitresult, decode), Xnew)
         la,
         Xnew;
         link_approx=m.link_approx,
-        ret_distr=m.ret_distr)
+        ret_distr=false)
     return [MLJBase.UnivariateFinite(MLJBase.classes(decode), prediction,augment=true) for prediction in predictions]
 end
 
