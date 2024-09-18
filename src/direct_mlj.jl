@@ -156,7 +156,7 @@ function MMI.fit(m::LaplaceClassifier, verbosity, X, y)
     y_plain   = MLJBase.int(y) .- 1 # 0, 1 of type Int
 
 
-    loss(y_hat, y) =  mean(Flux.Losses.crossentropy(y_hat, y))
+    loss(y_hat, y) =  Flux.Losses.logitcrossentropy(y_hat, y)
 
     data_loader = Flux.DataLoader((X,y_plain), batchsize=m.batch_size)
     opt_state = Flux.setup(Adam(), m.flux_model)
@@ -191,24 +191,21 @@ function MMI.fit(m::LaplaceClassifier, verbosity, X, y)
     LaplaceRedux.fit!(la, data_loader )
     optimize_prior!(la; verbose= false, n_steps=m.fit_prior_nsteps)
 
-    
-    fitresult=la
     report = (status="success", message="Model fitted successfully")
     cache     = nothing
-    return ((fitresult,decode), cache, report)
+    return ((la,decode), cache, report)
 end
 
 
 function MMI.predict(m::LaplaceClassifier, (fitresult, decode), Xnew)
-    #la = fitresult
+    la = fitresult
     Xnew = MLJBase.matrix(Xnew) |> permutedims
-    #predictions = LaplaceRedux.predict(
-        #la,
-        #Xnew;
-        #link_approx=model.link_approx,
-        #predict_proba=model.predict_proba,
-        #ret_distr=model.ret_distr)
-    #return [MLJBase.UnivariateFinite(MLJBase.classes(decode), prediction) for prediction in predictions]
+    predictions = LaplaceRedux.predict(
+        la,
+        Xnew;
+        link_approx=m.link_approx,
+        ret_distr=m.ret_distr)
+    return [MLJBase.UnivariateFinite(MLJBase.classes(decode), prediction,augment=true) for prediction in predictions]
 end
 
 
