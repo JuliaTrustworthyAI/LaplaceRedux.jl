@@ -13,7 +13,8 @@ using Distributions: Normal
 A mutable struct representing a Laplace regression model.
 It uses Laplace approximation to estimate the posterior distribution of the weights of a neural network. 
 It has the following Hyperparameters:
-- flux_model????
+- `flux_model`: A flux model provided by the user and compatible with the dataset.
+- `epochs`: The number of training epochs.
 - `subset_of_weights`: the subset of weights to use, either `:all`, `:last_layer`, or `:subnetwork`.
 - `subnetwork_indices`: the indices of the subnetworks.
 - `hessian_structure`: the structure of the Hessian matrix, either `:full` or `:diagonal`.
@@ -25,7 +26,9 @@ It has the following Hyperparameters:
 - `fit_prior_nsteps`: the number of steps used to fit the priors.
 """
 MLJBase.@mlj_model mutable struct LaplaceRegressor <: MLJFlux.MLJFluxProbabilistic
+
     flux_model::Flux.Chain = nothing
+    epochs::Integer = 1000::(_ > 0)
     subset_of_weights::Symbol = :all::(_ in (:all, :last_layer, :subnetwork))
     subnetwork_indices = nothing
     hessian_structure::Union{HessianStructure,Symbol,String} =
@@ -42,7 +45,19 @@ end
 function MMI.fit(m::LaplaceRegressor, verbosity, X, y)
     features  = Tables.schema(X).names
 
-    X = MLJBase.matrix(X)
+    X = MLJBase.matrix(X) |> permutedims
+    y = reshape(y, 1,:)
+    data_loader = Flux.DataLoader((X,y), batchsize=10)
+    opt_state = Flux.setup(Adam(), m.flux_model)
+    loss(y_hat, y) = mean(Flux.Losses.mse.(y_hat, y))
+
+    for epoch in 1:m.epochs
+        Flux.train!(m.flux_model,data_loader, opt_state) do model, X, y
+            loss(model(X), y)
+        
+        end
+      end
+
 
     la = LaplaceRedux.Laplace(
         m.flux_model;
@@ -56,11 +71,10 @@ function MMI.fit(m::LaplaceRegressor, verbosity, X, y)
         P₀=m.P₀,
     )
 
-    println(la)
 
     # fit the Laplace model:
-    LaplaceRedux.fit!(la, zip(X, y))
-    optimize_prior!(la; verbose=verbose_laplace, n_steps=model.fit_prior_nsteps)
+    LaplaceRedux.fit!(la, data_loader )
+    optimize_prior!(la; verbose= false, n_steps=m.fit_prior_nsteps)
 
     
     fitresult=la
@@ -92,7 +106,8 @@ It uses Laplace approximation to estimate the posterior distribution of the weig
 
 The model also has the following parameters:
 
-- `model`: Flux ???
+- `flux_model`: A flux model provided by the user and compatible with the dataset.
+- `epochs`: The number of training epochs.
 - `subset_of_weights`: the subset of weights to use, either `:all`, `:last_layer`, or `:subnetwork`.
 - `subnetwork_indices`: the indices of the subnetworks.
 - `hessian_structure`: the structure of the Hessian matrix, either `:full` or `:diagonal`.
@@ -107,7 +122,8 @@ The model also has the following parameters:
 """
 MLJBase.@mlj_model mutable struct LaplaceClassifier <: MLJFlux.MLJFluxProbabilistic
 
-    #model::Flux 
+    flux_model::Flux.Chain = nothing
+    epochs::Integer = 1000::(_ > 0)
     subset_of_weights::Symbol = :all::(_ in (:all, :last_layer, :subnetwork))
     subnetwork_indices::Vector{Vector{Int}} = Vector{Vector{Int}}([])
     hessian_structure::Union{HessianStructure,Symbol,String} =
@@ -130,6 +146,17 @@ function MMI.fit(m::LaplaceClassifier, verbosity, X, y)
     decode    = y[1]
     y_plain   = MLJBase.int(y) .- 1 # 0, 1 of type Int
 
+
+
+    for epoch in 1:m.epochs
+        Flux.train!(m.flux_model,data_loader, opt_state) do model, X, y
+            loss(model(X), y)
+        
+        end
+      end
+
+
+
     la = LaplaceRedux.Laplace(
         m.flux_model;
         likelihood=:classification,
@@ -142,15 +169,17 @@ function MMI.fit(m::LaplaceClassifier, verbosity, X, y)
         P₀=m.P₀,
     )
 
+
+
+
     # fit the Laplace model:
     LaplaceRedux.fit!(la, zip(X, y_plain))
     optimize_prior!(la; verbose=verbose_laplace, n_steps=model.fit_prior_nsteps)
 
-    
-    fitresult=la
+
     report = (status="success", message="Model fitted successfully")
     cache     = nothing
-    return (fitresult, decode), cache, report
+    return (la, decode), cache, report
 end
 
 
