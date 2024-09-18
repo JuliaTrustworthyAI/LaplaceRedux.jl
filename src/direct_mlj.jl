@@ -46,7 +46,7 @@ end
 
 
 function MMI.fit(m::LaplaceRegressor, verbosity, X, y)
-    features  = Tables.schema(X).names
+    #features  = Tables.schema(X).names
 
     X = MLJBase.matrix(X) |> permutedims
     y = reshape(y, 1,:)
@@ -149,24 +149,25 @@ end
 
 
 function MMI.fit(m::LaplaceClassifier, verbosity, X, y)
-    features  = Tables.schema(X).names
+    #features  = Tables.schema(X).names
     X = MLJBase.matrix(X) |> permutedims
-    y = reshape(y, 1,:)
-
-    decode    = y[1]
+    decode = MMI.decoder(y[1])
+    #y = reshape(y, 1,:)
     y_plain   = MLJBase.int(y) .- 1 # 0, 1 of type Int
+    y_onehot = Flux.onehotbatch(y_plain,  unique(y_plain) )
+
 
 
     #loss(y_hat, y) =  Flux.Losses.logitcrossentropy(y_hat, y)
 
-    data_loader = Flux.DataLoader((X,y_plain), batchsize=m.batch_size)
+    data_loader = Flux.DataLoader((X,y_onehot), batchsize=m.batch_size)
     opt_state = Flux.setup(Adam(), m.flux_model)
 
 
 
     for epoch in 1:m.epochs
-        Flux.train!(m.flux_model,data_loader, opt_state) do model, X, y_plain
-            m.flux_loss(model(X), y_plain)
+        Flux.train!(m.flux_model,data_loader, opt_state) do model, X, y_onehot
+            m.flux_loss(model(X), y_onehot)
         
         end
       end
@@ -206,7 +207,7 @@ function MMI.predict(m::LaplaceClassifier, (fitresult, decode), Xnew)
         Xnew;
         link_approx=m.link_approx,
         ret_distr=false)
-    return [MLJBase.UnivariateFinite(MLJBase.classes(decode), prediction,augment=true) for prediction in predictions]
+    return [MLJBase.UnivariateFinite(MLJBase.classes(decode), prediction, pool=decode,augment=true) for prediction in predictions]
 end
 
 
