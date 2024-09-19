@@ -198,7 +198,7 @@ function MMI.predict(m::LaplaceClassifier, (fitresult, decode), Xnew)
         
 
 
-    return [MLJBase.UnivariateFinite(MLJBase.classes(decode), prediction) for prediction in eachrow(predictions)]
+    return MLJBase.UnivariateFinite(MLJBase.classes(decode), predictions)
 end
 
 
