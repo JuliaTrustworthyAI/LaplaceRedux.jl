@@ -306,30 +306,35 @@ where
 Train the machine using `fit!(mach, rows=...)`.
 
 
-# Hyperparameters
+# Hyperparameters (format: name-type-default value-restrictions)
 
-- `max_depth=-1`:          max depth of the decision tree (-1=any)
+- `flux_model::Flux.Chain = nothing`:                                                               a Flux model provided by the user and compatible with the dataset.
 
-- `min_samples_leaf=1`:    max number of samples each leaf needs to have
+- `flux_loss = Flux.Losses.logitcrossentropy` :                                                     a Flux loss function
 
-- `min_samples_split=2`:   min number of samples needed for a split
+- `optimiser = Adam()`                                                                              a Flux optimiser
 
-- `min_purity_increase=0`: min purity needed for a split
+- `epochs::Integer = 1000::(_ > 0)`:                                                                the number of training epochs.
 
-- `n_subfeatures=0`: number of features to select at random (0 for all)
+- `batch_size::Integer = 32::(_ > 0)`:                                                              the batch size.
 
-- `post_prune=false`:      set to `true` for post-fit pruning
+- `subset_of_weights::Symbol = :all::(_ in (:all, :last_layer, :subnetwork))`:                      the subset of weights to use, either `:all`, `:last_layer`, or `:subnetwork`.
 
-- `merge_purity_threshold=1.0`: (post-pruning) merge leaves having
-                           combined purity `>= merge_purity_threshold`
+- `subnetwork_indices = nothing`:                                                                   the indices of the subnetworks.
 
-- `display_depth=5`:       max depth to show when displaying the tree
+- `hessian_structure::Union{HessianStructure,Symbol,String} = :full::(_ in (:full, :diagonal))`:    the structure of the Hessian matrix, either `:full` or `:diagonal`.
 
-- `feature_importance`: method to use for computing feature importances. One of `(:impurity,
-  :split)`
+- `backend::Symbol = :GGN::(_ in (:GGN, :EmpiricalFisher))`:                                        the backend to use, either `:GGN` or `:EmpiricalFisher`.
 
-- `rng=Random.GLOBAL_RNG`: random number generator or seed
+- `σ::Float64 = 1.0`:                                                                               the standard deviation of the prior distribution.
 
+- `μ₀::Float64 = 0.0`:                                                                              the mean of the prior distribution.
+
+- `P₀::Union{AbstractMatrix,UniformScaling,Nothing} = nothing`:                                     the covariance matrix of the prior distribution.
+
+- `fit_prior_nsteps::Int = 100::(_ > 0) `:                                                          the number of steps used to fit the priors.
+
+- `link_approx::Symbol = :probit::(_ in (:probit, :plugin))`:                                       the approximation to adopt to compute the probabilities.
 
 # Operations
 
@@ -348,34 +353,8 @@ The fields of `fitted_params(mach)` are:
 - `raw_tree`: the raw `Node`, `Leaf` or `Root` object returned by the core DecisionTree.jl
   algorithm
 
-- `tree`: a visualizable, wrapped version of `raw_tree` implementing the AbstractTrees.jl
-  interface; see "Examples" below
-
-- `encoding`: dictionary of target classes keyed on integers used
-  internally by DecisionTree.jl
-
-- `features`: the names of the features encountered in training, in an
-  order consistent with the output of `print_tree` (see below)
-
-
-# Report
-
-The fields of `report(mach)` are:
-
-- `classes_seen`: list of target classes actually observed in training
-
-- `print_tree`: alternative method to print the fitted
-  tree, with single argument the tree depth; interpretation requires
-  internal integer-class encoding (see "Fitted parameters" above).
-
-- `features`: the names of the features encountered in training, in an
-  order consistent with the output of `print_tree` (see below)
-
 # Accessor functions
 
-- `feature_importances(mach)` returns a vector of `(feature::Symbol => importance)` pairs;
-  the type of importance is determined by the hyperparameter `feature_importance` (see
-  above)
 
 # Examples
 
@@ -408,8 +387,6 @@ pdf.(yhat, "virginica")    # probabilities for the "verginica" class
 
 julia> tree = fitted_params(mach)
 
-
-feature_importances(mach)
 ```
 
 See also [LaplaceRedux.jl](https://github.com/JuliaTrustworthyAI/LaplaceRedux.jl).
@@ -435,35 +412,39 @@ where
   `Count`, or `<:OrderedFactor`; check column scitypes with `schema(X)`
 
 - `y`: is the target, which can be any `AbstractVector` whose element
-  scitype is `<:OrderedFactor` or `<:Multiclass`; check the scitype
+  scitype is `<:Continuous`; check the scitype
   with `scitype(y)`
 
 Train the machine using `fit!(mach, rows=...)`.
 
 
-# Hyperparameters
+# Hyperparameters (format: name-type-default value-restrictions)
 
-- `max_depth=-1`:          max depth of the decision tree (-1=any)
+- `flux_model::Flux.Chain = nothing`:                                                               a Flux model provided by the user and compatible with the dataset.
 
-- `min_samples_leaf=1`:    max number of samples each leaf needs to have
+- `flux_loss = Flux.Losses.logitcrossentropy` :                                                     a Flux loss function
 
-- `min_samples_split=2`:   min number of samples needed for a split
+- `optimiser = Adam()`                                                                              a Flux optimiser
 
-- `min_purity_increase=0`: min purity needed for a split
+- `epochs::Integer = 1000::(_ > 0)`:                                                                the number of training epochs.
 
-- `n_subfeatures=0`: number of features to select at random (0 for all)
+- `batch_size::Integer = 32::(_ > 0)`:                                                              the batch size.
 
-- `post_prune=false`:      set to `true` for post-fit pruning
+- `subset_of_weights::Symbol = :all::(_ in (:all, :last_layer, :subnetwork))`:                      the subset of weights to use, either `:all`, `:last_layer`, or `:subnetwork`.
 
-- `merge_purity_threshold=1.0`: (post-pruning) merge leaves having
-                           combined purity `>= merge_purity_threshold`
+- `subnetwork_indices = nothing`:                                                                   the indices of the subnetworks.
 
-- `display_depth=5`:       max depth to show when displaying the tree
+- `hessian_structure::Union{HessianStructure,Symbol,String} = :full::(_ in (:full, :diagonal))`:    the structure of the Hessian matrix, either `:full` or `:diagonal`.
 
-- `feature_importance`: method to use for computing feature importances. One of `(:impurity,
-  :split)`
+- `backend::Symbol = :GGN::(_ in (:GGN, :EmpiricalFisher))`:                                        the backend to use, either `:GGN` or `:EmpiricalFisher`.
 
-- `rng=Random.GLOBAL_RNG`: random number generator or seed
+- `σ::Float64 = 1.0`:                                                                               the standard deviation of the prior distribution.
+
+- `μ₀::Float64 = 0.0`:                                                                              the mean of the prior distribution.
+
+- `P₀::Union{AbstractMatrix,UniformScaling,Nothing} = nothing`:                                     the covariance matrix of the prior distribution.
+
+- `fit_prior_nsteps::Int = 100::(_ > 0) `:                                                          the number of steps used to fit the priors.
 
 
 # Operations
@@ -483,46 +464,28 @@ The fields of `fitted_params(mach)` are:
 - `raw_tree`: the raw `Node`, `Leaf` or `Root` object returned by the core DecisionTree.jl
   algorithm
 
-- `tree`: a visualizable, wrapped version of `raw_tree` implementing the AbstractTrees.jl
-  interface; see "Examples" below
-
-- `encoding`: dictionary of target classes keyed on integers used
-  internally by DecisionTree.jl
-
-- `features`: the names of the features encountered in training, in an
-  order consistent with the output of `print_tree` (see below)
-
-
-# Report
-
-The fields of `report(mach)` are:
-
-- `classes_seen`: list of target classes actually observed in training
-
-- `print_tree`: alternative method to print the fitted
-  tree, with single argument the tree depth; interpretation requires
-  internal integer-class encoding (see "Fitted parameters" above).
-
-- `features`: the names of the features encountered in training, in an
-  order consistent with the output of `print_tree` (see below)
 
 # Accessor functions
 
-- `feature_importances(mach)` returns a vector of `(feature::Symbol => importance)` pairs;
-  the type of importance is determined by the hyperparameter `feature_importance` (see
-  above)
+
 
 # Examples
 
 ```
 using MLJ
+using Flux
 LaplaceRegressor = @load LaplaceRegressor pkg=LaplaceRedux
+flux_model = Chain(
+    Dense(4, 10, relu),
+    Dense(10, 10, relu),
+    Dense(10, 1)
+)
 model = LaplaceRegressor(flux_model=flux_model)
 
-X, y = make_regression(100, 2; noise=0.5, sparse=0.2, outliers=0.1)
+X, y = make_regression(100, 4; noise=0.5, sparse=0.2, outliers=0.1)
 mach = machine(model, X, y) |> fit!
 
-Xnew, _ = make_regression(3, 2; rng=123)
+Xnew, _ = make_regression(3, 4; rng=123)
 yhat = predict(mach, Xnew) # probabilistic predictions
 predict_mode(mach, Xnew)   # point predictions
 
