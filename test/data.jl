@@ -15,7 +15,7 @@ for fun in fun_list
     # Generate data with the same seed
     Random.seed!(seed)
     xs1, ys1 = fun(N; seed=seed)
-    
+
     Random.seed!(seed)
     xs2, ys2 = fun(N; seed=seed)
 

@@ -144,7 +144,6 @@ function predict(
         else
             return fμ, pred_var
         end
-
     end
 
     # Classification:

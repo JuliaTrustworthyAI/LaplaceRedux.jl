@@ -27,11 +27,10 @@ It has the following Hyperparameters:
 - `fit_prior_nsteps`: the number of steps used to fit the priors.
 """
 MLJBase.@mlj_model mutable struct LaplaceRegressor <: MLJFlux.MLJFluxProbabilistic
-
     flux_model::Flux.Chain = nothing
     flux_loss = Flux.Losses.mse
     epochs::Integer = 1000::(_ > 0)
-    batch_size::Integer= 32::(_ > 0)
+    batch_size::Integer = 32::(_ > 0)
     subset_of_weights::Symbol = :all::(_ in (:all, :last_layer, :subnetwork))
     subnetwork_indices = nothing
     hessian_structure::Union{HessianStructure,Symbol,String} =
@@ -44,22 +43,19 @@ MLJBase.@mlj_model mutable struct LaplaceRegressor <: MLJFlux.MLJFluxProbabilist
     fit_prior_nsteps::Int = 100::(_ > 0)
 end
 
-
 function MMI.fit(m::LaplaceRegressor, verbosity, X, y)
     #features  = Tables.schema(X).names
 
     X = MLJBase.matrix(X) |> permutedims
-    y = reshape(y, 1,:)
-    data_loader = Flux.DataLoader((X,y), batchsize=m.batch_size)
+    y = reshape(y, 1, :)
+    data_loader = Flux.DataLoader((X, y); batchsize=m.batch_size)
     opt_state = Flux.setup(Adam(), m.flux_model)
 
-    for epoch in 1:m.epochs
-        Flux.train!(m.flux_model,data_loader, opt_state) do model, X, y
+    for epoch in 1:(m.epochs)
+        Flux.train!(m.flux_model, data_loader, opt_state) do model, X, y
             m.flux_loss(model(X), y)
-        
         end
-      end
-
+    end
 
     la = LaplaceRedux.Laplace(
         m.flux_model;
@@ -73,35 +69,26 @@ function MMI.fit(m::LaplaceRegressor, verbosity, X, y)
         P₀=m.P₀,
     )
 
-
     # fit the Laplace model:
-    LaplaceRedux.fit!(la, data_loader )
-    optimize_prior!(la; verbose= false, n_steps=m.fit_prior_nsteps)
+    LaplaceRedux.fit!(la, data_loader)
+    optimize_prior!(la; verbose=false, n_steps=m.fit_prior_nsteps)
 
-    
-    fitresult=la
+    fitresult = la
     report = (status="success", message="Model fitted successfully")
-    cache     = nothing
+    cache = nothing
     return (fitresult, cache, report)
 end
-
-
-
 
 function MMI.predict(m::LaplaceRegressor, fitresult, Xnew)
     Xnew = MLJBase.matrix(Xnew) |> permutedims
     la = fitresult
-    yhat = LaplaceRedux.predict(la, Xnew; ret_distr= false)
+    yhat = LaplaceRedux.predict(la, Xnew; ret_distr=false)
     # Extract mean and variance matrices
     means, variances = yhat
 
     # Create Normal distributions from the means and variances
     return [Normal(μ, sqrt(σ)) for (μ, σ) in zip(means, variances)]
 end
-
-
-
-
 
 """
     MLJBase.@mlj_model mutable struct LaplaceClassifier <: MLJFlux.MLJFluxProbabilistic
@@ -128,11 +115,10 @@ The model also has the following parameters:
 - `fit_prior_nsteps`: the number of steps used to fit the priors.
 """
 MLJBase.@mlj_model mutable struct LaplaceClassifier <: MLJFlux.MLJFluxProbabilistic
-
     flux_model::Flux.Chain = nothing
     flux_loss = Flux.Losses.logitcrossentropy
     epochs::Integer = 1000::(_ > 0)
-    batch_size::Integer= 32::(_ > 0)
+    batch_size::Integer = 32::(_ > 0)
     subset_of_weights::Symbol = :all::(_ in (:all, :last_layer, :subnetwork))
     subnetwork_indices = nothing
     hessian_structure::Union{HessianStructure,Symbol,String} =
@@ -146,23 +132,19 @@ MLJBase.@mlj_model mutable struct LaplaceClassifier <: MLJFlux.MLJFluxProbabilis
     link_approx::Symbol = :probit::(_ in (:probit, :plugin))
 end
 
-
-
 function MMI.fit(m::LaplaceClassifier, verbosity, X, y)
     X = MLJBase.matrix(X) |> permutedims
     decode = y[1]
-    y_plain   = MLJBase.int(y) .- 1 
-    y_onehot = Flux.onehotbatch(y_plain,  unique(y_plain) )
-    data_loader = Flux.DataLoader((X,y_onehot), batchsize=m.batch_size)
+    y_plain = MLJBase.int(y) .- 1
+    y_onehot = Flux.onehotbatch(y_plain, unique(y_plain))
+    data_loader = Flux.DataLoader((X, y_onehot); batchsize=m.batch_size)
     opt_state = Flux.setup(Adam(), m.flux_model)
 
-    for epoch in 1:m.epochs
-        Flux.train!(m.flux_model,data_loader, opt_state) do model, X, y_onehot
+    for epoch in 1:(m.epochs)
+        Flux.train!(m.flux_model, data_loader, opt_state) do model, X, y_onehot
             m.flux_loss(model(X), y_onehot)
-        
         end
-      end
-
+    end
 
     la = LaplaceRedux.Laplace(
         m.flux_model;
@@ -177,37 +159,28 @@ function MMI.fit(m::LaplaceClassifier, verbosity, X, y)
     )
 
     # fit the Laplace model:
-    LaplaceRedux.fit!(la, data_loader )
-    optimize_prior!(la; verbose= false, n_steps=m.fit_prior_nsteps)
+    LaplaceRedux.fit!(la, data_loader)
+    optimize_prior!(la; verbose=false, n_steps=m.fit_prior_nsteps)
 
     report = (status="success", message="Model fitted successfully")
-    cache     = nothing
-    return ((la,decode), cache, report)
+    cache = nothing
+    return ((la, decode), cache, report)
 end
-
 
 function MMI.predict(m::LaplaceClassifier, (fitresult, decode), Xnew)
     la = fitresult
     Xnew = MLJBase.matrix(Xnew) |> permutedims
-    predictions = LaplaceRedux.predict(
-        la,
-        Xnew;
-        link_approx=m.link_approx,
-        ret_distr=false) |>permutedims
-
-        
-
+    predictions =
+        LaplaceRedux.predict(la, Xnew; link_approx=m.link_approx, ret_distr=false) |>
+        permutedims
 
     return MLJBase.UnivariateFinite(MLJBase.classes(decode), predictions)
 end
 
-
-
-
 MLJBase.metadata_model(
     LaplaceClassifier;
     input_scitype=Union{
-        AbstractMatrix{<:Union{MLJBase.Finite, MLJBase.Continuous}}, # matrix with mixed types
+        AbstractMatrix{<:Union{MLJBase.Finite,MLJBase.Continuous}}, # matrix with mixed types
         MLJBase.Table(MLJBase.Finite, MLJBase.Continuous), # table with mixed types
     },
     target_scitype=AbstractArray{<:MLJBase.Finite}, # ordered factor or multiclass
@@ -217,9 +190,9 @@ MLJBase.metadata_model(
 MLJBase.metadata_model(
     LaplaceRegressor;
     input_scitype=Union{
-        AbstractMatrix{<:Union{MLJBase.Finite, MLJBase.Continuous}}, # matrix with mixed types
+        AbstractMatrix{<:Union{MLJBase.Finite,MLJBase.Continuous}}, # matrix with mixed types
         MLJBase.Table(MLJBase.Finite, MLJBase.Continuous), # table with mixed types
     },
-     target_scitype=AbstractArray{MLJBase.Continuous},
+    target_scitype=AbstractArray{MLJBase.Continuous},
     load_path="LaplaceRedux.LaplaceRegressor",
 )

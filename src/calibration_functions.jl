@@ -78,7 +78,7 @@ Outputs:  \
 """
 function sharpness_classification(y_binary, distributions::Vector{Bernoulli{Float64}})
     mean_class_one = mean(mean.(distributions[findall(y_binary .== 1)]))
-    mean_class_zero = mean( 1 .- mean.(distributions[findall(y_binary .== 0)]))
+    mean_class_zero = mean(1 .- mean.(distributions[findall(y_binary .== 0)]))
     return mean_class_one, mean_class_zero
 end
 
@@ -176,8 +176,9 @@ Inputs: \
 Outputs: \
     - `sigma`: the scalar that maximize the likelihood.
 """
-function sigma_scaling(distr::Vector{Normal{T}}, y_cal::Vector{<:AbstractFloat}
-    ) where T <: AbstractFloat
+function sigma_scaling(
+    distr::Vector{Normal{T}}, y_cal::Vector{<:AbstractFloat}
+) where {T<:AbstractFloat}
     means, variances = extract_mean_and_variance(distr)
 
     sigma = sqrt(1 / length(y_cal) * sum(norm.(y_cal .- means) ./ variances))
