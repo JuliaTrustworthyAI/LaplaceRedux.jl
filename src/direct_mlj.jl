@@ -77,7 +77,7 @@ function MMI.fit(m::LaplaceRegressor, verbosity, X, y)
     X = MLJBase.matrix(X) |> permutedims
     y = reshape(y, 1, :)
     data_loader = Flux.DataLoader((X, y); batchsize=m.batch_size)
-    opt_state = Flux.setup(m.optimiser(), m.flux_model)
+    opt_state = Flux.setup(m.optimiser, m.flux_model)
 
     for epoch in 1:(m.epochs)
         Flux.train!(m.flux_model, data_loader, opt_state) do model, X, y
@@ -381,10 +381,21 @@ The fields of `report(mach)` are:
 
 ```
 using MLJ
-DecisionTreeClassifier = @load DecisionTreeClassifier pkg=DecisionTree
-model = DecisionTreeClassifier(max_depth=3, min_samples_split=3)
+LaplaceClassifier = @load LaplaceClassifier pkg=LaplaceRedux
 
 X, y = @load_iris
+
+# Define the Flux Chain model
+using Flux
+flux_model = Chain(
+    Dense(4, 10, relu),
+    Dense(10, 10, relu),
+    Dense(10, 3)
+)
+
+#Define the LaplaceClassifier
+model = LaplaceClassifier(flux_model=flux_model)
+
 mach = machine(model, X, y) |> fit!
 
 Xnew = (sepal_length = [6.4, 7.2, 7.4],
@@ -395,19 +406,8 @@ yhat = predict(mach, Xnew) # probabilistic predictions
 predict_mode(mach, Xnew)   # point predictions
 pdf.(yhat, "virginica")    # probabilities for the "verginica" class
 
-julia> tree = fitted_params(mach).tree
-petal_length < 2.45
-├─ setosa (50/50)
-└─ petal_width < 1.75
-   ├─ petal_length < 4.95
-   │  ├─ versicolor (47/48)
-   │  └─ virginica (4/6)
-   └─ petal_length < 4.85
-      ├─ virginica (2/3)
-      └─ virginica (43/43)
+julia> tree = fitted_params(mach)
 
-using Plots, TreeRecipe
-plot(tree) # for a graphical representation of the tree
 
 feature_importances(mach)
 ```
@@ -516,33 +516,19 @@ The fields of `report(mach)` are:
 
 ```
 using MLJ
-DecisionTreeClassifier = @load DecisionTreeClassifier pkg=DecisionTree
-model = DecisionTreeClassifier(max_depth=3, min_samples_split=3)
+LaplaceRegressor = @load LaplaceRegressor pkg=LaplaceRedux
+model = LaplaceRegressor(flux_model=flux_model)
 
-X, y = @load_iris
+X, y = make_regression(100, 2; noise=0.5, sparse=0.2, outliers=0.1)
 mach = machine(model, X, y) |> fit!
 
-Xnew = (sepal_length = [6.4, 7.2, 7.4],
-        sepal_width = [2.8, 3.0, 2.8],
-        petal_length = [5.6, 5.8, 6.1],
-        petal_width = [2.1, 1.6, 1.9],)
+Xnew, _ = make_regression(3, 2; rng=123)
 yhat = predict(mach, Xnew) # probabilistic predictions
 predict_mode(mach, Xnew)   # point predictions
-pdf.(yhat, "virginica")    # probabilities for the "verginica" class
 
-julia> tree = fitted_params(mach).tree
-petal_length < 2.45
-├─ setosa (50/50)
-└─ petal_width < 1.75
-   ├─ petal_length < 4.95
-   │  ├─ versicolor (47/48)
-   │  └─ virginica (4/6)
-   └─ petal_length < 4.85
-      ├─ virginica (2/3)
-      └─ virginica (43/43)
+julia> tree = fitted_params(mach)
 
-using Plots, TreeRecipe
-plot(tree) # for a graphical representation of the tree
+
 
 feature_importances(mach)
 ```
