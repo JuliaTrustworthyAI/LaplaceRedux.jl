@@ -78,10 +78,40 @@ function MMI.fit(m::LaplaceRegressor, verbosity, X, y)
     y = reshape(y, 1, :)
     data_loader = Flux.DataLoader((X, y); batchsize=m.batch_size)
     opt_state = Flux.setup(m.optimiser, m.flux_model)
+    loss_history=[]
 
     for epoch in 1:(m.epochs)
-        Flux.train!(m.flux_model, data_loader, opt_state) do model, X, y
-            m.flux_loss(model(X), y)
+
+        loss_per_epoch= 0.0
+
+
+        for (X_batch, y_batch) in data_loader
+            # Forward pass: compute predictions
+            y_pred = m.flux_model(X_batch)
+
+            # Compute loss
+            loss = m.flux_loss(y_pred, y_batch)
+
+            # Compute gradients explicitly
+            grads = gradient(m.flux_model) do model
+                # Recompute predictions inside gradient context
+                y_pred = model(X_batch)
+                m.flux_loss(y_pred, y_batch)
+            end
+            
+            # Update parameters using the optimizer and computed gradients
+            Flux.Optimise.update!(opt_state ,m.flux_model , grads[1])
+
+            # Accumulate the loss for this batch
+            loss_per_epoch += sum(loss)  # Summing the batch loss
+            
+        end
+
+        push!(loss_history,loss_per_epoch )
+
+        # Print loss every 100 epochs if verbosity is 1 or more
+        if verbosity >= 1 && epoch % 100 == 0
+            println("Epoch $epoch: Loss: $loss_per_epoch ")
         end
     end
 
@@ -102,7 +132,7 @@ function MMI.fit(m::LaplaceRegressor, verbosity, X, y)
     optimize_prior!(la; verbose=false, n_steps=m.fit_prior_nsteps)
 
     fitresult = la
-    report = (status="success", message="Model fitted successfully")
+    report = (status="success", loss_history = loss_history)
     cache = nothing
     return (fitresult, cache, report)
 end
@@ -243,17 +273,44 @@ end
 """
 function MMI.fit(m::LaplaceClassifier, verbosity, X, y)
     X = MLJBase.matrix(X) |> permutedims
-    decode = y[1]
-    y_plain = MLJBase.int(y) .- 1
-    y_onehot = Flux.onehotbatch(y_plain, unique(y_plain))
-    data_loader = Flux.DataLoader((X, y_onehot); batchsize=m.batch_size)
-    opt_state = Flux.setup(m.optimiser, m.flux_model)
+# Store the first label as decode function
+decode = y[1]
+    
+# Convert labels to integer format starting from 0 for one-hot encoding
+y_plain = MLJBase.int(y) .- 1
 
-    for epoch in 1:(m.epochs)
-        Flux.train!(m.flux_model, data_loader, opt_state) do model, X, y_onehot
-            m.flux_loss(model(X), y_onehot)
-        end
+# One-hot encoding of labels
+unique_labels = unique(y_plain) # Ensure unique labels for one-hot encoding
+y_onehot = Flux.onehotbatch(y_plain, unique_labels) # One-hot encoding
+
+# Create a data loader for batching the data
+data_loader = Flux.DataLoader((X, y_onehot); batchsize=m.batch_size)
+
+# Set up the optimizer for the model
+opt_state = Flux.setup(m.optimiser, m.flux_model)
+loss_history = []
+
+# Training loop for the specified number of epochs
+for epoch in 1:m.epochs
+    loss_per_epoch = 0.0  # Initialize loss for the current epoch
+
+    # Training function for each batch in the data loader
+    Flux.train!(m.flux_model, data_loader, opt_state) do model, X_batch, y_batch
+        # Forward pass and compute the loss
+        loss = m.flux_loss(model(X_batch), y_batch)
+        
+        # Accumulate the loss for the current epoch
+        loss_per_epoch += sum(loss)
     end
+    
+    # Record loss history for analysis
+    push!(loss_history, loss_per_epoch)
+
+    # Verbosity: print loss every 100 epochs
+    if verbosity >= 1 && epoch % 100 == 0
+        println("Epoch $epoch: Loss: $loss_per_epoch")
+    end
+end
 
     la = LaplaceRedux.Laplace(
         m.flux_model;
@@ -271,7 +328,7 @@ function MMI.fit(m::LaplaceClassifier, verbosity, X, y)
     LaplaceRedux.fit!(la, data_loader)
     optimize_prior!(la; verbose=false, n_steps=m.fit_prior_nsteps)
 
-    report = (status="success", message="Model fitted successfully")
+    report = (status="success", loss_history = loss_history)
     cache = nothing
     return ((la, decode), cache, report)
 end
