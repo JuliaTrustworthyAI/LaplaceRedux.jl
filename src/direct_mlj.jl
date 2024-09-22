@@ -13,7 +13,7 @@ using Distributions: Normal
 A mutable struct representing a Laplace regression model.
 It uses Laplace approximation to estimate the posterior distribution of the weights of a neural network. 
 It has the following Hyperparameters:
-- `flux_model`: A Flux model provided by the user and compatible with the dataset.
+- `model`: A Flux model provided by the user and compatible with the dataset.
 - `flux_loss` : a Flux loss function
 - `optimiser` = a Flux optimiser
 - `epochs`: The number of training epochs.
@@ -28,7 +28,7 @@ It has the following Hyperparameters:
 - `fit_prior_nsteps`: the number of steps used to fit the priors.
 """
 MLJBase.@mlj_model mutable struct LaplaceRegressor <: MLJFlux.MLJFluxProbabilistic
-    flux_model::Flux.Chain = nothing
+    model::Flux.Chain = nothing
     flux_loss = Flux.Losses.mse
     optimiser = Adam()
     epochs::Integer = 1000::(_ > 0)
@@ -77,7 +77,7 @@ function MMI.fit(m::LaplaceRegressor, verbosity, X, y)
     X = MLJBase.matrix(X) |> permutedims
     y = reshape(y, 1, :)
     data_loader = Flux.DataLoader((X, y); batchsize=m.batch_size)
-    opt_state = Flux.setup(m.optimiser, m.flux_model)
+    opt_state = Flux.setup(m.optimiser, m.model)
     loss_history=[]
 
     for epoch in 1:(m.epochs)
@@ -87,20 +87,20 @@ function MMI.fit(m::LaplaceRegressor, verbosity, X, y)
 
         for (X_batch, y_batch) in data_loader
             # Forward pass: compute predictions
-            y_pred = m.flux_model(X_batch)
+            y_pred = m.model(X_batch)
 
             # Compute loss
             loss = m.flux_loss(y_pred, y_batch)
 
             # Compute gradients explicitly
-            grads = gradient(m.flux_model) do model
+            grads = gradient(m.model) do model
                 # Recompute predictions inside gradient context
                 y_pred = model(X_batch)
                 m.flux_loss(y_pred, y_batch)
             end
             
             # Update parameters using the optimizer and computed gradients
-            Flux.Optimise.update!(opt_state ,m.flux_model , grads[1])
+            Flux.Optimise.update!(opt_state ,m.model , grads[1])
 
             # Accumulate the loss for this batch
             loss_per_epoch += sum(loss)  # Summing the batch loss
@@ -116,7 +116,7 @@ function MMI.fit(m::LaplaceRegressor, verbosity, X, y)
     end
 
     la = LaplaceRedux.Laplace(
-        m.flux_model;
+        m.model;
         likelihood=:regression,
         subset_of_weights=m.subset_of_weights,
         subnetwork_indices=m.subnetwork_indices,
@@ -179,6 +179,26 @@ end
 
 
 
+
+@doc """
+    MMI.training_losses(model::LaplaceRegressor, report)
+
+Retrieve the training loss history from the given `report`.
+
+# Arguments
+- `model::LaplaceRegressor`: The model for which the training losses are being retrieved.
+- `report`: An object containing the training report, which includes the loss history.
+
+# Returns
+- A collection representing the loss history from the training report.
+"""
+function MMI.training_losses(model::LaplaceRegressor, report)
+    return report.loss_history
+end
+
+
+
+
 @doc """ 
 function MMI.predict(m::LaplaceRegressor, fitresult, Xnew)
 
@@ -213,7 +233,7 @@ A mutable struct representing a Laplace Classification model.
 It uses Laplace approximation to estimate the posterior distribution of the weights of a neural network. 
 The model also has the following parameters:
 
-- `flux_model`: A Flux model provided by the user and compatible with the dataset.
+- `model`: A Flux model provided by the user and compatible with the dataset.
 - `flux_loss` : a Flux loss function
 - `optimiser` = a Flux optimiser
 - `epochs`: The number of training epochs.
@@ -229,7 +249,7 @@ The model also has the following parameters:
 - `fit_prior_nsteps`: the number of steps used to fit the priors.
 """
 MLJBase.@mlj_model mutable struct LaplaceClassifier <: MLJFlux.MLJFluxProbabilistic
-    flux_model::Flux.Chain = nothing
+    model::Flux.Chain = nothing
     flux_loss = Flux.Losses.logitcrossentropy
     optimiser = Adam()
     epochs::Integer = 1000::(_ > 0)
@@ -287,7 +307,7 @@ y_onehot = Flux.onehotbatch(y_plain, unique_labels) # One-hot encoding
 data_loader = Flux.DataLoader((X, y_onehot); batchsize=m.batch_size)
 
 # Set up the optimizer for the model
-opt_state = Flux.setup(m.optimiser, m.flux_model)
+opt_state = Flux.setup(m.optimiser, m.model)
 loss_history = []
 
 # Training loop for the specified number of epochs
@@ -296,17 +316,17 @@ for epoch in 1:m.epochs
 
     for (X_batch, y_batch) in data_loader
         # Compute gradients explicitly
-        grads = gradient(m.flux_model) do model
+        grads = gradient(m.model) do model
             # Recompute predictions inside gradient context
             y_pred = model(X_batch)
             m.flux_loss(y_pred, y_batch)
         end
 
         # Update the model parameters using the computed gradients
-        Flux.Optimise.update!(opt_state, Flux.params(m.flux_model), grads)
+        Flux.Optimise.update!(opt_state, Flux.params(m.model), grads)
 
         # Compute the loss for this batch
-        loss = m.flux_loss(m.flux_model(X_batch), y_batch)
+        loss = m.flux_loss(m.model(X_batch), y_batch)
         
         # Accumulate the loss for the current epoch
         loss_per_epoch += sum(loss)
@@ -323,7 +343,7 @@ for epoch in 1:m.epochs
 end
 
     la = LaplaceRedux.Laplace(
-        m.flux_model;
+        m.model;
         likelihood=:classification,
         subset_of_weights=m.subset_of_weights,
         subnetwork_indices=m.subnetwork_indices,
@@ -387,7 +407,21 @@ function MMI.fitted_params(model::LaplaceClassifier, fitresult)
 end
 
 
+@doc """
+    MMI.training_losses(model::LaplaceClassifier, report)
 
+Retrieve the training loss history from the given `report`.
+
+# Arguments
+- `model::LaplaceClassifier`: The model for which the training losses are being retrieved.
+- `report`: An object containing the training report, which includes the loss history.
+
+# Returns
+- A collection representing the loss history from the training report.
+"""
+function MMI.training_losses(model::LaplaceClassifier, report)
+    return report.loss_history
+end
 
 
 @doc """ 
@@ -414,6 +448,29 @@ function MMI.predict(m::LaplaceClassifier, (fitresult, decode), Xnew)
     return MLJBase.UnivariateFinite(MLJBase.classes(decode), predictions)
 end
 
+
+MMI.metadata_pkg(
+  LaplaceRegressor,
+  name="LaplaceRedux",
+  package_uuid="??????",
+  package_url="https://github.com/JuliaTrustworthyAI/LaplaceRedux.jl",
+  is_pure_julia=true,
+  is_wrapper=true,
+  package_license = "https://github.com/JuliaTrustworthyAI/LaplaceRedux.jl/blob/main/LICENSE",
+)
+
+MMI.metadata_pkg(
+  LaplaceClassifier,
+  name="LaplaceRedux",
+  package_uuid="dontknow",
+  package_url="https://github.com/JuliaTrustworthyAI/LaplaceRedux.jl",
+  is_pure_julia=true,
+  is_wrapper=true,
+  package_license = "https://github.com/JuliaTrustworthyAI/LaplaceRedux.jl/blob/main/LICENSE",
+)
+
+
+
 MLJBase.metadata_model(
     LaplaceClassifier;
     input_scitype=Union{
@@ -421,6 +478,7 @@ MLJBase.metadata_model(
         MLJBase.Table(MLJBase.Finite, MLJBase.Continuous), # table with mixed types
     },
     target_scitype=AbstractArray{<:MLJBase.Finite}, # ordered factor or multiclass
+    supports_training_losses = true,
     load_path="LaplaceRedux.LaplaceClassifier",
 )
 # metadata for each model,
@@ -431,7 +489,9 @@ MLJBase.metadata_model(
         MLJBase.Table(MLJBase.Finite, MLJBase.Continuous), # table with mixed types
     },
     target_scitype=AbstractArray{MLJBase.Continuous},
+    supports_training_losses = true,
     load_path="LaplaceRedux.LaplaceRegressor",
+
 )
 
 const DOC_LAPLACE_REDUX = "[Laplace Redux – Effortless Bayesian Deep Learning]"*
@@ -464,7 +524,7 @@ Train the machine using `fit!(mach, rows=...)`.
 
 # Hyperparameters (format: name-type-default value-restrictions)
 
-- `flux_model::Flux.Chain = nothing`:                                                               a Flux model provided by the user and compatible with the dataset.
+- `model::Flux.Chain = nothing`:                                                               a Flux model provided by the user and compatible with the dataset.
 
 - `flux_loss = Flux.Losses.logitcrossentropy` :                                                     a Flux loss function
 
@@ -535,14 +595,14 @@ X, y = @load_iris
 
 # Define the Flux Chain model
 using Flux
-flux_model = Chain(
+model = Chain(
     Dense(4, 10, relu),
     Dense(10, 10, relu),
     Dense(10, 3)
 )
 
 #Define the LaplaceClassifier
-model = LaplaceClassifier(flux_model=flux_model)
+model = LaplaceClassifier(model=model)
 
 mach = machine(model, X, y) |> fit!
 
@@ -589,7 +649,7 @@ Train the machine using `fit!(mach, rows=...)`.
 
 # Hyperparameters (format: name-type-default value-restrictions)
 
-- `flux_model::Flux.Chain = nothing`:                                                               a Flux model provided by the user and compatible with the dataset.
+- `model::Flux.Chain = nothing`:                                                               a Flux model provided by the user and compatible with the dataset.
 
 - `flux_loss = Flux.Losses.logitcrossentropy` :                                                     a Flux loss function
 
@@ -657,12 +717,12 @@ The fields of `fitted_params(mach)` are:
 using MLJ
 using Flux
 LaplaceRegressor = @load LaplaceRegressor pkg=LaplaceRedux
-flux_model = Chain(
+model = Chain(
     Dense(4, 10, relu),
     Dense(10, 10, relu),
     Dense(10, 1)
 )
-model = LaplaceRegressor(flux_model=flux_model)
+model = LaplaceRegressor(model=model)
 
 X, y = make_regression(100, 4; noise=0.5, sparse=0.2, outliers=0.1)
 mach = machine(model, X, y) |> fit!
