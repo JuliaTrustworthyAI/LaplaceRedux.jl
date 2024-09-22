@@ -294,14 +294,24 @@ loss_history = []
 for epoch in 1:m.epochs
     loss_per_epoch = 0.0  # Initialize loss for the current epoch
 
-    # Training function for each batch in the data loader
-    Flux.train!(m.flux_model, data_loader, opt_state) do model, X_batch, y_batch
-        # Forward pass and compute the loss
-        loss = m.flux_loss(model(X_batch), y_batch)
+    for (X_batch, y_batch) in data_loader
+        # Compute gradients explicitly
+        grads = gradient(m.flux_model) do model
+            # Recompute predictions inside gradient context
+            y_pred = model(X_batch)
+            m.flux_loss(y_pred, y_batch)
+        end
+
+        # Update the model parameters using the computed gradients
+        Flux.Optimise.update!(opt_state, Flux.params(m.flux_model), grads)
+
+        # Compute the loss for this batch
+        loss = m.flux_loss(m.flux_model(X_batch), y_batch)
         
         # Accumulate the loss for the current epoch
         loss_per_epoch += sum(loss)
     end
+
     
     # Record loss history for analysis
     push!(loss_history, loss_per_epoch)
