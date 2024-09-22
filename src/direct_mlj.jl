@@ -107,6 +107,48 @@ function MMI.fit(m::LaplaceRegressor, verbosity, X, y)
     return (fitresult, cache, report)
 end
 
+
+@doc """ 
+
+ function  MMI.fitted_params(model::LaplaceRegressor, fitresult)
+ 
+ 
+ This function extracts the fitted parameters from a `LaplaceRegressor` model.
+
+ # Arguments
+ - `model::LaplaceRegressor`: The Laplace regression model.
+ - `fitresult`:  the Laplace approximation (`la`).
+
+ # Returns
+ A named tuple containing:
+ - `μ`: The mean of the posterior distribution.
+ - `H`: The Hessian of the posterior distribution.
+ - `P`: The precision matrix of the posterior distribution.
+ - `Σ`: The covariance matrix of the posterior distribution.
+ - `n_data`: The number of data points.
+ - `n_params`: The number of parameters.
+ - `n_out`: The number of outputs.
+ - `loss`: The loss value of the posterior distribution.
+
+"""
+function MMI.fitted_params(model::LaplaceRegressor, fitresult)
+    la = fitresult
+    posterior = la.posterior
+    return (
+        μ = posterior.μ,
+        H = posterior.H,
+        P = posterior.P,
+        Σ = posterior.Σ,
+        n_data = posterior.n_data,
+        n_params = posterior.n_params,
+        n_out = posterior.n_out,
+        loss = posterior.loss
+    )
+end
+
+
+
+
 @doc """ 
 function MMI.predict(m::LaplaceRegressor, fitresult, Xnew)
 
@@ -234,6 +276,53 @@ function MMI.fit(m::LaplaceClassifier, verbosity, X, y)
     return ((la, decode), cache, report)
 end
 
+
+
+
+
+
+@doc """ 
+
+ function  MMI.fitted_params(model::LaplaceClassifier, fitresult)
+ 
+ 
+ This function extracts the fitted parameters from a `LaplaceClassifier` model.
+
+ # Arguments
+ - `model::LaplaceClassifier`: The Laplace classifier model.
+ - `fitresult`: A tuple containing the Laplace approximation (`la`) and a decode function.
+
+ # Returns
+ A named tuple containing:
+ - `μ`: The mean of the posterior distribution.
+ - `H`: The Hessian of the posterior distribution.
+ - `P`: The precision matrix of the posterior distribution.
+ - `Σ`: The covariance matrix of the posterior distribution.
+ - `n_data`: The number of data points.
+ - `n_params`: The number of parameters.
+ - `n_out`: The number of outputs.
+ - `loss`: The loss value of the posterior distribution.
+
+"""
+function MMI.fitted_params(model::LaplaceClassifier, fitresult)
+    la, decode = fitresult
+    posterior = la.posterior
+    return (
+        μ = posterior.μ,
+        H = posterior.H,
+        P = posterior.P,
+        Σ = posterior.Σ,
+        n_data = posterior.n_data,
+        n_params = posterior.n_params,
+        n_out = posterior.n_out,
+        loss = posterior.loss
+    )
+end
+
+
+
+
+
 @doc """ 
 Predicts the class probabilities for new data using a Laplace classifier.
 
@@ -350,8 +439,21 @@ Train the machine using `fit!(mach, rows=...)`.
 
 The fields of `fitted_params(mach)` are:
 
-- `raw_tree`: the raw `Node`, `Leaf` or `Root` object returned by the core DecisionTree.jl
-  algorithm
+ - `μ`: The mean of the posterior distribution.
+
+ - `H`: The Hessian of the posterior distribution.
+
+ - `P`: The precision matrix of the posterior distribution.
+
+ - `Σ`: The covariance matrix of the posterior distribution.
+
+ - `n_data`: The number of data points.
+
+ - `n_params`: The number of parameters.
+
+ - `n_out`: The number of outputs.
+
+ - `loss`: The loss value of the posterior distribution.
 
 # Accessor functions
 
@@ -461,8 +563,21 @@ Train the machine using `fit!(mach, rows=...)`.
 
 The fields of `fitted_params(mach)` are:
 
-- `raw_tree`: the raw `Node`, `Leaf` or `Root` object returned by the core DecisionTree.jl
-  algorithm
+ - `μ`: The mean of the posterior distribution.
+
+ - `H`: The Hessian of the posterior distribution.
+
+ - `P`: The precision matrix of the posterior distribution.
+
+ - `Σ`: The covariance matrix of the posterior distribution.
+
+ - `n_data`: The number of data points.
+
+ - `n_params`: The number of parameters.
+
+ - `n_out`: The number of outputs.
+ 
+ - `loss`: The loss value of the posterior distribution.
 
 
 # Accessor functions
