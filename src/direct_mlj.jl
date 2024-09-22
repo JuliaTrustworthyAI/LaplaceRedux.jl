@@ -1,3 +1,4 @@
+module MLJLaplaceRedux
 using Flux
 using Random
 using Tables
@@ -66,11 +67,11 @@ Fit a LaplaceRegressor model using the provided features and target values.
 # Returns
 - `fitresult`: The fitted Laplace model.
 - `cache`: Currently unused, returns `nothing`.
-- `report`: A tuple containing the status and message of the fitting process.
+- `report`: A tuple containing the loss history of the fitting process.
 
 # Description
 This function performs the following steps:
-1. Converts the input features `X` to a matrix and transposes it.
+1. If X is a Table: converts the input features `X` to a matrix and transposes it.
 2. Reshapes the target values `y` to shape (1,:).
 3. Creates a data loader for batching the data.
 4. Sets up the optimizer state using the Adam optimizer.
@@ -78,7 +79,7 @@ This function performs the following steps:
 6. Initializes a Laplace model with the trained Flux model and specified parameters.
 7. Fits the Laplace model using the data loader.
 8. Optimizes the prior of the Laplace model.
-9. Returns the fitted Laplace model, a cache (currently `nothing`), and a report indicating success.
+9. Returns the fitted Laplace model, a cache (currently `nothing`), and a report listing training related statistics.
 """
 function MMI.fit(m::LaplaceRegressor, verbosity, X, y)
 
@@ -95,6 +96,7 @@ function MMI.fit(m::LaplaceRegressor, verbosity, X, y)
     data_loader = Flux.DataLoader((X, y); batchsize=m.batch_size)
     opt_state = Flux.setup(m.optimiser, m.model)
     loss_history=[]
+    push!(loss_history, m.flux_loss(m.model(X), y ))
 
     for epoch in 1:(m.epochs)
 
@@ -148,7 +150,7 @@ function MMI.fit(m::LaplaceRegressor, verbosity, X, y)
     optimize_prior!(la; verbose=false, n_steps=m.fit_prior_nsteps)
 
     fitresult = la
-    report = (status="success", loss_history = loss_history)
+    report = (loss_history = loss_history,)
     cache = nothing
     return (fitresult, cache, report)
 end
@@ -304,11 +306,7 @@ end
  - A tuple containing:
    - `(la, decode)`: The fitted Laplace model and the decode function for the target labels.
    - `cache`: A placeholder for any cached data (currently `nothing`).
-   - `report`: A report dictionary containing the status and message of the fitting process.
- 
- Notes:
- - The function uses the Flux library for neural network training and the LaplaceRedux library for fitting the Laplace approximation.
- - The `optimize_prior!` function is called to optimize the prior parameters of the Laplace model.
+   - `report`: A NamedTuple containing  statistics related to the fitting process.
 
 """
 function MMI.fit(m::LaplaceClassifier, verbosity, X, y)
@@ -388,7 +386,7 @@ function MMI.fit(m::LaplaceClassifier, verbosity, X, y)
         LaplaceRedux.fit!(la, data_loader)
         optimize_prior!(la; verbose=false, n_steps=m.fit_prior_nsteps)
 
-        report = (status="success", loss_history = loss_history)
+        report = (loss_history = loss_history,)
         cache = nothing
         return ((la, decode), cache, report)
 end
@@ -545,9 +543,13 @@ $(MMI.doc_header(LaplaceClassifier))
 
 # Training data
 
-In MLJ or MLJBase, bind an instance `model` to data with
+In MLJ or MLJBase, given a dataset X,y and a Flux Chain adapt to the dataset, pass the chain to the model
 
-    mach = machine(model, X, y)
+laplace_model = LaplaceClassifier(model = Flux_Chain,kwargs...)
+
+then bind an instance `laplace_model` to data with
+
+    mach = machine(laplace_model, X, y)
 
 where
 
@@ -601,6 +603,8 @@ Train the machine using `fit!(mach, rows=...)`.
 - `predict_mode(mach, Xnew)`: instead return the mode of each
   prediction above.
 
+- `training_losses(mach)`: return the loss history from report
+
 
 # Fitted parameters
 
@@ -621,6 +625,14 @@ The fields of `fitted_params(mach)` are:
  - `n_out`: The number of outputs.
 
  - `loss`: The loss value of the posterior distribution.
+
+
+
+ # Report
+
+The fields of `report(mach)` are:
+
+- `loss_history`: an array containing the total loss per epoch.
 
 # Accessor functions
 
@@ -652,9 +664,9 @@ Xnew = (sepal_length = [6.4, 7.2, 7.4],
         petal_width = [2.1, 1.6, 1.9],)
 yhat = predict(mach, Xnew) # probabilistic predictions
 predict_mode(mach, Xnew)   # point predictions
+training_losses(mach)      # loss history per epoch
 pdf.(yhat, "virginica")    # probabilities for the "verginica" class
-
-julia> tree = fitted_params(mach)
+fitted_params(mach)        # NamedTuple with the fitted params of Laplace
 
 ```
 
@@ -670,10 +682,13 @@ $(MMI.doc_header(LaplaceRegressor))
 
 # Training data
 
-In MLJ or MLJBase, bind an instance `model` to data with
+In MLJ or MLJBase, given a dataset X,y and a Flux Chain adapt to the dataset, pass the chain to the model
 
-    mach = machine(model, X, y)
+laplace_model = LaplaceRegressor(model = Flux_Chain,kwargs...)
 
+then bind an instance `laplace_model` to data with
+
+    mach = machine(laplace_model, X, y)
 where
 
 - `X`: any table of input features (eg, a `DataFrame`) whose columns
@@ -689,7 +704,7 @@ Train the machine using `fit!(mach, rows=...)`.
 
 # Hyperparameters (format: name-type-default value-restrictions)
 
-- `model::Flux.Chain = nothing`:                                                               a Flux model provided by the user and compatible with the dataset.
+- `model::Flux.Chain = nothing`:                                                                    a Flux model provided by the user and compatible with the dataset.
 
 - `flux_loss = Flux.Losses.logitcrossentropy` :                                                     a Flux loss function
 
@@ -725,6 +740,8 @@ Train the machine using `fit!(mach, rows=...)`.
 - `predict_mode(mach, Xnew)`: instead return the mode of each
   prediction above.
 
+- `training_losses(mach)`: return the loss history from report
+
 
 # Fitted parameters
 
@@ -745,6 +762,15 @@ The fields of `fitted_params(mach)` are:
  - `n_out`: The number of outputs.
  
  - `loss`: The loss value of the posterior distribution.
+
+
+# Report
+
+The fields of `report(mach)` are:
+
+- `loss_history`: an array containing the total loss per epoch.
+
+
 
 
 # Accessor functions
@@ -770,15 +796,14 @@ mach = machine(model, X, y) |> fit!
 Xnew, _ = make_regression(3, 4; rng=123)
 yhat = predict(mach, Xnew) # probabilistic predictions
 predict_mode(mach, Xnew)   # point predictions
+training_losses(mach)      # loss history per epoch
+fitted_params(mach)        # NamedTuple with the fitted params of Laplace
 
-julia> tree = fitted_params(mach)
-
-
-
-feature_importances(mach)
 ```
 
 See also [LaplaceRedux.jl](https://github.com/JuliaTrustworthyAI/LaplaceRedux.jl).
 
 """
 LaplaceRegressor
+
+end # module
