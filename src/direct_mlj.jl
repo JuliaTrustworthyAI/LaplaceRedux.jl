@@ -44,6 +44,14 @@ MLJBase.@mlj_model mutable struct LaplaceRegressor <: MLJFlux.MLJFluxProbabilist
     fit_prior_nsteps::Int = 100::(_ > 0)
 end
 
+
+# for fit:
+MMI.reformat(::LaplaceRegressor, X, y) = (MLJBase.matrix(X) |> permutedims,reshape(y, 1, :))
+
+MMI.reformat(::LaplaceRegressor, X) = (MLJBase.matrix(X) |> permutedims,)
+
+
+
 @doc """
     MMI.fit(m::LaplaceRegressor, verbosity, X, y)
 
@@ -74,8 +82,16 @@ This function performs the following steps:
 """
 function MMI.fit(m::LaplaceRegressor, verbosity, X, y)
 
-    X = MLJBase.matrix(X) |> permutedims
+    #X = MLJBase.matrix(X) |> permutedims
+    #y = reshape(y, 1, :)
+
+    if Tables.istable(X)
+        X = Tables.matrix(X)|>permutedims
+    end
+
+    # Reshape y if necessary
     y = reshape(y, 1, :)
+
     data_loader = Flux.DataLoader((X, y); batchsize=m.batch_size)
     opt_state = Flux.setup(m.optimiser, m.model)
     loss_history=[]
@@ -216,7 +232,10 @@ function MMI.predict(m::LaplaceRegressor, fitresult, Xnew)
 Finally, it creates Normal distributions from these means and variances and returns them as an array.
 """
 function MMI.predict(m::LaplaceRegressor, fitresult, Xnew)
-    Xnew = MLJBase.matrix(Xnew) |> permutedims
+    #Xnew = MLJBase.matrix(Xnew) |> permutedims
+    if Tables.istable(Xnew)
+        Xnew = Tables.matrix(Xnew)|>permutedims
+    end
     la = fitresult
     yhat = LaplaceRedux.predict(la, Xnew; ret_distr=false)
     # Extract mean and variance matrices
@@ -266,6 +285,7 @@ MLJBase.@mlj_model mutable struct LaplaceClassifier <: MLJFlux.MLJFluxProbabilis
     link_approx::Symbol = :probit::(_ in (:probit, :plugin))
 end
 
+
 @doc """ 
 
  function MMI.fit(m::LaplaceClassifier, verbosity, X, y)
@@ -292,75 +312,85 @@ end
 
 """
 function MMI.fit(m::LaplaceClassifier, verbosity, X, y)
-    X = MLJBase.matrix(X) |> permutedims
-# Store the first label as decode function
-decode = y[1]
-    
-# Convert labels to integer format starting from 0 for one-hot encoding
-y_plain = MLJBase.int(y) .- 1
+    #X = MLJBase.matrix(X) |> permutedims
 
-# One-hot encoding of labels
-unique_labels = unique(y_plain) # Ensure unique labels for one-hot encoding
-y_onehot = Flux.onehotbatch(y_plain, unique_labels) # One-hot encoding
+    if Tables.istable(X)
+        X = Tables.matrix(X)|>permutedims
+    end
 
-# Create a data loader for batching the data
-data_loader = Flux.DataLoader((X, y_onehot); batchsize=m.batch_size)
 
-# Set up the optimizer for the model
-opt_state = Flux.setup(m.optimiser, m.model)
-loss_history = []
+    # Store the first label as decode function
+    decode = y[1]
+        
+    # Convert labels to integer format starting from 0 for one-hot encoding
+    y_plain = MLJBase.int(y) .- 1
 
-# Training loop for the specified number of epochs
-for epoch in 1:m.epochs
-    loss_per_epoch = 0.0  # Initialize loss for the current epoch
+    # One-hot encoding of labels
+    unique_labels = unique(y_plain) # Ensure unique labels for one-hot encoding
+    y_onehot = Flux.onehotbatch(y_plain, unique_labels) # One-hot encoding
 
-    for (X_batch, y_batch) in data_loader
-        # Compute gradients explicitly
-        grads = gradient(m.model) do model
-            # Recompute predictions inside gradient context
-            y_pred = model(X_batch)
-            m.flux_loss(y_pred, y_batch)
+    # Create a data loader for batching the data
+    data_loader = Flux.DataLoader((X, y_onehot); batchsize=m.batch_size)
+
+    # Set up the optimizer for the model
+    opt_state = Flux.setup(m.optimiser, m.model)
+    loss_history = []
+
+    # Training loop for the specified number of epochs
+    for epoch in 1:(m.epochs)
+
+        loss_per_epoch= 0.0
+
+
+        for (X_batch, y_batch) in data_loader
+            # Forward pass: compute predictions
+            y_pred = m.model(X_batch)
+
+            # Compute loss
+            loss = m.flux_loss(y_pred, y_batch)
+
+            # Compute gradients explicitly
+            grads = gradient(m.model) do model
+                # Recompute predictions inside gradient context
+                y_pred = model(X_batch)
+                m.flux_loss(y_pred, y_batch)
+            end
+            
+            # Update parameters using the optimizer and computed gradients
+            Flux.Optimise.update!(opt_state ,m.model , grads[1])
+
+            # Accumulate the loss for this batch
+            loss_per_epoch += sum(loss)  # Summing the batch loss
+            
         end
 
-        # Update the model parameters using the computed gradients
-        Flux.Optimise.update!(opt_state, Flux.params(m.model), grads)
+        push!(loss_history,loss_per_epoch )
 
-        # Compute the loss for this batch
-        loss = m.flux_loss(m.model(X_batch), y_batch)
-        
-        # Accumulate the loss for the current epoch
-        loss_per_epoch += sum(loss)
+        # Print loss every 100 epochs if verbosity is 1 or more
+        if verbosity >= 1 && epoch % 100 == 0
+            println("Epoch $epoch: Loss: $loss_per_epoch ")
+        end
     end
 
-    
-    # Record loss history for analysis
-    push!(loss_history, loss_per_epoch)
+        la = LaplaceRedux.Laplace(
+            m.model;
+            likelihood=:classification,
+            subset_of_weights=m.subset_of_weights,
+            subnetwork_indices=m.subnetwork_indices,
+            hessian_structure=m.hessian_structure,
+            backend=m.backend,
+            σ=m.σ,
+            μ₀=m.μ₀,
+            P₀=m.P₀,
+        )
 
-    # Verbosity: print loss every 100 epochs
-    if verbosity >= 1 && epoch % 100 == 0
-        println("Epoch $epoch: Loss: $loss_per_epoch")
-    end
-end
+        # fit the Laplace model:
+        LaplaceRedux.fit!(la, data_loader)
+        optimize_prior!(la; verbose=false, n_steps=m.fit_prior_nsteps)
 
-    la = LaplaceRedux.Laplace(
-        m.model;
-        likelihood=:classification,
-        subset_of_weights=m.subset_of_weights,
-        subnetwork_indices=m.subnetwork_indices,
-        hessian_structure=m.hessian_structure,
-        backend=m.backend,
-        σ=m.σ,
-        μ₀=m.μ₀,
-        P₀=m.P₀,
-    )
-
-    # fit the Laplace model:
-    LaplaceRedux.fit!(la, data_loader)
-    optimize_prior!(la; verbose=false, n_steps=m.fit_prior_nsteps)
-
-    report = (status="success", loss_history = loss_history)
-    cache = nothing
-    return ((la, decode), cache, report)
+        report = (status="success", loss_history = loss_history)
+        cache = nothing
+        return ((la, decode), cache, report)
 end
 
 
@@ -439,8 +469,11 @@ The function transforms the new data `Xnew` into a matrix, applies the LaplaceRe
 prediction function, and then returns the predictions as a `MLJBase.UnivariateFinite` object.
 """
 function MMI.predict(m::LaplaceClassifier, (fitresult, decode), Xnew)
+    if Tables.istable(Xnew)
+        Xnew = Tables.matrix(Xnew)|>permutedims
+    end
     la = fitresult
-    Xnew = MLJBase.matrix(Xnew) |> permutedims
+    #Xnew = MLJBase.matrix(Xnew) |> permutedims
     predictions =
         LaplaceRedux.predict(la, Xnew; link_approx=m.link_approx, ret_distr=false) |>
         permutedims
@@ -448,6 +481,13 @@ function MMI.predict(m::LaplaceClassifier, (fitresult, decode), Xnew)
     return MLJBase.UnivariateFinite(MLJBase.classes(decode), predictions)
 end
 
+
+
+
+# for fit:
+MMI.reformat(::LaplaceClassifier, X, y) = (MLJBase.matrix(X) |> permutedims,y)
+
+MMI.reformat(::LaplaceClassifier, X) = (MLJBase.matrix(X) |> permutedims,)
 
 MMI.metadata_pkg(
   LaplaceRegressor,
