@@ -1,4 +1,4 @@
-module MLJLaplaceRedux
+#module MLJLaplaceRedux
 using Flux
 using Random
 using Tables
@@ -304,7 +304,7 @@ end
  
  Returns:
  - A tuple containing:
-   - `(la, decode)`: The fitted Laplace model and the decode function for the target labels.
+   - `(la, y[1])`: The fitted Laplace model and the decode function for the target labels.
    - `cache`: A placeholder for any cached data (currently `nothing`).
    - `report`: A NamedTuple containing  statistics related to the fitting process.
 
@@ -318,7 +318,7 @@ function MMI.fit(m::LaplaceClassifier, verbosity, X, y)
 
 
     # Store the first label as decode function
-    decode = y[1]
+    #decode = y[1]
         
     # Convert labels to integer format starting from 0 for one-hot encoding
     y_plain = MLJBase.int(y) .- 1
@@ -388,7 +388,7 @@ function MMI.fit(m::LaplaceClassifier, verbosity, X, y)
 
         report = (loss_history = loss_history,)
         cache = nothing
-        return ((la, decode), cache, report)
+        return ((la, y[1]), cache, report)
 end
 
 
@@ -490,7 +490,7 @@ MMI.reformat(::LaplaceClassifier, X) = (MLJBase.matrix(X) |> permutedims,)
 MMI.metadata_pkg(
   LaplaceRegressor,
   name="LaplaceRedux",
-  package_uuid="??????",
+  package_uuid="c52c1a26-f7c5-402b-80be-ba1e638ad478",
   package_url="https://github.com/JuliaTrustworthyAI/LaplaceRedux.jl",
   is_pure_julia=true,
   is_wrapper=true,
@@ -500,7 +500,7 @@ MMI.metadata_pkg(
 MMI.metadata_pkg(
   LaplaceClassifier,
   name="LaplaceRedux",
-  package_uuid="dontknow",
+  package_uuid="c52c1a26-f7c5-402b-80be-ba1e638ad478",
   package_url="https://github.com/JuliaTrustworthyAI/LaplaceRedux.jl",
   is_pure_julia=true,
   is_wrapper=true,
@@ -806,4 +806,4 @@ See also [LaplaceRedux.jl](https://github.com/JuliaTrustworthyAI/LaplaceRedux.jl
 """
 LaplaceRegressor
 
-end # module
+#end # module
