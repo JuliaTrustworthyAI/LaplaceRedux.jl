@@ -9,7 +9,7 @@ import MLJModelInterface as MMI
 using Distributions: Normal
 
 """
-    MLJBase.@mlj_model mutable struct LaplaceRegressor <: MLJFlux.MLJFluxProbabilistic
+    MLJBase.@mlj_model mutable struct LaplaceRegressor <: MLJBase.Probabilistic
 
 A mutable struct representing a Laplace regression model.
 It uses Laplace approximation to estimate the posterior distribution of the weights of a neural network. 
@@ -28,8 +28,12 @@ It has the following Hyperparameters:
 - `P₀`: the covariance matrix of the prior distribution.
 - `fit_prior_nsteps`: the number of steps used to fit the priors.
 """
-MLJBase.@mlj_model mutable struct LaplaceRegressor <: MLJFlux.MLJFluxProbabilistic
-    model::Flux.Chain = nothing
+MLJBase.@mlj_model mutable struct LaplaceRegressor <: MLJBase.Probabilistic
+    model::Flux.Chain =  Chain(
+        Dense(4, 10, relu),
+        Dense(10, 10, relu),
+        Dense(10, 1)
+    )
     flux_loss = Flux.Losses.mse
     optimiser = Adam()
     epochs::Integer = 1000::(_ > 0)
@@ -110,7 +114,7 @@ function MMI.fit(m::LaplaceRegressor, verbosity, X, y)
             # Compute loss
             loss = m.flux_loss(y_pred, y_batch)
 
-            # Compute gradients explicitly
+            # Compute gradients 
             grads = gradient(m.model) do model
                 # Recompute predictions inside gradient context
                 y_pred = model(X_batch)
@@ -151,9 +155,14 @@ function MMI.fit(m::LaplaceRegressor, verbosity, X, y)
 
     fitresult = la
     report = (loss_history = loss_history,)
-    cache = nothing
-    return (fitresult, cache, report)
+    cache = (deepcopy(m),opt_state, loss_history)
+    return fitresult, cache, report
 end
+
+
+
+
+
 
 
 @doc """ 
@@ -248,7 +257,7 @@ function MMI.predict(m::LaplaceRegressor, fitresult, Xnew)
 end
 
 """
-    MLJBase.@mlj_model mutable struct LaplaceClassifier <: MLJFlux.MLJFluxProbabilistic
+    MLJBase.@mlj_model mutable struct LaplaceClassifier <: MLJBase.Probabilistic
 
 A mutable struct representing a Laplace Classification model.
 It uses Laplace approximation to estimate the posterior distribution of the weights of a neural network. 
@@ -269,7 +278,7 @@ The model also has the following parameters:
 - `link_approx`: the link approximation to use, either `:probit` or `:plugin`.
 - `fit_prior_nsteps`: the number of steps used to fit the priors.
 """
-MLJBase.@mlj_model mutable struct LaplaceClassifier <: MLJFlux.MLJFluxProbabilistic
+MLJBase.@mlj_model mutable struct LaplaceClassifier <: MLJBase.Probabilistic
     model::Flux.Chain = nothing
     flux_loss = Flux.Losses.logitcrossentropy
     optimiser = Adam()
@@ -387,7 +396,7 @@ function MMI.fit(m::LaplaceClassifier, verbosity, X, y)
         optimize_prior!(la; verbose=false, n_steps=m.fit_prior_nsteps)
 
         report = (loss_history = loss_history,)
-        cache = nothing
+        cache = (deepcopy(m),opt_state,loss_history)
         return ((la, y[1]), cache, report)
 end
 
