@@ -1,4 +1,5 @@
 #module MLJLaplaceRedux
+using Optimisers: Optimisers
 using Flux
 using Random
 using Tables
@@ -8,34 +9,11 @@ using MLJBase
 import MLJModelInterface as MMI
 using Distributions: Normal
 
-"""
-    MLJBase.@mlj_model mutable struct LaplaceRegressor <: MLJBase.Probabilistic
 
-A mutable struct representing a Laplace regression model.
-It uses Laplace approximation to estimate the posterior distribution of the weights of a neural network. 
-It has the following Hyperparameters:
-- `model`: A Flux model provided by the user and compatible with the dataset.
-- `flux_loss` : a Flux loss function
-- `optimiser` = a Flux optimiser
-- `epochs`: The number of training epochs.
-- `batch_size`: The batch size.
-- `subset_of_weights`: the subset of weights to use, either `:all`, `:last_layer`, or `:subnetwork`.
-- `subnetwork_indices`: the indices of the subnetworks.
-- `hessian_structure`: the structure of the Hessian matrix, either `:full` or `:diagonal`.
-- `backend`: the backend to use, either `:GGN` or `:EmpiricalFisher`.
-- `σ`: the standard deviation of the prior distribution.
-- `μ₀`: the mean of the prior distribution.
-- `P₀`: the covariance matrix of the prior distribution.
-- `fit_prior_nsteps`: the number of steps used to fit the priors.
-"""
 MLJBase.@mlj_model mutable struct LaplaceRegressor <: MLJBase.Probabilistic
-    model::Flux.Chain =  Chain(
-        Dense(4, 10, relu),
-        Dense(10, 10, relu),
-        Dense(10, 1)
-    )
+    model::Union{Flux.Chain,Nothing} =  nothing
     flux_loss = Flux.Losses.mse
-    optimiser = Adam()
+    optimiser = Optimisers.Adam()
     epochs::Integer = 1000::(_ > 0)
     batch_size::Integer = 32::(_ > 0)
     subset_of_weights::Symbol = :all::(_ in (:all, :last_layer, :subnetwork))
@@ -52,7 +30,7 @@ end
 
 # for fit:
 MMI.reformat(::LaplaceRegressor, X, y) = (MLJBase.matrix(X) |> permutedims,reshape(y, 1, :))
-
+#for predict:
 MMI.reformat(::LaplaceRegressor, X) = (MLJBase.matrix(X) |> permutedims,)
 
 
@@ -96,11 +74,13 @@ function MMI.fit(m::LaplaceRegressor, verbosity, X, y)
 
     # Reshape y if necessary
     y = reshape(y, 1, :)
+    # Make a copy of the model because Flux does not allow to mutate hyperparameters
+    copied_model = deepcopy(m.model)
 
     data_loader = Flux.DataLoader((X, y); batchsize=m.batch_size)
-    opt_state = Flux.setup(m.optimiser, m.model)
+    state_tree = Optimisers.setup(m.optimiser, copied_model)
     loss_history=[]
-    push!(loss_history, m.flux_loss(m.model(X), y ))
+    push!(loss_history, m.flux_loss(copied_model(X), y ))
 
     for epoch in 1:(m.epochs)
 
@@ -109,20 +89,20 @@ function MMI.fit(m::LaplaceRegressor, verbosity, X, y)
 
         for (X_batch, y_batch) in data_loader
             # Forward pass: compute predictions
-            y_pred = m.model(X_batch)
+            y_pred = copied_model(X_batch)
 
             # Compute loss
             loss = m.flux_loss(y_pred, y_batch)
 
             # Compute gradients 
-            grads = gradient(m.model) do model
+            grads,_ = gradient(copied_model,X_batch) do model, X
                 # Recompute predictions inside gradient context
-                y_pred = model(X_batch)
+                y_pred = model(X)
                 m.flux_loss(y_pred, y_batch)
             end
             
             # Update parameters using the optimizer and computed gradients
-            Flux.Optimise.update!(opt_state ,m.model , grads[1])
+            state_tree, model = Optimisers.update!(state_tree ,copied_model, grads)
 
             # Accumulate the loss for this batch
             loss_per_epoch += sum(loss)  # Summing the batch loss
@@ -138,7 +118,7 @@ function MMI.fit(m::LaplaceRegressor, verbosity, X, y)
     end
 
     la = LaplaceRedux.Laplace(
-        m.model;
+        copied_model;
         likelihood=:regression,
         subset_of_weights=m.subset_of_weights,
         subnetwork_indices=m.subnetwork_indices,
@@ -155,12 +135,85 @@ function MMI.fit(m::LaplaceRegressor, verbosity, X, y)
 
     fitresult = la
     report = (loss_history = loss_history,)
-    cache = (deepcopy(m),opt_state, loss_history)
+    cache = (deepcopy(m),state_tree, loss_history)
     return fitresult, cache, report
 end
 
 
+# Define the function is_same_except
+function MMI.is_same_except(m1::LaplaceRegressor, m2::LaplaceRegressor, exceptions::Symbol...) 
+    typeof(m1) === typeof(m2) || return false
+    names = propertynames(m1)
+    propertynames(m2) === names || return false
 
+    for name in names
+        if !(name in exceptions)
+            if !_isdefined(m1, name)
+               !_isdefined(m2, name) || return false
+            elseif _isdefined(m2, name)
+                if name in deep_properties(LaplaceRegressor)
+                    _equal_to_depth_one(
+                        getproperty(m1,name),
+                        getproperty(m2, name)
+                    ) || return false
+                else
+                    (
+                        is_same_except(
+                            getproperty(m1, name),
+                            getproperty(m2, name)
+                        ) ||
+                        getproperty(m1, name) isa AbstractRNG ||
+                        getproperty(m2, name) isa AbstractRNG ||
+                        (getproperty(m1, name) isa Flux.Chain && getproperty(m2, name) isa Flux.Chain && _equal_flux_chain(getproperty(m1, name), getproperty(m2, name)))
+                    ) || return false
+                end
+            else
+                return false
+            end
+        end
+    end
+    return true
+end
+
+# Define helper functions used in is_same_except
+function _isdefined(obj, name)
+    return hasproperty(obj, name)
+end
+
+function deep_properties(::Type)
+    return Set{Symbol}()
+end
+
+function _equal_to_depth_one(a, b)
+    return a == b
+end
+
+function _equal_flux_chain(chain1::Flux.Chain, chain2::Flux.Chain)
+    if length(chain1.layers) != length(chain2.layers)
+        println("no length chain")
+        return false
+    end
+    params1 = Flux.params(chain1)
+    params2 = Flux.params(chain2)
+    if length(params1) != length(params2)
+        println("no length params")
+        return false
+    end
+    for (p1, p2) in zip(params1, params2)
+        if !isequal(p1, p2)
+            println(" params differs")
+            return false
+        end
+    end
+    for (layer1, layer2) in zip(chain1.layers, chain2.layers)
+        if typeof(layer1) != typeof(layer2)
+            println("layer differ")
+            return false
+        end
+
+    end
+    return true
+end
 
 
 
@@ -256,32 +309,11 @@ function MMI.predict(m::LaplaceRegressor, fitresult, Xnew)
     return [Normal(μ, sqrt(σ)) for (μ, σ) in zip(means, variances)]
 end
 
-"""
-    MLJBase.@mlj_model mutable struct LaplaceClassifier <: MLJBase.Probabilistic
 
-A mutable struct representing a Laplace Classification model.
-It uses Laplace approximation to estimate the posterior distribution of the weights of a neural network. 
-The model also has the following parameters:
-
-- `model`: A Flux model provided by the user and compatible with the dataset.
-- `flux_loss` : a Flux loss function
-- `optimiser` = a Flux optimiser
-- `epochs`: The number of training epochs.
-- `batch_size`: The batch size.
-- `subset_of_weights`: the subset of weights to use, either `:all`, `:last_layer`, or `:subnetwork`.
-- `subnetwork_indices`: the indices of the subnetworks.
-- `hessian_structure`: the structure of the Hessian matrix, either `:full` or `:diagonal`.
-- `backend`: the backend to use, either `:GGN` or `:EmpiricalFisher`.
-- `σ`: the standard deviation of the prior distribution.
-- `μ₀`: the mean of the prior distribution.
-- `P₀`: the covariance matrix of the prior distribution.
-- `link_approx`: the link approximation to use, either `:probit` or `:plugin`.
-- `fit_prior_nsteps`: the number of steps used to fit the priors.
-"""
 MLJBase.@mlj_model mutable struct LaplaceClassifier <: MLJBase.Probabilistic
-    model::Flux.Chain = nothing
+    model::Union{Flux.Chain,Nothing} =  nothing
     flux_loss = Flux.Losses.logitcrossentropy
-    optimiser = Adam()
+    optimiser = Optimisers.Adam()
     epochs::Integer = 1000::(_ > 0)
     batch_size::Integer = 32::(_ > 0)
     subset_of_weights::Symbol = :all::(_ in (:all, :last_layer, :subnetwork))
@@ -335,12 +367,14 @@ function MMI.fit(m::LaplaceClassifier, verbosity, X, y)
     # One-hot encoding of labels
     unique_labels = unique(y_plain) # Ensure unique labels for one-hot encoding
     y_onehot = Flux.onehotbatch(y_plain, unique_labels) # One-hot encoding
+    #copy model 
+    copied_model = deepcopy(m.model)
 
     # Create a data loader for batching the data
     data_loader = Flux.DataLoader((X, y_onehot); batchsize=m.batch_size)
 
     # Set up the optimizer for the model
-    opt_state = Flux.setup(m.optimiser, m.model)
+    state_tree = Optimisers.setup(m.optimiser, copied_model)
     loss_history = []
 
     # Training loop for the specified number of epochs
@@ -351,20 +385,20 @@ function MMI.fit(m::LaplaceClassifier, verbosity, X, y)
 
         for (X_batch, y_batch) in data_loader
             # Forward pass: compute predictions
-            y_pred = m.model(X_batch)
+            y_pred = copied_model(X_batch)
 
             # Compute loss
             loss = m.flux_loss(y_pred, y_batch)
 
-            # Compute gradients explicitly
-            grads = gradient(m.model) do model
+            # Compute gradients 
+            grads,_ = gradient(copied_model,X_batch) do model, X
                 # Recompute predictions inside gradient context
-                y_pred = model(X_batch)
+                y_pred = model(X)
                 m.flux_loss(y_pred, y_batch)
             end
             
             # Update parameters using the optimizer and computed gradients
-            Flux.Optimise.update!(opt_state ,m.model , grads[1])
+            state_tree, model = Optimisers.update!(state_tree ,copied_model, grads)
 
             # Accumulate the loss for this batch
             loss_per_epoch += sum(loss)  # Summing the batch loss
@@ -396,7 +430,7 @@ function MMI.fit(m::LaplaceClassifier, verbosity, X, y)
         optimize_prior!(la; verbose=false, n_steps=m.fit_prior_nsteps)
 
         report = (loss_history = loss_history,)
-        cache = (deepcopy(m),opt_state,loss_history)
+        cache = (deepcopy(m),state_tree,loss_history)
         return ((la, y[1]), cache, report)
 end
 
@@ -493,7 +527,7 @@ end
 
 # for fit:
 MMI.reformat(::LaplaceClassifier, X, y) = (MLJBase.matrix(X) |> permutedims,y)
-
+# for predict:
 MMI.reformat(::LaplaceClassifier, X) = (MLJBase.matrix(X) |> permutedims,)
 
 MMI.metadata_pkg(
