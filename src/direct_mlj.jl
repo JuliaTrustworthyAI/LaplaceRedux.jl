@@ -9,6 +9,23 @@ using MLJBase
 import MLJModelInterface as MMI
 using Distributions: Normal
 
+MLJBase.@mlj_model mutable struct LaplaceClassifier <: MLJBase.Probabilistic
+    model::Union{Flux.Chain,Nothing} =  nothing
+    flux_loss = Flux.Losses.logitcrossentropy
+    optimiser = Optimisers.Adam()
+    epochs::Integer = 1000::(_ > 0)
+    batch_size::Integer = 32::(_ > 0)
+    subset_of_weights::Symbol = :all::(_ in (:all, :last_layer, :subnetwork))
+    subnetwork_indices = nothing
+    hessian_structure::Union{HessianStructure,Symbol,String} =
+        :full::(_ in (:full, :diagonal))
+    backend::Symbol = :GGN::(_ in (:GGN, :EmpiricalFisher))
+    σ::Float64 = 1.0
+    μ₀::Float64 = 0.0
+    P₀::Union{AbstractMatrix,UniformScaling,Nothing} = nothing
+    fit_prior_nsteps::Int = 100::(_ > 0)
+    link_approx::Symbol = :probit::(_ in (:probit, :plugin))
+end
 
 MLJBase.@mlj_model mutable struct LaplaceRegressor <: MLJBase.Probabilistic
     model::Union{Flux.Chain,Nothing} =  nothing
@@ -27,11 +44,17 @@ MLJBase.@mlj_model mutable struct LaplaceRegressor <: MLJBase.Probabilistic
     fit_prior_nsteps::Int = 100::(_ > 0)
 end
 
+Const_Models = Union{LaplaceRegressor,LaplaceClassifier}
 
 # for fit:
-MMI.reformat(::LaplaceRegressor, X, y) = (MLJBase.matrix(X) |> permutedims,reshape(y, 1, :))
+MMI.reformat(::Const_Models, X, y) = (MLJBase.matrix(X) |> permutedims, reshape(y, 1, :))
 #for predict:
-MMI.reformat(::LaplaceRegressor, X) = (MLJBase.matrix(X) |> permutedims,)
+MMI.reformat(::Const_Models, X) = (MLJBase.matrix(X) |> permutedims,)
+
+# for fit:
+MMI.reformat(::LaplaceClassifier, X, y) = (MLJBase.matrix(X) |> permutedims,y)
+# for predict:
+#MMI.reformat(::LaplaceClassifier, X) = (MLJBase.matrix(X) |> permutedims,)
 
 
 
@@ -68,19 +91,18 @@ function MMI.fit(m::LaplaceRegressor, verbosity, X, y)
     #X = MLJBase.matrix(X) |> permutedims
     #y = reshape(y, 1, :)
 
-    if Tables.istable(X)
-        X = Tables.matrix(X)|>permutedims
-    end
+    #if Tables.istable(X)
+        #X = Tables.matrix(X)|>permutedims
+    #end
 
     # Reshape y if necessary
-    y = reshape(y, 1, :)
+    #y = reshape(y, 1, :)
     # Make a copy of the model because Flux does not allow to mutate hyperparameters
     copied_model = deepcopy(m.model)
 
     data_loader = Flux.DataLoader((X, y); batchsize=m.batch_size)
     state_tree = Optimisers.setup(m.optimiser, copied_model)
     loss_history=[]
-    push!(loss_history, m.flux_loss(copied_model(X), y ))
 
     for epoch in 1:(m.epochs)
 
@@ -95,14 +117,14 @@ function MMI.fit(m::LaplaceRegressor, verbosity, X, y)
             loss = m.flux_loss(y_pred, y_batch)
 
             # Compute gradients 
-            grads,_ = gradient(copied_model,X_batch) do model, X
+            grads,_ = gradient(copied_model,X_batch) do grad_model, X
                 # Recompute predictions inside gradient context
-                y_pred = model(X)
+                y_pred = grad_model(X)
                 m.flux_loss(y_pred, y_batch)
             end
             
             # Update parameters using the optimizer and computed gradients
-            state_tree, model = Optimisers.update!(state_tree ,copied_model, grads)
+            state_tree, copied_model = Optimisers.update!(state_tree ,copied_model, grads)
 
             # Accumulate the loss for this batch
             loss_per_epoch += sum(loss)  # Summing the batch loss
@@ -133,15 +155,126 @@ function MMI.fit(m::LaplaceRegressor, verbosity, X, y)
     LaplaceRedux.fit!(la, data_loader)
     optimize_prior!(la; verbose=false, n_steps=m.fit_prior_nsteps)
 
-    fitresult = la
+    fitresult = (la, y[1])
     report = (loss_history = loss_history,)
-    cache = (deepcopy(m),state_tree, loss_history)
+    cache = (deepcopy(m),state_tree,loss_history)
+    return fitresult, cache, report
+end
+
+function MMI.update(m::LaplaceRegressor, verbosity, old_fitresult, old_cache, X, y) 
+    println("we are in the update function")
+
+    data_loader = Flux.DataLoader((X, y); batchsize=m.batch_size)
+    old_model = old_cache[1]
+    old_state_tree = old_cache[2]
+    old_loss_history = old_cache[3]
+    old_la = old_fitresult[1]
+
+    epochs = m.epochs
+
+    if MMI.is_same_except(m, old_model,:epochs)
+
+
+        if epochs > old_model.epochs
+
+
+            for epoch in (old_model.epochs+1):(epochs)
+
+                loss_per_epoch= 0.0
+        
+        
+                for (X_batch, y_batch) in data_loader
+                    # Forward pass: compute predictions
+                    y_pred = old_la.model(X_batch)
+        
+                    # Compute loss
+                    loss = m.flux_loss(y_pred, y_batch)
+        
+                    # Compute gradients 
+                    grads,_ = gradient(old_la.model,X_batch) do grad_model, X
+                        # Recompute predictions inside gradient context
+                        y_pred = grad_model(X)
+                        m.flux_loss(y_pred, y_batch)
+                    end
+                    
+                    # Update parameters using the optimizer and computed gradients
+                    old_state_tree,old_la.model = Optimisers.update!(old_state_tree,old_la.model, grads)
+        
+                    # Accumulate the loss for this batch
+                    loss_per_epoch += sum(loss)  # Summing the batch loss
+                    
+                end
+        
+                push!(old_loss_history,loss_per_epoch )
+        
+                # Print loss every 100 epochs if verbosity is 1 or more
+                if verbosity >= 1 && epoch % 100 == 0
+                    println("Epoch $epoch: Loss: $loss_per_epoch ")
+                end
+            end
+
+        la = LaplaceRedux.Laplace(
+        old_la.model;
+        likelihood=:regression,
+        subset_of_weights=m.subset_of_weights,
+        subnetwork_indices=m.subnetwork_indices,
+        hessian_structure=m.hessian_structure,
+        backend=m.backend,
+        σ=m.σ,
+        μ₀=m.μ₀,
+        P₀=m.P₀,
+        )
+
+        # fit the Laplace model:
+        LaplaceRedux.fit!(la, data_loader)
+        optimize_prior!(la; verbose=false, n_steps=m.fit_prior_nsteps)
+
+        fitresult = (la, y[1])
+        report = (loss_history = old_loss_history,)
+        cache = (deepcopy(m),old_state_tree,old_loss_history)
+
+        else
+
+            nothing
+            
+        end
+
+    end
+
+    if  MMI.is_same_except(m, old_model,:fit_prior_nsteps,:subset_of_weights,:subnetwork_indices,:hessian_structure,:backend,:σ,:μ₀,:P₀)
+
+        println(" changing only the laplace optimization part")
+
+        la = LaplaceRedux.Laplace(
+            old_la.model;
+            likelihood=:regression,
+            subset_of_weights=m.subset_of_weights,
+            subnetwork_indices=m.subnetwork_indices,
+            hessian_structure=m.hessian_structure,
+            backend=m.backend,
+            σ=m.σ,
+            μ₀=m.μ₀,
+            P₀=m.P₀,
+            )
+    
+            # fit the Laplace model:
+            LaplaceRedux.fit!(la, data_loader)
+            optimize_prior!(la; verbose=false, n_steps=m.fit_prior_nsteps)
+    
+            fitresult = la
+            report = (loss_history = old_loss_history,)
+            cache = (deepcopy(m),old_state_tree,old_loss_history)
+
+    end
+
+
     return fitresult, cache, report
 end
 
 
 # Define the function is_same_except
-function MMI.is_same_except(m1::LaplaceRegressor, m2::LaplaceRegressor, exceptions::Symbol...) 
+function MMI.is_same_except(m1::Const_Models, m2::Const_Models, exceptions::Symbol...) 
+    println("overloaded")
     typeof(m1) === typeof(m2) || return false
     names = propertynames(m1)
     propertynames(m2) === names || return false
@@ -241,8 +374,8 @@ end
  - `loss`: The loss value of the posterior distribution.
 
 """
-function MMI.fitted_params(model::LaplaceRegressor, fitresult)
-    la = fitresult
+function MMI.fitted_params(model::Const_Models, fitresult)
+    la,decode = fitresult
     posterior = la.posterior
     return (
         μ = posterior.μ,
@@ -261,18 +394,18 @@ end
 
 
 @doc """
-    MMI.training_losses(model::LaplaceRegressor, report)
+    MMI.training_losses(model::Union{LaplaceRegressor,LaplaceClassifier}, report)
 
 Retrieve the training loss history from the given `report`.
 
 # Arguments
-- `model::LaplaceRegressor`: The model for which the training losses are being retrieved.
+- `model`: The model for which the training losses are being retrieved.
 - `report`: An object containing the training report, which includes the loss history.
 
 # Returns
 - A collection representing the loss history from the training report.
 """
-function MMI.training_losses(model::LaplaceRegressor, report)
+function MMI.training_losses(model::Const_Models, report)
     return report.loss_history
 end
 
@@ -282,11 +415,11 @@ end
 @doc """ 
 function MMI.predict(m::LaplaceRegressor, fitresult, Xnew)
 
- Predicts the response for new data using a fitted LaplaceRegressor model.
+ Predicts the response for new data using a fitted Laplace  model.
 
  # Arguments
- - `m::LaplaceRegressor`: The LaplaceRegressor model.
- - `fitresult`: The result of fitting the LaplaceRegressor model.
+ - `m::LaplaceRegressor`: The Laplace  model.
+ - `fitresult`: The result of the fitting procedure.
  - `Xnew`: The new data for which predictions are to be made.
 
  # Returns
@@ -300,7 +433,7 @@ function MMI.predict(m::LaplaceRegressor, fitresult, Xnew)
     if Tables.istable(Xnew)
         Xnew = Tables.matrix(Xnew)|>permutedims
     end
-    la = fitresult
+    la, y = fitresult
     yhat = LaplaceRedux.predict(la, Xnew; ret_distr=false)
     # Extract mean and variance matrices
     means, variances = yhat
@@ -310,23 +443,7 @@ function MMI.predict(m::LaplaceRegressor, fitresult, Xnew)
 end
 
 
-MLJBase.@mlj_model mutable struct LaplaceClassifier <: MLJBase.Probabilistic
-    model::Union{Flux.Chain,Nothing} =  nothing
-    flux_loss = Flux.Losses.logitcrossentropy
-    optimiser = Optimisers.Adam()
-    epochs::Integer = 1000::(_ > 0)
-    batch_size::Integer = 32::(_ > 0)
-    subset_of_weights::Symbol = :all::(_ in (:all, :last_layer, :subnetwork))
-    subnetwork_indices = nothing
-    hessian_structure::Union{HessianStructure,Symbol,String} =
-        :full::(_ in (:full, :diagonal))
-    backend::Symbol = :GGN::(_ in (:GGN, :EmpiricalFisher))
-    σ::Float64 = 1.0
-    μ₀::Float64 = 0.0
-    P₀::Union{AbstractMatrix,UniformScaling,Nothing} = nothing
-    fit_prior_nsteps::Int = 100::(_ > 0)
-    link_approx::Symbol = :probit::(_ in (:probit, :plugin))
-end
+
 
 
 @doc """ 
@@ -435,64 +552,7 @@ function MMI.fit(m::LaplaceClassifier, verbosity, X, y)
 end
 
 
-
-
-
-
-@doc """ 
-
- function  MMI.fitted_params(model::LaplaceClassifier, fitresult)
  
- 
- This function extracts the fitted parameters from a `LaplaceClassifier` model.
-
- # Arguments
- - `model::LaplaceClassifier`: The Laplace classifier model.
- - `fitresult`: A tuple containing the Laplace approximation (`la`) and a decode function.
-
- # Returns
- A named tuple containing:
- - `μ`: The mean of the posterior distribution.
- - `H`: The Hessian of the posterior distribution.
- - `P`: The precision matrix of the posterior distribution.
- - `Σ`: The covariance matrix of the posterior distribution.
- - `n_data`: The number of data points.
- - `n_params`: The number of parameters.
- - `n_out`: The number of outputs.
- - `loss`: The loss value of the posterior distribution.
-
-"""
-function MMI.fitted_params(model::LaplaceClassifier, fitresult)
-    la, decode = fitresult
-    posterior = la.posterior
-    return (
-        μ = posterior.μ,
-        H = posterior.H,
-        P = posterior.P,
-        Σ = posterior.Σ,
-        n_data = posterior.n_data,
-        n_params = posterior.n_params,
-        n_out = posterior.n_out,
-        loss = posterior.loss
-    )
-end
-
-
-@doc """
-    MMI.training_losses(model::LaplaceClassifier, report)
-
-Retrieve the training loss history from the given `report`.
-
-# Arguments
-- `model::LaplaceClassifier`: The model for which the training losses are being retrieved.
-- `report`: An object containing the training report, which includes the loss history.
-
-# Returns
-- A collection representing the loss history from the training report.
-"""
-function MMI.training_losses(model::LaplaceClassifier, report)
-    return report.loss_history
-end
 
 
 @doc """ 
@@ -525,10 +585,7 @@ end
 
 
 
-# for fit:
-MMI.reformat(::LaplaceClassifier, X, y) = (MLJBase.matrix(X) |> permutedims,y)
-# for predict:
-MMI.reformat(::LaplaceClassifier, X) = (MLJBase.matrix(X) |> permutedims,)
+
 
 MMI.metadata_pkg(
   LaplaceRegressor,
