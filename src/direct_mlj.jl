@@ -44,44 +44,48 @@ MLJBase.@mlj_model mutable struct LaplaceRegressor <: MLJBase.Probabilistic
     fit_prior_nsteps::Int = 100::(_ > 0)
 end
 
-Const_Models = Union{LaplaceRegressor,LaplaceClassifier}
+Laplace_Models = Union{LaplaceRegressor,LaplaceClassifier}
 
 # for fit:
-MMI.reformat(::Const_Models, X, y) = (MLJBase.matrix(X) |> permutedims, reshape(y, 1, :))
+MMI.reformat(::Laplace_Models, X, y) = (MLJBase.matrix(X) |> permutedims, reshape(y, 1, :))
 #for predict:
-MMI.reformat(::Const_Models, X) = (MLJBase.matrix(X) |> permutedims,)
+MMI.reformat(::Laplace_Models, X) = (MLJBase.matrix(X) |> permutedims,)
 
 
 
 @doc """
-    MMI.fit(m::LaplaceRegressor, verbosity, X, y)
+    MMI.fit(m::Union{LaplaceRegressor,LaplaceClassifier}, verbosity, X, y)
 
-Fit a LaplaceRegressor model using the provided features and target values.
+Fit a Laplace model using the provided features and target values.
 
 # Arguments
-- `m::LaplaceRegressor`: The LaplaceRegressor model to be fitted.
+- `m::Laplace`: The Laplace (LaplaceRegressor or LaplaceClassifier) model to be fitted.
 - `verbosity`: Verbosity level for logging.
 - `X`: Input features, expected to be in a format compatible with MLJBase.matrix.
 - `y`: Target values.
 
 # Returns
-- `fitresult`: The fitted Laplace model.
-- `cache`: Currently unused, returns `nothing`.
-- `report`: A tuple containing the loss history of the fitting process.
-
-# Description
-This function performs the following steps:
-1. If X is a Table: converts the input features `X` to a matrix and transposes it.
-2. Reshapes the target values `y` to shape (1,:).
-3. Creates a data loader for batching the data.
-4. Sets up the optimizer state using the Adam optimizer.
-5. Trains the model for a specified number of epochs.
-6. Initializes a Laplace model with the trained Flux model and specified parameters.
-7. Fits the Laplace model using the data loader.
-8. Optimizes the prior of the Laplace model.
-9. Returns the fitted Laplace model, a cache (currently `nothing`), and a report listing training related statistics.
+- `fitresult`: a tuple (la,decode) cointaing  the fitted Laplace model and y[1],the first element of the categorical y vector.
+- `cache`: a tuple containing a deepcopy of the model, the current state of the optimiser and the training loss history.
+- `report`: A Namedtuple containing the loss history of the fitting process.
 """
-function MMI.fit(m::LaplaceRegressor, verbosity, X, y)
+function MMI.fit(m::Laplace_Models, verbosity, X, y)
+
+    decode = y[1]
+
+
+    if typeof(m) == LaplaceRegressor
+        nothing
+    else
+        # Convert labels to integer format starting from 0 for one-hot encoding
+        y_plain = MLJBase.int(y[1,:]) .- 1
+
+        # One-hot encoding of labels
+        unique_labels = unique(y_plain) # Ensure unique labels for one-hot encoding
+        y = Flux.onehotbatch(y_plain, unique_labels) # One-hot encoding
+
+    end
+
     # Make a copy of the model because Flux does not allow to mutate hyperparameters
     copied_model = deepcopy(m.model)
 
@@ -136,18 +140,50 @@ function MMI.fit(m::LaplaceRegressor, verbosity, X, y)
         P₀=m.P₀,
     )
 
+    if typeof(m) == LaplaceClassifier
+        la.likelihood = :classification
+    end
+
     # fit the Laplace model:
     LaplaceRedux.fit!(la, data_loader)
     optimize_prior!(la; verbose=false, n_steps=m.fit_prior_nsteps)
 
-    fitresult = (la, y[1])
+    fitresult = (la, decode)
     report = (loss_history = loss_history,)
     cache = (deepcopy(m),state_tree,loss_history)
     return fitresult, cache, report
 end
 
-function MMI.update(m::LaplaceRegressor, verbosity, old_fitresult, old_cache, X, y) 
-    println("we are in the update function")
+@doc """
+    MMI.update(m::Union{LaplaceRegressor,LaplaceClassifier}, verbosity, X, y)
+
+Update the Laplace model using the provided new data points.
+
+# Arguments
+- `m`: The Laplace (LaplaceRegressor or LaplaceClassifier) model to be fitted.
+- `verbosity`: Verbosity level for logging.
+- `X`: New input features, expected to be in a format compatible with MLJBase.matrix.
+- `y`: New target values.
+
+# Returns
+- `fitresult`: a tuple (la,decode) cointaing  the updated fitted Laplace model and y[1],the first element of the categorical y vector.
+- `cache`: a tuple containing a deepcopy of the model, the updated current state of the optimiser and training loss history.
+- `report`: A Namedtuple containing the complete loss history of the fitting process.
+"""
+function MMI.update(m::Laplace_Models, verbosity, old_fitresult, old_cache, X, y) 
+
+
+    if typeof(m) == LaplaceRegressor
+        nothing
+    else
+        # Convert labels to integer format starting from 0 for one-hot encoding
+        y_plain = MLJBase.int(y[1,:]) .- 1
+
+        # One-hot encoding of labels
+        unique_labels = unique(y_plain) # Ensure unique labels for one-hot encoding
+        y = Flux.onehotbatch(y_plain, unique_labels) # One-hot encoding
+
+    end
 
     data_loader = Flux.DataLoader((X, y); batchsize=m.batch_size)
     old_model = old_cache[1]
@@ -209,6 +245,9 @@ function MMI.update(m::LaplaceRegressor, verbosity, old_fitresult, old_cache, X,
         μ₀=m.μ₀,
         P₀=m.P₀,
         )
+        if typeof(m) == LaplaceClassifier
+            la.likelihood = :classification
+        end
 
         # fit the Laplace model:
         LaplaceRedux.fit!(la, data_loader)
@@ -241,6 +280,9 @@ function MMI.update(m::LaplaceRegressor, verbosity, old_fitresult, old_cache, X,
             μ₀=m.μ₀,
             P₀=m.P₀,
             )
+            if typeof(m) == LaplaceClassifier
+                la.likelihood = :classification
+            end
     
             # fit the Laplace model:
             LaplaceRedux.fit!(la, data_loader)
@@ -257,8 +299,35 @@ function MMI.update(m::LaplaceRegressor, verbosity, old_fitresult, old_cache, X,
 end
 
 
-# Define the function is_same_except
-function MMI.is_same_except(m1::Const_Models, m2::Const_Models, exceptions::Symbol...) 
+@doc """
+    function MMI.is_same_except(m1::Laplace_Models, m2::Laplace_Models, exceptions::Symbol...) 
+
+If both `m1` and `m2` are of `MLJType`, return `true` if the
+following conditions all hold, and `false` otherwise:
+
+- `typeof(m1) === typeof(m2)`
+
+- `propertynames(m1) === propertynames(m2)`
+
+- with the exception of properties listed as `exceptions` or bound to
+  an `AbstractRNG`, each pair of corresponding property values is
+  either "equal" or both undefined. (If a property appears as a
+  `propertyname` but not a `fieldname`, it is deemed as always defined.)
+
+The meaining of "equal" depends on the type of the property value:
+
+- values that are themselves of `MLJType` are "equal" if they are
+  equal in the sense of `is_same_except` with no exceptions.
+
+- values that are not of `MLJType` are "equal" if they are `==`.
+
+In the special case of a "deep" property, "equal" has a different
+meaning; see [`deep_properties`](@ref)) for details.
+
+If `m1` or `m2` are not `MLJType` objects, then return `==(m1, m2)`.
+
+"""
+function MMI.is_same_except(m1::Laplace_Models, m2::Laplace_Models, exceptions::Symbol...) 
     typeof(m1) === typeof(m2) || return false
     names = propertynames(m1)
     propertynames(m2) === names || return false
@@ -354,7 +423,7 @@ end
  - `loss`: The loss value of the posterior distribution.
 
 """
-function MMI.fitted_params(model::Const_Models, fitresult)
+function MMI.fitted_params(model::Laplace_Models, fitresult)
     la, decode = fitresult
     posterior = la.posterior
     return (
@@ -385,7 +454,7 @@ Retrieve the training loss history from the given `report`.
 # Returns
 - A collection representing the loss history from the training report.
 """
-function MMI.training_losses(model::Const_Models, report)
+function MMI.training_losses(model::Laplace_Models, report)
     return report.loss_history
 end
 
@@ -403,149 +472,29 @@ function MMI.predict(m::LaplaceRegressor, fitresult, Xnew)
  - `Xnew`: The new data for which predictions are to be made.
 
  # Returns
- - An array of Normal distributions, each centered around the predicted mean and variance for the corresponding input in `Xnew`.
-
- The function first converts `Xnew` to a matrix and permutes its dimensions. It then uses the `LaplaceRedux.predict` function to obtain the predicted means and variances. 
-Finally, it creates Normal distributions from these means and variances and returns them as an array.
+    for LaplaceRegressor:
+    - An array of Normal distributions, each centered around the predicted mean and variance for the corresponding input in `Xnew`.
+    for LaplaceClassifier:
+    - `MLJBase.UnivariateFinite`: The predicted class probabilities for the new data.
 """
-function MMI.predict(m::LaplaceRegressor, fitresult, Xnew)
-    la, y = fitresult
-    yhat = LaplaceRedux.predict(la, Xnew; ret_distr=false)
-    # Extract mean and variance matrices
-    means, variances = yhat
+function MMI.predict(m::Laplace_Models, fitresult, Xnew)
+    la, decode = fitresult
+    if typeof(m)== LaplaceRegressor
+        yhat = LaplaceRedux.predict(la, Xnew; ret_distr=false)
+        # Extract mean and variance matrices
+        means, variances = yhat
 
-    # Create Normal distributions from the means and variances
-    return [Normal(μ, sqrt(σ)) for (μ, σ) in zip(means, variances)]
-end
+        # Create Normal distributions from the means and variances
+        return [Normal(μ, sqrt(σ)) for (μ, σ) in zip(means, variances)]
 
+    else
+        predictions = LaplaceRedux.predict(la, Xnew; link_approx=m.link_approx, ret_distr=false) |> permutedims
 
-
-
-
-@doc """ 
-
- function MMI.fit(m::LaplaceClassifier, verbosity, X, y)
- 
- Description:
- This function fits a LaplaceClassifier model using the provided data. It first preprocesses the input data `X` and target labels `y`, 
- then trains a neural network model using the Flux library. After training, it fits a Laplace approximation to the trained model.
- 
- Arguments:
- - `m::LaplaceClassifier`: The LaplaceClassifier model to be fitted.
- - `verbosity`: Verbosity level for logging.
- - `X`: Input data features.
- - `y`: Target labels.
- 
- Returns:
- - A tuple containing:
-   - `(la, y[1])`: The fitted Laplace model and the decode function for the target labels.
-   - `cache`: A placeholder for any cached data (currently `nothing`).
-   - `report`: A NamedTuple containing  statistics related to the fitting process.
-
-"""
-function MMI.fit(m::LaplaceClassifier, verbosity, X, y)
- 
- 
-        
-    # Convert labels to integer format starting from 0 for one-hot encoding
-    y_plain = MLJBase.int(y[1,:]) .- 1
-
-    # One-hot encoding of labels
-    unique_labels = unique(y_plain) # Ensure unique labels for one-hot encoding
-    y_onehot = Flux.onehotbatch(y_plain, unique_labels) # One-hot encoding
-    #copy model 
-    copied_model = deepcopy(m.model)
-
-    # Create a data loader for batching the data
-    data_loader = Flux.DataLoader((X, y_onehot); batchsize=m.batch_size)
-
-    # Set up the optimizer for the model
-    state_tree = Optimisers.setup(m.optimiser, copied_model)
-    loss_history = []
-
-    # Training loop for the specified number of epochs
-    for epoch in 1:(m.epochs)
-
-        loss_per_epoch= 0.0
-
-
-        for (X_batch, y_batch) in data_loader
-            # Forward pass: compute predictions
-            y_pred = copied_model(X_batch)
-
-            # Compute loss
-            loss = m.flux_loss(y_pred, y_batch)
-
-            # Compute gradients 
-            grads,_ = gradient(copied_model,X_batch) do grad_model, X
-                # Recompute predictions inside gradient context
-                y_pred = grad_model(X)
-                m.flux_loss(y_pred, y_batch)
-            end
-            
-            # Update parameters using the optimizer and computed gradients
-            state_tree, model = Optimisers.update!(state_tree ,copied_model, grads)
-
-            # Accumulate the loss for this batch
-            loss_per_epoch += sum(loss)  # Summing the batch loss
-            
-        end
-
-        push!(loss_history,loss_per_epoch )
-
-        # Print loss every 100 epochs if verbosity is 1 or more
-        if verbosity >= 1 && epoch % 100 == 0
-            println("Epoch $epoch: Loss: $loss_per_epoch ")
-        end
+        return MLJBase.UnivariateFinite(MLJBase.classes(decode), predictions)
     end
-
-        la = LaplaceRedux.Laplace(
-            m.model;
-            likelihood=:classification,
-            subset_of_weights=m.subset_of_weights,
-            subnetwork_indices=m.subnetwork_indices,
-            hessian_structure=m.hessian_structure,
-            backend=m.backend,
-            σ=m.σ,
-            μ₀=m.μ₀,
-            P₀=m.P₀,
-        )
-
-        # fit the Laplace model:
-        LaplaceRedux.fit!(la, data_loader)
-        optimize_prior!(la; verbose=false, n_steps=m.fit_prior_nsteps)
-
-        report = (loss_history = loss_history,)
-        cache = (deepcopy(m),state_tree,loss_history)
-        return ((la, y[1]), cache, report)
 end
 
 
- 
-
-
-@doc """ 
-Predicts the class probabilities for new data using a Laplace classifier.
-
- # Arguments
- - `m::LaplaceClassifier`: The Laplace classifier model.
- - `(fitresult, decode)`: A tuple containing the fitted model result and the decode function.
- - `Xnew`: The new data for which predictions are to be made.
-
- # Returns
- - `MLJBase.UnivariateFinite`: The predicted class probabilities for the new data.
-
-The function transforms the new data `Xnew` into a matrix, applies the LaplaceRedux
-prediction function, and then returns the predictions as a `MLJBase.UnivariateFinite` object.
-"""
-function MMI.predict(m::LaplaceClassifier, fitresult, Xnew)
-    la,decode = fitresult
-    predictions =
-        LaplaceRedux.predict(la, Xnew; link_approx=m.link_approx, ret_distr=false) |>
-        permutedims
-
-    return MLJBase.UnivariateFinite(MLJBase.classes(decode), predictions)
-end
 
 
 
