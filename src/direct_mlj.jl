@@ -10,7 +10,7 @@ import MLJModelInterface as MMI
 using Distributions: Normal
 
 MLJBase.@mlj_model mutable struct LaplaceClassifier <: MLJBase.Probabilistic
-    model::Union{Flux.Chain,Nothing} =  nothing
+    model::Union{Flux.Chain,Nothing} = nothing
     flux_loss = Flux.Losses.logitcrossentropy
     optimiser = Optimisers.Adam()
     epochs::Integer = 1000::(_ > 0)
@@ -28,7 +28,7 @@ MLJBase.@mlj_model mutable struct LaplaceClassifier <: MLJBase.Probabilistic
 end
 
 MLJBase.@mlj_model mutable struct LaplaceRegressor <: MLJBase.Probabilistic
-    model::Union{Flux.Chain,Nothing} =  nothing
+    model::Union{Flux.Chain,Nothing} = nothing
     flux_loss = Flux.Losses.mse
     optimiser = Optimisers.Adam()
     epochs::Integer = 1000::(_ > 0)
@@ -51,8 +51,6 @@ MMI.reformat(::Laplace_Models, X, y) = (MLJBase.matrix(X) |> permutedims, reshap
 #for predict:
 MMI.reformat(::Laplace_Models, X) = (MLJBase.matrix(X) |> permutedims,)
 
-
-
 @doc """
     MMI.fit(m::Union{LaplaceRegressor,LaplaceClassifier}, verbosity, X, y)
 
@@ -70,20 +68,17 @@ Fit a Laplace model using the provided features and target values.
 - `report`: A Namedtuple containing the loss history of the fitting process.
 """
 function MMI.fit(m::Laplace_Models, verbosity, X, y)
-
     decode = y[1]
-
 
     if typeof(m) == LaplaceRegressor
         nothing
     else
         # Convert labels to integer format starting from 0 for one-hot encoding
-        y_plain = MLJBase.int(y[1,:]) .- 1
+        y_plain = MLJBase.int(y[1, :]) .- 1
 
         # One-hot encoding of labels
         unique_labels = unique(y_plain) # Ensure unique labels for one-hot encoding
         y = Flux.onehotbatch(y_plain, unique_labels) # One-hot encoding
-
     end
 
     # Make a copy of the model because Flux does not allow to mutate hyperparameters
@@ -91,12 +86,10 @@ function MMI.fit(m::Laplace_Models, verbosity, X, y)
 
     data_loader = Flux.DataLoader((X, y); batchsize=m.batch_size)
     state_tree = Optimisers.setup(m.optimiser, copied_model)
-    loss_history=[]
+    loss_history = []
 
     for epoch in 1:(m.epochs)
-
-        loss_per_epoch= 0.0
-
+        loss_per_epoch = 0.0
 
         for (X_batch, y_batch) in data_loader
             # Forward pass: compute predictions
@@ -106,21 +99,20 @@ function MMI.fit(m::Laplace_Models, verbosity, X, y)
             loss = m.flux_loss(y_pred, y_batch)
 
             # Compute gradients 
-            grads,_ = gradient(copied_model,X_batch) do grad_model, X
+            grads, _ = gradient(copied_model, X_batch) do grad_model, X
                 # Recompute predictions inside gradient context
                 y_pred = grad_model(X)
                 m.flux_loss(y_pred, y_batch)
             end
-            
+
             # Update parameters using the optimizer and computed gradients
-            state_tree, copied_model = Optimisers.update!(state_tree ,copied_model, grads)
+            state_tree, copied_model = Optimisers.update!(state_tree, copied_model, grads)
 
             # Accumulate the loss for this batch
             loss_per_epoch += sum(loss)  # Summing the batch loss
-            
         end
 
-        push!(loss_history,loss_per_epoch )
+        push!(loss_history, loss_per_epoch)
 
         # Print loss every 100 epochs if verbosity is 1 or more
         if verbosity >= 1 && epoch % 100 == 0
@@ -149,8 +141,8 @@ function MMI.fit(m::Laplace_Models, verbosity, X, y)
     optimize_prior!(la; verbose=false, n_steps=m.fit_prior_nsteps)
 
     fitresult = (la, decode)
-    report = (loss_history = loss_history,)
-    cache = (deepcopy(m),state_tree,loss_history)
+    report = (loss_history=loss_history,)
+    cache = (deepcopy(m), state_tree, loss_history)
     return fitresult, cache, report
 end
 
@@ -170,19 +162,16 @@ Update the Laplace model using the provided new data points.
 - `cache`: a tuple containing a deepcopy of the model, the updated current state of the optimiser and training loss history.
 - `report`: A Namedtuple containing the complete loss history of the fitting process.
 """
-function MMI.update(m::Laplace_Models, verbosity, old_fitresult, old_cache, X, y) 
-
-
+function MMI.update(m::Laplace_Models, verbosity, old_fitresult, old_cache, X, y)
     if typeof(m) == LaplaceRegressor
         nothing
     else
         # Convert labels to integer format starting from 0 for one-hot encoding
-        y_plain = MLJBase.int(y[1,:]) .- 1
+        y_plain = MLJBase.int(y[1, :]) .- 1
 
         # One-hot encoding of labels
         unique_labels = unique(y_plain) # Ensure unique labels for one-hot encoding
         y = Flux.onehotbatch(y_plain, unique_labels) # One-hot encoding
-
     end
 
     data_loader = Flux.DataLoader((X, y); batchsize=m.batch_size)
@@ -193,80 +182,82 @@ function MMI.update(m::Laplace_Models, verbosity, old_fitresult, old_cache, X, y
 
     epochs = m.epochs
 
-    if MMI.is_same_except(m, old_model,:epochs)
-
-
+    if MMI.is_same_except(m, old_model, :epochs)
         if epochs > old_model.epochs
+            for epoch in (old_model.epochs + 1):(epochs)
+                loss_per_epoch = 0.0
 
-
-            for epoch in (old_model.epochs+1):(epochs)
-
-                loss_per_epoch= 0.0
-        
-        
                 for (X_batch, y_batch) in data_loader
                     # Forward pass: compute predictions
                     y_pred = old_la.model(X_batch)
-        
+
                     # Compute loss
                     loss = m.flux_loss(y_pred, y_batch)
-        
+
                     # Compute gradients 
-                    grads,_ = gradient(old_la.model,X_batch) do grad_model, X
+                    grads, _ = gradient(old_la.model, X_batch) do grad_model, X
                         # Recompute predictions inside gradient context
                         y_pred = grad_model(X)
                         m.flux_loss(y_pred, y_batch)
                     end
-                    
+
                     # Update parameters using the optimizer and computed gradients
-                    old_state_tree,old_la.model = Optimisers.update!(old_state_tree,old_la.model, grads)
-        
+                    old_state_tree, old_la.model = Optimisers.update!(
+                        old_state_tree, old_la.model, grads
+                    )
+
                     # Accumulate the loss for this batch
                     loss_per_epoch += sum(loss)  # Summing the batch loss
-                    
                 end
-        
-                push!(old_loss_history,loss_per_epoch )
-        
+
+                push!(old_loss_history, loss_per_epoch)
+
                 # Print loss every 100 epochs if verbosity is 1 or more
                 if verbosity >= 1 && epoch % 100 == 0
                     println("Epoch $epoch: Loss: $loss_per_epoch ")
                 end
             end
 
-        la = LaplaceRedux.Laplace(
-        old_la.model;
-        likelihood=:regression,
-        subset_of_weights=m.subset_of_weights,
-        subnetwork_indices=m.subnetwork_indices,
-        hessian_structure=m.hessian_structure,
-        backend=m.backend,
-        σ=m.σ,
-        μ₀=m.μ₀,
-        P₀=m.P₀,
-        )
-        if typeof(m) == LaplaceClassifier
-            la.likelihood = :classification
-        end
+            la = LaplaceRedux.Laplace(
+                old_la.model;
+                likelihood=:regression,
+                subset_of_weights=m.subset_of_weights,
+                subnetwork_indices=m.subnetwork_indices,
+                hessian_structure=m.hessian_structure,
+                backend=m.backend,
+                σ=m.σ,
+                μ₀=m.μ₀,
+                P₀=m.P₀,
+            )
+            if typeof(m) == LaplaceClassifier
+                la.likelihood = :classification
+            end
 
-        # fit the Laplace model:
-        LaplaceRedux.fit!(la, data_loader)
-        optimize_prior!(la; verbose=false, n_steps=m.fit_prior_nsteps)
+            # fit the Laplace model:
+            LaplaceRedux.fit!(la, data_loader)
+            optimize_prior!(la; verbose=false, n_steps=m.fit_prior_nsteps)
 
-        fitresult = (la, y[1])
-        report = (loss_history = old_loss_history,)
-        cache = (deepcopy(m),old_state_tree,old_loss_history)
+            fitresult = (la, y[1])
+            report = (loss_history=old_loss_history,)
+            cache = (deepcopy(m), old_state_tree, old_loss_history)
 
         else
-
             nothing
-            
         end
-
     end
 
-    if  MMI.is_same_except(m, old_model,:fit_prior_nsteps,:subset_of_weights,:subnetwork_indices,:hessian_structure,:backend,:σ,:μ₀,:P₀)
-
+    if MMI.is_same_except(
+        m,
+        old_model,
+        :fit_prior_nsteps,
+        :subset_of_weights,
+        :subnetwork_indices,
+        :hessian_structure,
+        :backend,
+        :σ,
+        :μ₀,
+        :P₀,
+    )
         println(" updating only the laplace optimization part")
 
         la = LaplaceRedux.Laplace(
@@ -279,25 +270,22 @@ function MMI.update(m::Laplace_Models, verbosity, old_fitresult, old_cache, X, y
             σ=m.σ,
             μ₀=m.μ₀,
             P₀=m.P₀,
-            )
-            if typeof(m) == LaplaceClassifier
-                la.likelihood = :classification
-            end
-    
-            # fit the Laplace model:
-            LaplaceRedux.fit!(la, data_loader)
-            optimize_prior!(la; verbose=false, n_steps=m.fit_prior_nsteps)
-    
-            fitresult = la
-            report = (loss_history = old_loss_history,)
-            cache = (deepcopy(m),old_state_tree,old_loss_history)
+        )
+        if typeof(m) == LaplaceClassifier
+            la.likelihood = :classification
+        end
 
+        # fit the Laplace model:
+        LaplaceRedux.fit!(la, data_loader)
+        optimize_prior!(la; verbose=false, n_steps=m.fit_prior_nsteps)
+
+        fitresult = la
+        report = (loss_history=old_loss_history,)
+        cache = (deepcopy(m), old_state_tree, old_loss_history)
     end
-
 
     return fitresult, cache, report
 end
-
 
 @doc """
     function MMI.is_same_except(m1::Laplace_Models, m2::Laplace_Models, exceptions::Symbol...) 
@@ -327,7 +315,7 @@ meaning; see [`deep_properties`](@ref)) for details.
 If `m1` or `m2` are not `MLJType` objects, then return `==(m1, m2)`.
 
 """
-function MMI.is_same_except(m1::Laplace_Models, m2::Laplace_Models, exceptions::Symbol...) 
+function MMI.is_same_except(m1::Laplace_Models, m2::Laplace_Models, exceptions::Symbol...)
     typeof(m1) === typeof(m2) || return false
     names = propertynames(m1)
     propertynames(m2) === names || return false
@@ -335,22 +323,21 @@ function MMI.is_same_except(m1::Laplace_Models, m2::Laplace_Models, exceptions::
     for name in names
         if !(name in exceptions)
             if !_isdefined(m1, name)
-               !_isdefined(m2, name) || return false
+                !_isdefined(m2, name) || return false
             elseif _isdefined(m2, name)
                 if name in deep_properties(LaplaceRegressor)
-                    _equal_to_depth_one(
-                        getproperty(m1,name),
-                        getproperty(m2, name)
-                    ) || return false
+                    _equal_to_depth_one(getproperty(m1, name), getproperty(m2, name)) ||
+                        return false
                 else
                     (
-                        is_same_except(
-                            getproperty(m1, name),
-                            getproperty(m2, name)
-                        ) ||
+                        is_same_except(getproperty(m1, name), getproperty(m2, name)) ||
                         getproperty(m1, name) isa AbstractRNG ||
                         getproperty(m2, name) isa AbstractRNG ||
-                        (getproperty(m1, name) isa Flux.Chain && getproperty(m2, name) isa Flux.Chain && _equal_flux_chain(getproperty(m1, name), getproperty(m2, name)))
+                        (
+                            getproperty(m1, name) isa Flux.Chain &&
+                            getproperty(m2, name) isa Flux.Chain &&
+                            _equal_flux_chain(getproperty(m1, name), getproperty(m2, name))
+                        )
                     ) || return false
                 end
             else
@@ -392,13 +379,9 @@ function _equal_flux_chain(chain1::Flux.Chain, chain2::Flux.Chain)
         if typeof(layer1) != typeof(layer2)
             return false
         end
-
     end
     return true
 end
-
-
-
 
 @doc """ 
 
@@ -427,20 +410,16 @@ function MMI.fitted_params(model::Laplace_Models, fitresult)
     la, decode = fitresult
     posterior = la.posterior
     return (
-        μ = posterior.μ,
-        H = posterior.H,
-        P = posterior.P,
-        Σ = posterior.Σ,
-        n_data = posterior.n_data,
-        n_params = posterior.n_params,
-        n_out = posterior.n_out,
-        loss = posterior.loss
+        μ=posterior.μ,
+        H=posterior.H,
+        P=posterior.P,
+        Σ=posterior.Σ,
+        n_data=posterior.n_data,
+        n_params=posterior.n_params,
+        n_out=posterior.n_out,
+        loss=posterior.loss,
     )
 end
-
-
-
-
 
 @doc """
     MMI.training_losses(model::Union{LaplaceRegressor,LaplaceClassifier}, report)
@@ -457,9 +436,6 @@ Retrieve the training loss history from the given `report`.
 function MMI.training_losses(model::Laplace_Models, report)
     return report.loss_history
 end
-
-
-
 
 @doc """ 
 function MMI.predict(m::LaplaceRegressor, fitresult, Xnew)
@@ -479,7 +455,7 @@ function MMI.predict(m::LaplaceRegressor, fitresult, Xnew)
 """
 function MMI.predict(m::Laplace_Models, fitresult, Xnew)
     la, decode = fitresult
-    if typeof(m)== LaplaceRegressor
+    if typeof(m) == LaplaceRegressor
         yhat = LaplaceRedux.predict(la, Xnew; ret_distr=false)
         # Extract mean and variance matrices
         means, variances = yhat
@@ -488,40 +464,33 @@ function MMI.predict(m::Laplace_Models, fitresult, Xnew)
         return [Normal(μ, sqrt(σ)) for (μ, σ) in zip(means, variances)]
 
     else
-        predictions = LaplaceRedux.predict(la, Xnew; link_approx=m.link_approx, ret_distr=false) |> permutedims
+        predictions =
+            LaplaceRedux.predict(la, Xnew; link_approx=m.link_approx, ret_distr=false) |>
+            permutedims
 
         return MLJBase.UnivariateFinite(MLJBase.classes(decode), predictions)
     end
 end
 
-
-
-
-
-
-
-
 MMI.metadata_pkg(
-  LaplaceRegressor,
-  name="LaplaceRedux",
-  package_uuid="c52c1a26-f7c5-402b-80be-ba1e638ad478",
-  package_url="https://github.com/JuliaTrustworthyAI/LaplaceRedux.jl",
-  is_pure_julia=true,
-  is_wrapper=true,
-  package_license = "https://github.com/JuliaTrustworthyAI/LaplaceRedux.jl/blob/main/LICENSE",
+    LaplaceRegressor;
+    name="LaplaceRedux",
+    package_uuid="c52c1a26-f7c5-402b-80be-ba1e638ad478",
+    package_url="https://github.com/JuliaTrustworthyAI/LaplaceRedux.jl",
+    is_pure_julia=true,
+    is_wrapper=true,
+    package_license="https://github.com/JuliaTrustworthyAI/LaplaceRedux.jl/blob/main/LICENSE",
 )
 
 MMI.metadata_pkg(
-  LaplaceClassifier,
-  name="LaplaceRedux",
-  package_uuid="c52c1a26-f7c5-402b-80be-ba1e638ad478",
-  package_url="https://github.com/JuliaTrustworthyAI/LaplaceRedux.jl",
-  is_pure_julia=true,
-  is_wrapper=true,
-  package_license = "https://github.com/JuliaTrustworthyAI/LaplaceRedux.jl/blob/main/LICENSE",
+    LaplaceClassifier;
+    name="LaplaceRedux",
+    package_uuid="c52c1a26-f7c5-402b-80be-ba1e638ad478",
+    package_url="https://github.com/JuliaTrustworthyAI/LaplaceRedux.jl",
+    is_pure_julia=true,
+    is_wrapper=true,
+    package_license="https://github.com/JuliaTrustworthyAI/LaplaceRedux.jl/blob/main/LICENSE",
 )
-
-
 
 MLJBase.metadata_model(
     LaplaceClassifier;
@@ -530,7 +499,7 @@ MLJBase.metadata_model(
         MLJBase.Table(MLJBase.Finite, MLJBase.Continuous), # table with mixed types
     },
     target_scitype=AbstractArray{<:MLJBase.Finite}, # ordered factor or multiclass
-    supports_training_losses = true,
+    supports_training_losses=true,
     load_path="LaplaceRedux.LaplaceClassifier",
 )
 # metadata for each model,
@@ -541,16 +510,16 @@ MLJBase.metadata_model(
         MLJBase.Table(MLJBase.Finite, MLJBase.Continuous), # table with mixed types
     },
     target_scitype=AbstractArray{MLJBase.Continuous},
-    supports_training_losses = true,
+    supports_training_losses=true,
     load_path="LaplaceRedux.LaplaceRegressor",
-
 )
 
-const DOC_LAPLACE_REDUX = "[Laplace Redux – Effortless Bayesian Deep Learning]"*
-    "(https://proceedings.neurips.cc/paper/2021/hash/a3923dbe2f702eff254d67b48ae2f06e-Abstract.html), originally published in "*
+const DOC_LAPLACE_REDUX =
+    "[Laplace Redux – Effortless Bayesian Deep Learning]" *
+    "(https://proceedings.neurips.cc/paper/2021/hash/a3923dbe2f702eff254d67b48ae2f06e-Abstract.html), originally published in " *
     "Daxberger, E., Kristiadi, A., Immer, A., Eschenhagen, R., Bauer, M., Hennig, P. (2021): \"Laplace Redux – Effortless Bayesian Deep Learning.\", NIPS'21: Proceedings of the 35th International Conference on Neural Information Processing Systems*, Article No. 1537, pp. 20089–20103"
 
-    """
+"""
 $(MMI.doc_header(LaplaceClassifier))
 
 `LaplaceClassifier` implements the $DOC_LAPLACE_REDUX for classification models.
