@@ -51,11 +51,6 @@ MMI.reformat(::Const_Models, X, y) = (MLJBase.matrix(X) |> permutedims, reshape(
 #for predict:
 MMI.reformat(::Const_Models, X) = (MLJBase.matrix(X) |> permutedims,)
 
-# for fit:
-MMI.reformat(::LaplaceClassifier, X, y) = (MLJBase.matrix(X) |> permutedims,y)
-# for predict:
-#MMI.reformat(::LaplaceClassifier, X) = (MLJBase.matrix(X) |> permutedims,)
-
 
 
 @doc """
@@ -87,16 +82,6 @@ This function performs the following steps:
 9. Returns the fitted Laplace model, a cache (currently `nothing`), and a report listing training related statistics.
 """
 function MMI.fit(m::LaplaceRegressor, verbosity, X, y)
-
-    #X = MLJBase.matrix(X) |> permutedims
-    #y = reshape(y, 1, :)
-
-    #if Tables.istable(X)
-        #X = Tables.matrix(X)|>permutedims
-    #end
-
-    # Reshape y if necessary
-    #y = reshape(y, 1, :)
     # Make a copy of the model because Flux does not allow to mutate hyperparameters
     copied_model = deepcopy(m.model)
 
@@ -243,7 +228,7 @@ function MMI.update(m::LaplaceRegressor, verbosity, old_fitresult, old_cache, X,
 
     if  MMI.is_same_except(m, old_model,:fit_prior_nsteps,:subset_of_weights,:subnetwork_indices,:hessian_structure,:backend,:σ,:μ₀,:P₀)
 
-        println(" changing only the laplace optimization part")
+        println(" updating only the laplace optimization part")
 
         la = LaplaceRedux.Laplace(
             old_la.model;
@@ -274,7 +259,6 @@ end
 
 # Define the function is_same_except
 function MMI.is_same_except(m1::Const_Models, m2::Const_Models, exceptions::Symbol...) 
-    println("overloaded")
     typeof(m1) === typeof(m2) || return false
     names = propertynames(m1)
     propertynames(m2) === names || return false
@@ -323,24 +307,20 @@ end
 
 function _equal_flux_chain(chain1::Flux.Chain, chain2::Flux.Chain)
     if length(chain1.layers) != length(chain2.layers)
-        println("no length chain")
         return false
     end
     params1 = Flux.params(chain1)
     params2 = Flux.params(chain2)
     if length(params1) != length(params2)
-        println("no length params")
         return false
     end
     for (p1, p2) in zip(params1, params2)
         if !isequal(p1, p2)
-            println(" params differs")
             return false
         end
     end
     for (layer1, layer2) in zip(chain1.layers, chain2.layers)
         if typeof(layer1) != typeof(layer2)
-            println("layer differ")
             return false
         end
 
@@ -375,7 +355,7 @@ end
 
 """
 function MMI.fitted_params(model::Const_Models, fitresult)
-    la,decode = fitresult
+    la, decode = fitresult
     posterior = la.posterior
     return (
         μ = posterior.μ,
@@ -429,10 +409,6 @@ function MMI.predict(m::LaplaceRegressor, fitresult, Xnew)
 Finally, it creates Normal distributions from these means and variances and returns them as an array.
 """
 function MMI.predict(m::LaplaceRegressor, fitresult, Xnew)
-    #Xnew = MLJBase.matrix(Xnew) |> permutedims
-    if Tables.istable(Xnew)
-        Xnew = Tables.matrix(Xnew)|>permutedims
-    end
     la, y = fitresult
     yhat = LaplaceRedux.predict(la, Xnew; ret_distr=false)
     # Extract mean and variance matrices
@@ -468,18 +444,11 @@ end
 
 """
 function MMI.fit(m::LaplaceClassifier, verbosity, X, y)
-    #X = MLJBase.matrix(X) |> permutedims
-
-    if Tables.istable(X)
-        X = Tables.matrix(X)|>permutedims
-    end
-
-
-    # Store the first label as decode function
-    #decode = y[1]
+ 
+ 
         
     # Convert labels to integer format starting from 0 for one-hot encoding
-    y_plain = MLJBase.int(y) .- 1
+    y_plain = MLJBase.int(y[1,:]) .- 1
 
     # One-hot encoding of labels
     unique_labels = unique(y_plain) # Ensure unique labels for one-hot encoding
@@ -508,9 +477,9 @@ function MMI.fit(m::LaplaceClassifier, verbosity, X, y)
             loss = m.flux_loss(y_pred, y_batch)
 
             # Compute gradients 
-            grads,_ = gradient(copied_model,X_batch) do model, X
+            grads,_ = gradient(copied_model,X_batch) do grad_model, X
                 # Recompute predictions inside gradient context
-                y_pred = model(X)
+                y_pred = grad_model(X)
                 m.flux_loss(y_pred, y_batch)
             end
             
@@ -569,12 +538,8 @@ Predicts the class probabilities for new data using a Laplace classifier.
 The function transforms the new data `Xnew` into a matrix, applies the LaplaceRedux
 prediction function, and then returns the predictions as a `MLJBase.UnivariateFinite` object.
 """
-function MMI.predict(m::LaplaceClassifier, (fitresult, decode), Xnew)
-    if Tables.istable(Xnew)
-        Xnew = Tables.matrix(Xnew)|>permutedims
-    end
-    la = fitresult
-    #Xnew = MLJBase.matrix(Xnew) |> permutedims
+function MMI.predict(m::LaplaceClassifier, fitresult, Xnew)
+    la,decode = fitresult
     predictions =
         LaplaceRedux.predict(la, Xnew; link_approx=m.link_approx, ret_distr=false) |>
         permutedims
