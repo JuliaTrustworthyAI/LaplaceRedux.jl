@@ -25,6 +25,8 @@ using LaplaceRedux
     MLJBase.training_losses(mach) #training loss history
     model.epochs= 100 #changing number of epochs
     MLJBase.fit!(mach) #testing update function
+    model.epochs= 50 #changing number of epochs to a lower number
+    MLJBase.fit!(mach) #testing update function
     model.fit_prior_nsteps = 200 #changing LaplaceRedux fit steps
     MLJBase.fit!(mach) #testing update function (the laplace part)
 end
@@ -35,7 +37,6 @@ end
 # Define the model
 flux_model = Chain(
     Dense(4, 10, relu),
-    Dense(10, 10, relu),
     Dense(10, 3)
 )
 
@@ -55,7 +56,19 @@ MLJBase.fitted_params(mach)  # fitted params
 MLJBase.training_losses(mach) #training loss history
 model.epochs= 100 #changing number of epochs
 MLJBase.fit!(mach) #testing update function
+model.epochs= 50 #changing number of epochs to a lower number
+MLJBase.fit!(mach) #testing update function
 model.fit_prior_nsteps = 200 #changing LaplaceRedux fit steps
 MLJBase.fit!(mach) #testing update function (the laplace part)
+
+# Define a different model
+flux_model_two = Chain(
+    Dense(4, 6, relu),
+    Dense(6, 3)
+)
+
+model_two = LaplaceClassifier(model=flux_model_two,epochs=70)
+
+MLJBase.is_same_except(model_two, model, :epochs)
    
 end
