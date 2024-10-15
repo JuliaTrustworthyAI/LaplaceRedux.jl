@@ -239,14 +239,20 @@ function MMI.update(m::Laplace_Models, verbosity, old_fitresult, old_cache, X, y
 
             fitresult = (la, y[1])
             report = (loss_history=old_loss_history,)
-            cache = (deepcopy(m), old_state_tree, old_loss_history)
+            cache = old_cache
 
         else
-            nothing
+            fitresult =  old_fitresult
+            report = (loss_history=old_loss_history,)
+            cache = (deepcopy(m), old_state_tree, old_loss_history)
         end
-    end
+        
 
-    if MMI.is_same_except(
+
+
+    return fitresult, cache, report
+
+    elseif MMI.is_same_except(
         m,
         old_model,
         :fit_prior_nsteps,
@@ -282,9 +288,23 @@ function MMI.update(m::Laplace_Models, verbosity, old_fitresult, old_cache, X, y
         fitresult = la
         report = (loss_history=old_loss_history,)
         cache = (deepcopy(m), old_state_tree, old_loss_history)
+
+        return fitresult, cache, report
+
+
+
+    else
+
+        fitresult, cache, report =  MMI.fit(m, verbosity, X, y)
+
+
+        return fitresult, cache, report
+
+
+
+
     end
 
-    return fitresult, cache, report
 end
 
 @doc """
