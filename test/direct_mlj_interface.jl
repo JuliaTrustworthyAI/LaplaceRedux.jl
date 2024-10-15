@@ -22,6 +22,11 @@ using LaplaceRedux
     yhat = MLJBase.predict(mach, Xnew) # probabilistic predictions
     MLJBase.predict_mode(mach, Xnew)   # point predictions
     MLJBase.fitted_params(mach)   #fitted params function 
+    MLJBase.training_losses(mach) #training loss history
+    model.epochs= 100 #changing number of epochs
+    MLJBase.fit!(mach) #testing update function
+    model.fit_prior_nsteps = 200 #changing LaplaceRedux fit steps
+    MLJBase.fit!(mach) #testing update function (the laplace part)
 end
 
 
@@ -47,5 +52,10 @@ yhat = MLJBase.predict(mach, Xnew) # probabilistic predictions
 predict_mode(mach, Xnew)   # point predictions
 pdf.(yhat, "virginica")    # probabilities for the "verginica" class
 MLJBase.fitted_params(mach)  # fitted params 
+MLJBase.training_losses(mach) #training loss history
+model.epochs= 100 #changing number of epochs
+MLJBase.fit!(mach) #testing update function
+model.fit_prior_nsteps = 200 #changing LaplaceRedux fit steps
+MLJBase.fit!(mach) #testing update function (the laplace part)
    
 end
