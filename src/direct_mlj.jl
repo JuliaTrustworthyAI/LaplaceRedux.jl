@@ -47,7 +47,25 @@ end
 Laplace_Models = Union{LaplaceRegressor,LaplaceClassifier}
 
 # for fit:
-MMI.reformat(::Laplace_Models, X, y) = (MLJBase.matrix(X) |> permutedims, reshape(y, 1, :))
+MMI.reformat(::LaplaceRegressor, X, y) = (MLJBase.matrix(X) |> permutedims, (reshape(y, 1, :),nothing))
+
+
+function MMI.reformat(::LaplaceClassifier, X, y) 
+
+    X = MLJBase.matrix(X) |> permutedims
+
+
+    y= reshape(y, 1, :)
+    # Convert labels to integer format starting from 0 for one-hot encoding
+    y_plain = MLJBase.int(y[1, :]) .- 1
+    # One-hot encoding of labels
+    unique_labels = unique(y_plain) # Ensure unique labels for one-hot encoding
+    y_onehot = Flux.onehotbatch(y_plain, unique_labels) # One-hot encoding
+    return X,(y_onehot, y[1])
+end
+
+#MMI.selectrows(::LaplaceClassifier, I, Xmatrix, y) = (view(Xmatrix, :, I), (view(y[1],I),y[2]))
+#MMI.selectrows(::LaplaceRegressor, I, Xmatrix, y) = (view(Xmatrix, :,I), (view(y[1],I),y[2]) )
 #for predict:
 MMI.reformat(::Laplace_Models, X) = (MLJBase.matrix(X) |> permutedims,)
 
@@ -68,18 +86,10 @@ Fit a Laplace model using the provided features and target values.
 - `report`: A Namedtuple containing the loss history of the fitting process.
 """
 function MMI.fit(m::Laplace_Models, verbosity, X, y)
-    decode = y[1]
+    decode = y[2]
 
-    if typeof(m) == LaplaceRegressor
-        nothing
-    else
-        # Convert labels to integer format starting from 0 for one-hot encoding
-        y_plain = MLJBase.int(y[1, :]) .- 1
+    y= y[1] 
 
-        # One-hot encoding of labels
-        unique_labels = unique(y_plain) # Ensure unique labels for one-hot encoding
-        y = Flux.onehotbatch(y_plain, unique_labels) # One-hot encoding
-    end
 
     # Make a copy of the model because Flux does not allow to mutate hyperparameters
     copied_model = deepcopy(m.model)
@@ -163,22 +173,14 @@ Update the Laplace model using the provided new data points.
 - `report`: A Namedtuple containing the complete loss history of the fitting process.
 """
 function MMI.update(m::Laplace_Models, verbosity, old_fitresult, old_cache, X, y)
-    if typeof(m) == LaplaceRegressor
-        nothing
-    else
-        # Convert labels to integer format starting from 0 for one-hot encoding
-        y_plain = MLJBase.int(y[1, :]) .- 1
+    decode = y[2]
+    y_up=y[1]
 
-        # One-hot encoding of labels
-        unique_labels = unique(y_plain) # Ensure unique labels for one-hot encoding
-        y = Flux.onehotbatch(y_plain, unique_labels) # One-hot encoding
-    end
-
-    data_loader = Flux.DataLoader((X, y); batchsize=m.batch_size)
+    data_loader = Flux.DataLoader((X, y_up); batchsize=m.batch_size)
     old_model = old_cache[1]
     old_state_tree = old_cache[2]
     old_loss_history = old_cache[3]
-    #old_la = old_fitresult[1]
+     
 
     epochs = m.epochs
 
@@ -238,20 +240,17 @@ function MMI.update(m::Laplace_Models, verbosity, old_fitresult, old_cache, X, y
             LaplaceRedux.fit!(la, data_loader)
             optimize_prior!(la; verbose=false, n_steps=m.fit_prior_nsteps)
 
-            fitresult = (la, y[1])
+            fitresult = (la, decode)
             report = (loss_history=old_loss_history,)
-            cache = old_cache
+            cache = (deepcopy(m), old_state_tree, old_loss_history)
 
         else
-            fitresult =  old_fitresult
+            println("The number of epochs inserted is lower than the number of epochs already been trained. No update is necessary")
+            fitresult = (old_la, decode)
             report = (loss_history=old_loss_history,)
             cache = (deepcopy(m), old_state_tree, old_loss_history)
         end
-        
 
-
-
-    return fitresult, cache, report
 
     elseif MMI.is_same_except(
         m,
@@ -265,7 +264,6 @@ function MMI.update(m::Laplace_Models, verbosity, old_fitresult, old_cache, X, y
         :μ₀,
         :P₀,
     )
-
         println(" updating only the laplace optimization part")
         old_la = old_fitresult[1]
 
@@ -288,30 +286,19 @@ function MMI.update(m::Laplace_Models, verbosity, old_fitresult, old_cache, X, y
         LaplaceRedux.fit!(la, data_loader)
         optimize_prior!(la; verbose=false, n_steps=m.fit_prior_nsteps)
 
-        fitresult = la
+        fitresult = (la,decode)
         report = (loss_history=old_loss_history,)
         cache = (deepcopy(m), old_state_tree, old_loss_history)
 
-        return fitresult, cache, report
-
-
 
     else
-        println(" I believe this error is provoked by that if statement in the fit function. This case should address the possibility that \n 
-        the user change the flux chain. In this case the update! function should revert to the fallback fit! function, \n 
-        however  y has already been transformed during the previous fit! run . One way to solve this issue is to make sure that the \n 
-        data preparation is completely done in reformat")
 
-        fitresult, cache, report =  MMI.fit(m, verbosity, X, y)
-
-
-        return fitresult, cache, report
-
-
-
+        fitresult, cache, report = MLJBase.fit(m, verbosity,X,y)
+     
 
     end
 
+    return fitresult, cache, report
 end
 
 @doc """

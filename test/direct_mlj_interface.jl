@@ -4,6 +4,7 @@ using MLJBase: MLJBase, categorical
 using Flux
 using StableRNGs
 using MLJ
+using MLJ:predict,fit!
 using LaplaceRedux
 
 
@@ -29,6 +30,7 @@ using LaplaceRedux
     MLJBase.fit!(mach) #testing update function
     model.fit_prior_nsteps = 200 #changing LaplaceRedux fit steps
     MLJBase.fit!(mach) #testing update function (the laplace part)
+    evaluate!(mach, resampling=cv, measure=l2, verbosity=0)
 end
 
 
