@@ -47,19 +47,22 @@ end
 LaplaceModels = Union{LaplaceRegressor,LaplaceClassifier}
 
 # for fit:
-MMI.reformat(::LaplaceRegressor, X, y) = (MLJBase.matrix(X) |> permutedims, reshape(y, 1, :))
+MMI.reformat(::LaplaceRegressor, X, y) = (MLJBase.matrix(X) |> permutedims, (reshape(y, 1, :), nothing))
 
 function MMI.reformat(::LaplaceClassifier, X, y) 
 
     X = MLJBase.matrix(X) |> permutedims
     y = categorical(y)
-    unique_labels = y.pool.levels
-    y = Flux.onehotbatch(y, unique_labels) # One-hot encoding
+    labels = y.pool.levels
+    y = Flux.onehotbatch(y, labels) # One-hot encoding
 
-    return X, y
+    return X, (y, labels)
 end
 
 MMI.reformat(::LaplaceModels, X) = (MLJBase.matrix(X) |> permutedims,)
+
+MMI.selectrows(::LaplaceModels, I, Xmatrix, y) = (Xmatrix[:, I], (y[1][:,I], y[2]))
+MMI.selectrows(::LaplaceModels, I, Xmatrix) = (Xmatrix[:, I],)
 
 @doc """
     MMI.fit(m::Union{LaplaceRegressor,LaplaceClassifier}, verbosity, X, y)
@@ -78,10 +81,7 @@ Fit a Laplace model using the provided features and target values.
 - `report`: A Namedtuple containing the loss history of the fitting process.
 """
 function MMI.fit(m::LaplaceModels, verbosity, X, y)
-    decode = y[2]
-
-    y= y[1] 
-
+    y, decode = y
 
     # Make a copy of the model because Flux does not allow to mutate hyperparameters
     copied_model = deepcopy(m.model)
@@ -165,8 +165,7 @@ Update the Laplace model using the provided new data points.
 - `report`: A Namedtuple containing the complete loss history of the fitting process.
 """
 function MMI.update(m::LaplaceModels, verbosity, old_fitresult, old_cache, X, y)
-    decode = y[2]
-    y_up=y[1]
+    y_up, decode = y
 
     data_loader = Flux.DataLoader((X, y_up); batchsize=m.batch_size)
     old_model = old_cache[1]
