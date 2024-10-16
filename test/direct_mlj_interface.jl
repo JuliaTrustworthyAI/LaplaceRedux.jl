@@ -17,7 +17,7 @@ using LaplaceRedux
     
     X, y = make_regression(100, 4; noise=0.5, sparse=0.2, outliers=0.1)
     mach = machine(model, X, y) #|> MLJBase.fit! #|> (fitresult,cache,report)
-    MLJBase.fit!(mach)
+    MLJBase.fit!(mach,verbosity=1)
     Xnew, _ = make_regression(3, 4; rng=123)
     yhat = MLJBase.predict(mach, Xnew) # probabilistic predictions
     MLJBase.predict_mode(mach, Xnew)   # point predictions
@@ -44,7 +44,7 @@ model = LaplaceClassifier(model=flux_model,epochs=50)
 
 X, y = @load_iris
 mach = machine(model, X, y)
-MLJBase.fit!(mach)
+MLJBase.fit!(mach,verbosity=1)
 Xnew = (sepal_length = [6.4, 7.2, 7.4],
         sepal_width = [2.8, 3.0, 2.8],
         petal_length = [5.6, 5.8, 6.1],
@@ -67,8 +67,8 @@ flux_model_two = Chain(
     Dense(6, 3)
 )
 
-model_two = LaplaceClassifier(model=flux_model_two,epochs=70)
+model.model = flux_model_two
 
-MLJBase.is_same_except(model_two, model, :epochs)
+MLJBase.fit!(mach)
    
 end

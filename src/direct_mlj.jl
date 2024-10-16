@@ -178,11 +178,12 @@ function MMI.update(m::Laplace_Models, verbosity, old_fitresult, old_cache, X, y
     old_model = old_cache[1]
     old_state_tree = old_cache[2]
     old_loss_history = old_cache[3]
-    old_la = old_fitresult[1]
+    #old_la = old_fitresult[1]
 
     epochs = m.epochs
 
     if MMI.is_same_except(m, old_model, :epochs)
+        old_la = old_fitresult[1]
         if epochs > old_model.epochs
             for epoch in (old_model.epochs + 1):(epochs)
                 loss_per_epoch = 0.0
@@ -264,7 +265,9 @@ function MMI.update(m::Laplace_Models, verbosity, old_fitresult, old_cache, X, y
         :μ₀,
         :P₀,
     )
+
         println(" updating only the laplace optimization part")
+        old_la = old_fitresult[1]
 
         la = LaplaceRedux.Laplace(
             old_la.model;
@@ -294,6 +297,10 @@ function MMI.update(m::Laplace_Models, verbosity, old_fitresult, old_cache, X, y
 
 
     else
+        println(" I believe this error is provoked by that if statement in the fit function. This case should address the possibility that \n 
+        the user change the flux chain. In this case the update! function should revert to the fallback fit! function, \n 
+        however  y has already been transformed during the previous fit! run . One way to solve this issue is to make sure that the \n 
+        data preparation is completely done in reformat")
 
         fitresult, cache, report =  MMI.fit(m, verbosity, X, y)
 
