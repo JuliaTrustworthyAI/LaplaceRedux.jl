@@ -473,7 +473,7 @@ function MMI.predict(m::LaplaceModels, fitresult, Xnew)
             LaplaceRedux.predict(la, Xnew; link_approx=m.link_approx, ret_distr=false) |>
             permutedims
 
-        return MLJBase.UnivariateFinite(MLJBase.classes(decode), predictions)
+        return MLJBase.UnivariateFinite(decode, predictions; pool=missing)
     end
 end
 

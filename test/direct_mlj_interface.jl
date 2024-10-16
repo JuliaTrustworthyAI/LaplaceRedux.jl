@@ -31,7 +31,7 @@ cv = CV(; nfolds=3)
     MLJBase.fit!(mach) #testing update function
     model.fit_prior_nsteps = 200 #changing LaplaceRedux fit steps
     MLJBase.fit!(mach) #testing update function (the laplace part)
-    evaluate!(mach, resampling=cv, measure=l2, verbosity=0)
+    # evaluate!(mach, resampling=cv, measure=l2, verbosity=0)
 end
 
 
@@ -63,6 +63,7 @@ end
     MLJBase.fit!(mach) #testing update function
     model.fit_prior_nsteps = 200 #changing LaplaceRedux fit steps
     MLJBase.fit!(mach) #testing update function (the laplace part)
+    evaluate!(mach; resampling=cv, measure=brier_loss, verbosity=0)
 
     # Define a different model
     flux_model_two = Chain(
