@@ -33,11 +33,6 @@ cv = CV(; nfolds=3)
     model.fit_prior_nsteps = 200 #changing LaplaceRedux fit steps
     MLJBase.fit!(mach) #testing update function (the laplace part)
     yhat = MLJBase.predict(mach, X) # probabilistic predictions
-    println( typeof(yhat) )
-    println( size(yhat) )
-    println( typeof(y) )
-    println( size(y) )
-
     evaluate!(mach, resampling=cv, measure=log_loss, verbosity=0)
 
 end
