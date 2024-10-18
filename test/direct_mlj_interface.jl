@@ -44,6 +44,9 @@ cv = CV(; nfolds=3)
     model.model = flux_model_two
     MLJBase.fit!(mach)
 
+    model_two = LaplaceRegressor(model=flux_model_two,epochs=100)
+    @test !MLJBase.is_same_except(model,model_two)
+
 
 
 end
