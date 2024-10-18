@@ -1,3 +1,5 @@
+#deactivated in runtests.jl
+
 using Random: Random
 import Random.seed!
 using MLJBase: MLJBase, categorical
