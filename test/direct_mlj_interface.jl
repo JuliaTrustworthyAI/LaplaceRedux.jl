@@ -18,11 +18,12 @@ cv = CV(; nfolds=3)
     model = LaplaceRegressor(model=flux_model,epochs=50)
     
     X, y = make_regression(100, 4; noise=0.5, sparse=0.2, outliers=0.1)
+    #train, test = partition(eachindex(y), 0.7); # 70:30 split
     mach = machine(model, X, y) #|> MLJBase.fit! #|> (fitresult,cache,report)
-    MLJBase.fit!(mach,verbosity=1)
-    Xnew, _ = make_regression(3, 4; rng=123)
-    yhat = MLJBase.predict(mach, Xnew) # probabilistic predictions
-    MLJBase.predict_mode(mach, Xnew)   # point predictions
+    MLJBase.fit!(mach, verbosity=1)
+    #Xnew, ynew = make_regression(3, 4; rng=123)
+    yhat = MLJBase.predict(mach, X) # probabilistic predictions
+    MLJBase.predict_mode(mach, X)   # point predictions
     MLJBase.fitted_params(mach)   #fitted params function 
     MLJBase.training_losses(mach) #training loss history
     model.epochs= 100 #changing number of epochs
@@ -31,7 +32,14 @@ cv = CV(; nfolds=3)
     MLJBase.fit!(mach) #testing update function
     model.fit_prior_nsteps = 200 #changing LaplaceRedux fit steps
     MLJBase.fit!(mach) #testing update function (the laplace part)
-    # evaluate!(mach, resampling=cv, measure=l2, verbosity=0)
+    yhat = MLJBase.predict(mach, X) # probabilistic predictions
+    println( typeof(yhat) )
+    println( size(yhat) )
+    println( typeof(y) )
+    println( size(y) )
+
+    evaluate!(mach, resampling=cv, measure=log_loss, verbosity=0)
+
 end
 
 

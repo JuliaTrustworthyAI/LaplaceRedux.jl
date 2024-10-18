@@ -466,7 +466,7 @@ function MMI.predict(m::LaplaceModels, fitresult, Xnew)
         means, variances = yhat
 
         # Create Normal distributions from the means and variances
-        return [Normal(μ, sqrt(σ)) for (μ, σ) in zip(means, variances)]
+        return vec([Normal(μ, sqrt(σ)) for (μ, σ) in zip(means, variances)])
 
     else
         predictions =
