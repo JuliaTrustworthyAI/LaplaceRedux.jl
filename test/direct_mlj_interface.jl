@@ -4,8 +4,7 @@ using MLJBase: MLJBase, categorical
 using Flux
 using StableRNGs
 using MLJ
-using MLJ:predict,fit!
-using LaplaceRedux
+import LaplaceRedux: LaplaceClassifier, LaplaceRegressor
 
 cv = CV(; nfolds=3)
 
@@ -34,6 +33,18 @@ cv = CV(; nfolds=3)
     MLJBase.fit!(mach) #testing update function (the laplace part)
     yhat = MLJBase.predict(mach, X) # probabilistic predictions
     evaluate!(mach, resampling=cv, measure=log_loss, verbosity=0)
+
+
+    # Define a different model
+    flux_model_two = Chain(
+        Dense(4, 6, relu),
+        Dense(6, 1)
+    )
+    # test update! fallback to fit!
+    model.model = flux_model_two
+    MLJBase.fit!(mach)
+
+
 
 end
 
