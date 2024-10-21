@@ -352,10 +352,13 @@ function MMI.is_same_except(m1::LaplaceModels, m2::LaplaceModels, exceptions::Sy
     end
     return true
 end
-
-function _isdefined(obj, name)
-    return hasproperty(obj, name)
+function _isdefined(object, name)
+    pnames = propertynames(object)
+    fnames = fieldnames(typeof(object))
+    name in pnames && !(name in fnames) && return true
+    isdefined(object, name)
 end
+
 
 
 
