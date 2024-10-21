@@ -353,18 +353,11 @@ function MMI.is_same_except(m1::LaplaceModels, m2::LaplaceModels, exceptions::Sy
     return true
 end
 
-# Define helper functions used in is_same_except
 function _isdefined(obj, name)
     return hasproperty(obj, name)
 end
 
-function deep_properties(::Type)
-    return Set{Symbol}()
-end
 
-function _equal_to_depth_one(a, b)
-    return a == b
-end
 
 function _equal_flux_chain(chain1::Flux.Chain, chain2::Flux.Chain)
     if length(chain1.layers) != length(chain2.layers)
