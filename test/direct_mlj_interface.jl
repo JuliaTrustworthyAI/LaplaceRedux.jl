@@ -1,19 +1,20 @@
 using Random: Random
 import Random.seed!
 using MLJBase: MLJBase, categorical
+using MLJ: MLJ
 using Flux
 using StableRNGs
 import LaplaceRedux: LaplaceClassifier, LaplaceRegressor
 
-cv = CV(; nfolds=3)
+cv = MLJBase.CV(; nfolds=3)
 
 @testset "Regression" begin
     flux_model = Chain(Dense(4, 10, relu), Dense(10, 10, relu), Dense(10, 1))
     model = LaplaceRegressor(; model=flux_model, epochs=50)
 
-    X, y = make_regression(100, 4; noise=0.5, sparse=0.2, outliers=0.1)
+    X, y = MLJ.make_regression(100, 4; noise=0.5, sparse=0.2, outliers=0.1)
     #train, test = partition(eachindex(y), 0.7); # 70:30 split
-    mach = machine(model, X, y) #|> MLJBase.fit! #|> (fitresult,cache,report)
+    mach = MLJ.machine(model, X, y) #|> MLJBase.fit! #|> (fitresult,cache,report)
     MLJBase.fit!(mach; verbosity=1)
     #Xnew, ynew = make_regression(3, 4; rng=123)
     yhat = MLJBase.predict(mach, X) # probabilistic predictions
@@ -27,7 +28,7 @@ cv = CV(; nfolds=3)
     model.fit_prior_nsteps = 200 #changing LaplaceRedux fit steps
     MLJBase.fit!(mach) #testing update function (the laplace part)
     yhat = MLJBase.predict(mach, X) # probabilistic predictions
-    evaluate!(mach; resampling=cv, measure=log_loss, verbosity=0)
+    MLJ.evaluate!(mach; resampling=cv, measure=MLJ.log_loss, verbosity=0)
 
     # Define a different model
     flux_model_two = Chain(Dense(4, 6, relu), Dense(6, 1))
@@ -45,8 +46,8 @@ end
 
     model = LaplaceClassifier(; model=flux_model, epochs=50)
 
-    X, y = @load_iris
-    mach = machine(model, X, y)
+    X, y = MLJ.@load_iris
+    mach = MLJ.machine(model, X, y)
     MLJBase.fit!(mach; verbosity=1)
     Xnew = (
         sepal_length=[6.4, 7.2, 7.4],
@@ -55,8 +56,8 @@ end
         petal_width=[2.1, 1.6, 1.9],
     )
     yhat = MLJBase.predict(mach, Xnew) # probabilistic predictions
-    predict_mode(mach, Xnew)   # point predictions
-    pdf.(yhat, "virginica")    # probabilities for the "verginica" class
+    MLJBase.predict_mode(mach, Xnew)   # point predictions
+    MLJBase.pdf.(yhat, "virginica")    # probabilities for the "verginica" class
     MLJBase.fitted_params(mach)  # fitted params 
     MLJBase.training_losses(mach) #training loss history
     model.epochs = 100 #changing number of epochs
@@ -65,7 +66,7 @@ end
     MLJBase.fit!(mach) #testing update function
     model.fit_prior_nsteps = 200 #changing LaplaceRedux fit steps
     MLJBase.fit!(mach) #testing update function (the laplace part)
-    evaluate!(mach; resampling=cv, measure=brier_loss, verbosity=0)
+    MLJ.evaluate!(mach; resampling=cv, measure=MLJ.brier_loss, verbosity=0)
 
     # Define a different model
     flux_model_two = Chain(Dense(4, 6, relu), Dense(6, 3))

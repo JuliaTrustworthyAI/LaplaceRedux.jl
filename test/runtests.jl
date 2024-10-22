@@ -35,7 +35,7 @@ using Test
         include("krondecomposed.jl")
     end
 
-    @testset "ML" begin
+    @testset "MLJ" begin
         include("direct_mlj_interface.jl")
     end
 end

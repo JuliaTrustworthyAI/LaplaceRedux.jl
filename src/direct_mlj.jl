@@ -53,7 +53,7 @@ end
 
 function MMI.reformat(::LaplaceClassifier, X, y)
     X = MLJBase.matrix(X) |> permutedims
-    y = categorical(y)
+    y = MLJBase.categorical(y)
     labels = y.pool.levels
     y = Flux.onehotbatch(y, labels) # One-hot encoding
 
@@ -332,7 +332,7 @@ function MMI.is_same_except(m1::LaplaceModels, m2::LaplaceModels, exceptions::Sy
                         return false
                 else
                     (
-                        is_same_except(getproperty(m1, name), getproperty(m2, name)) ||
+                        MMI.is_same_except(getproperty(m1, name), getproperty(m2, name)) ||
                         getproperty(m1, name) isa AbstractRNG ||
                         getproperty(m2, name) isa AbstractRNG ||
                         (
