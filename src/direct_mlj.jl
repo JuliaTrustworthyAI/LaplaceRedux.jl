@@ -5,7 +5,7 @@ using Random
 using Tables
 using LinearAlgebra
 using LaplaceRedux
-using MLJBase
+using MLJBase: MLJBase
 import MLJModelInterface as MMI
 using Distributions: Normal
 
@@ -315,7 +315,7 @@ The meaining of "equal" depends on the type of the property value:
 - values that are not of `MLJType` are "equal" if they are `==`.
 
 In the special case of a "deep" property, "equal" has a different
-meaning; see [`deep_properties`](@ref)) for details.
+meaning; see [`MMI.StatTraits.deep_properties`](@ref)) for details.
 
 If `m1` or `m2` are not `MLJType` objects, then return `==(m1, m2)`.
 
@@ -330,7 +330,7 @@ function MMI.is_same_except(m1::LaplaceModels, m2::LaplaceModels, exceptions::Sy
             if !_isdefined(m1, name)
                 !_isdefined(m2, name) || return false
             elseif _isdefined(m2, name)
-                if name in deep_properties(LaplaceRegressor)
+                if name in MMI.StatTraits.deep_properties(LaplaceRegressor)
                     _equal_to_depth_one(getproperty(m1, name), getproperty(m2, name)) ||
                         return false
                 else

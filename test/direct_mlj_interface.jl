@@ -3,7 +3,6 @@ import Random.seed!
 using MLJBase: MLJBase, categorical
 using Flux
 using StableRNGs
-using MLJ
 import LaplaceRedux: LaplaceClassifier, LaplaceRegressor
 
 cv = CV(; nfolds=3)
