@@ -47,10 +47,11 @@ end
 LaplaceModels = Union{LaplaceRegressor,LaplaceClassifier}
 
 # for fit:
-MMI.reformat(::LaplaceRegressor, X, y) = (MLJBase.matrix(X) |> permutedims, (reshape(y, 1, :), nothing))
+function MMI.reformat(::LaplaceRegressor, X, y)
+    return (MLJBase.matrix(X) |> permutedims, (reshape(y, 1, :), nothing))
+end
 
-function MMI.reformat(::LaplaceClassifier, X, y) 
-
+function MMI.reformat(::LaplaceClassifier, X, y)
     X = MLJBase.matrix(X) |> permutedims
     y = categorical(y)
     labels = y.pool.levels
@@ -61,7 +62,7 @@ end
 
 MMI.reformat(::LaplaceModels, X) = (MLJBase.matrix(X) |> permutedims,)
 
-MMI.selectrows(::LaplaceModels, I, Xmatrix, y) = (Xmatrix[:, I], (y[1][:,I], y[2]))
+MMI.selectrows(::LaplaceModels, I, Xmatrix, y) = (Xmatrix[:, I], (y[1][:, I], y[2]))
 MMI.selectrows(::LaplaceModels, I, Xmatrix) = (Xmatrix[:, I],)
 
 @doc """
@@ -171,7 +172,6 @@ function MMI.update(m::LaplaceModels, verbosity, old_fitresult, old_cache, X, y)
     old_model = old_cache[1]
     old_state_tree = old_cache[2]
     old_loss_history = old_cache[3]
-     
 
     epochs = m.epochs
 
@@ -236,12 +236,13 @@ function MMI.update(m::LaplaceModels, verbosity, old_fitresult, old_cache, X, y)
             cache = (deepcopy(m), old_state_tree, old_loss_history)
 
         else
-            println("The number of epochs inserted is lower than the number of epochs already been trained. No update is necessary")
+            println(
+                "The number of epochs inserted is lower than the number of epochs already been trained. No update is necessary",
+            )
             fitresult = (old_la, decode)
             report = (loss_history=old_loss_history,)
             cache = (deepcopy(m), old_state_tree, old_loss_history)
         end
-
 
     elseif MMI.is_same_except(
         m,
@@ -277,16 +278,12 @@ function MMI.update(m::LaplaceModels, verbosity, old_fitresult, old_cache, X, y)
         LaplaceRedux.fit!(la, data_loader)
         optimize_prior!(la; verbose=false, n_steps=m.fit_prior_nsteps)
 
-        fitresult = (la,decode)
+        fitresult = (la, decode)
         report = (loss_history=old_loss_history,)
         cache = (deepcopy(m), old_state_tree, old_loss_history)
 
-
     else
-
-        fitresult, cache, report = MLJBase.fit(m, verbosity,X,y)
-     
-
+        fitresult, cache, report = MLJBase.fit(m, verbosity, X, y)
     end
 
     return fitresult, cache, report
@@ -356,11 +353,8 @@ function _isdefined(object, name)
     pnames = propertynames(object)
     fnames = fieldnames(typeof(object))
     name in pnames && !(name in fnames) && return true
-    isdefined(object, name)
+    return isdefined(object, name)
 end
-
-
-
 
 function _equal_flux_chain(chain1::Flux.Chain, chain2::Flux.Chain)
     if length(chain1.layers) != length(chain2.layers)

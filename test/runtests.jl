@@ -38,5 +38,4 @@ using Test
     @testset "ML" begin
         include("direct_mlj_interface.jl")
     end
-
 end
