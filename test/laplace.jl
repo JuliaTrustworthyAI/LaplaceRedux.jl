@@ -259,7 +259,7 @@ end
     @test LaplaceRedux.has_softmax_or_sigmoid_final_layer(model) == false
 end
 
-function train_nn(val::Dict; verbose=false)
+function train_nn(val::Dict; verbosity=0)
     # Unpack:
     X = val[:X]
     Y = val[:Y]
@@ -291,7 +291,7 @@ function train_nn(val::Dict; verbose=false)
             end
             update!(opt, Flux.params(nn), gs)
         end
-        if verbose && epoch % show_every == 0
+        if verbosity>0 && epoch % show_every == 0
             println("Epoch " * string(epoch))
             @show avg_loss(data)
         end
@@ -306,7 +306,7 @@ function run_workflow(
     backend::Symbol,
     subset_of_weights::Symbol;
     hessian_structure=:full,
-    verbose::Bool=false,
+    verbosity::Int=0,
     do_optimize_prior::Bool=true,
     do_predict::Bool=true,
 )
@@ -342,7 +342,7 @@ function run_workflow(
     )
     fit!(la, data)
     if do_optimize_prior
-        optimize_prior!(la; verbose=verbose)
+        optimize_prior!(la; verbosity=verbosity)
     end
     if do_predict
         predict(la, X)

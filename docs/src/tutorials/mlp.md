@@ -93,7 +93,7 @@ Laplace approximation can be implemented as follows:
 la = Laplace(nn; likelihood=:classification, subset_of_weights=:all)
 fit!(la, data)
 la_untuned = deepcopy(la)   # saving for plotting
-optimize_prior!(la; verbose=true, n_steps=500)
+optimize_prior!(la; verbosity=1, n_steps=500)
 ```
 
 The plot below shows the resulting posterior predictive surface for the plugin estimator (left) and the Laplace approximation (right).

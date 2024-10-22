@@ -97,7 +97,7 @@ The Laplace approximation can be implemented as follows:
 ```{julia}
 la = Laplace(nn; likelihood=:classification)
 fit!(la, data)
-optimize_prior!(la; verbose=true, n_steps=100)
+optimize_prior!(la; verbosity=1, n_steps=100)
 ```
 
 with either the probit approximation:
