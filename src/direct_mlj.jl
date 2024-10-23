@@ -312,7 +312,7 @@ The meaining of "equal" depends on the type of the property value:
 - values that are not of `MLJType` are "equal" if they are `==`.
 
 In the special case of a "deep" property, "equal" has a different
-meaning; see [`MLJBase.deep_properties`](@ref)) for details.
+meaning; see `MLJBase.deep_properties` for details.
 
 If `m1` or `m2` are not `MLJType` objects, then return `==(m1, m2)`.
 
