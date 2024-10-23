@@ -3,8 +3,6 @@ using LaplaceRedux
 using Distributions
 using Trapz
 
-
-
 # Test for `sharpness_regression` function
 @testset "sharpness_regression distributions tests" begin
     @info " testing sharpness_regression with distributions"

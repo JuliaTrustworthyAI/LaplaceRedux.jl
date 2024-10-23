@@ -19,9 +19,6 @@ export fit!, predict
 export optimize_prior!,
     glm_predictive_distribution, posterior_covariance, posterior_precision
 
-include("mlj_flux.jl")
-export LaplaceClassification
-export LaplaceRegression
 
 include("calibration_functions.jl")
 export empirical_frequency_binary_classification,
@@ -29,5 +26,8 @@ export empirical_frequency_binary_classification,
     empirical_frequency_regression,
     sharpness_regression,
     extract_mean_and_variance,
-    sigma_scaling, rescale_stddev
+    sigma_scaling,
+    rescale_stddev
+
+include("direct_mlj.jl")
 end
