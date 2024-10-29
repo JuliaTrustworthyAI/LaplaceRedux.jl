@@ -14,7 +14,7 @@ function optimize_prior!(
     lr::Real=1e-1,
     λinit::Union{Nothing,Real}=nothing,
     σinit::Union{Nothing,Real}=nothing,
-    verbose::Bool=false,
+    verbosity::Int=0,
     tune_σ::Bool=la.likelihood == :regression,
 )
 
@@ -42,7 +42,7 @@ function optimize_prior!(
         end
         Flux.Optimise.update!(opt, ps, gs)
         i += 1
-        if verbose
+        if verbosity>0
             if i % show_every == 0
                 @info "Iteration $(i): P₀=$(exp(logP₀[1])), σ=$(exp(logσ[1]))"
                 @show loss(exp.(logP₀), exp.(logσ))
