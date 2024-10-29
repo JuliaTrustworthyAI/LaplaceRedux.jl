@@ -65,6 +65,63 @@ MMI.reformat(::LaplaceModels, X) = (MLJBase.matrix(X) |> permutedims,)
 MMI.selectrows(::LaplaceModels, I, Xmatrix, y) = (Xmatrix[:, I], (y[1][:, I], y[2]))
 MMI.selectrows(::LaplaceModels, I, Xmatrix) = (Xmatrix[:, I],)
 
+
+
+"""
+    function features_shape(model::LaplaceRegression, X, y)
+
+Compute the the number of features of the X input dataset and  the number of variables to predict from  the y  output dataset.
+
+# Arguments
+- `model::LaplaceModels`: The Laplace  model to fit.
+- `X`: The input data for training.
+- `y`: The target labels for training one-hot encoded.
+
+# Returns
+- (input size, output size)
+"""
+function features_shape(model::LaplaceModels, X, y)
+    #X = X isa Tables.MatrixTable ? MLJBase.matrix(X) : X
+    n_input = size(X, 1)
+    dims = size(y)
+    if length(dims) == 1
+        n_output = 1
+    else
+        n_output = dims[1]
+    end
+    return (n_input, n_output)
+end
+
+
+"""
+    default_build( seed::Int, shape)
+
+Builds a default MLP Flux model compatible with the dimensions of the dataset, with reproducible initial weights.
+
+# Arguments
+- `seed::Int`: The seed for random number generation.
+- `shape`: a tuple containing the dimensions of the input layer and the output layer.
+
+# Returns
+- The constructed Flux model, which consist in a simple MLP with 2 hidden layers with 20 neurons each and an input and output layers compatible with the dataset.
+"""
+function default_build(seed::Int, shape)
+    Random.seed!(seed)
+    (n_input, n_output) = shape
+    
+    chain = Chain(
+        Dense(n_input, 20, relu),
+        Dense(20, 20, relu),
+        #Dense(20, 20, relu),
+        Dense(20, n_output)
+    )
+    
+    return chain
+end
+
+
+
+
 @doc """
     MMI.fit(m::Union{LaplaceRegressor,LaplaceClassifier}, verbosity, X, y)
 
@@ -83,6 +140,13 @@ Fit a Laplace model using the provided features and target values.
 """
 function MMI.fit(m::LaplaceModels, verbosity, X, y)
     y, decode = y
+
+    if (m.model === nothing)
+        shape = features_shape(m, X, y)
+
+        m.model = default_build(11, shape)
+
+    end
 
     # Make a copy of the model because Flux does not allow to mutate hyperparameters
     copied_model = deepcopy(m.model)
@@ -141,7 +205,7 @@ function MMI.fit(m::LaplaceModels, verbosity, X, y)
 
     # fit the Laplace model:
     LaplaceRedux.fit!(la, data_loader)
-    optimize_prior!(la; verbose=false, n_steps=m.fit_prior_nsteps)
+    optimize_prior!(la; verbosity= verbosity, n_steps=m.fit_prior_nsteps)
 
     fitresult = (la, decode)
     report = (loss_history=loss_history,)
@@ -229,7 +293,7 @@ function MMI.update(m::LaplaceModels, verbosity, old_fitresult, old_cache, X, y)
 
             # fit the Laplace model:
             LaplaceRedux.fit!(la, data_loader)
-            optimize_prior!(la; verbose=false, n_steps=m.fit_prior_nsteps)
+            optimize_prior!(la; verbosity = verbosity, n_steps=m.fit_prior_nsteps)
 
             fitresult = (la, decode)
             report = (loss_history=old_loss_history,)
@@ -276,7 +340,7 @@ function MMI.update(m::LaplaceModels, verbosity, old_fitresult, old_cache, X, y)
 
         # fit the Laplace model:
         LaplaceRedux.fit!(la, data_loader)
-        optimize_prior!(la; verbose=false, n_steps=m.fit_prior_nsteps)
+        optimize_prior!(la; verbosity = verbosity, n_steps=m.fit_prior_nsteps)
 
         fitresult = (la, decode)
         report = (loss_history=old_loss_history,)
