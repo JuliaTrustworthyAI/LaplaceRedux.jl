@@ -68,7 +68,7 @@ MMI.selectrows(::LaplaceModels, I, Xmatrix) = (Xmatrix[:, I],)
 
 
 """
-    function features_shape(model::LaplaceRegression, X, y)
+    function dataset_shape(model::LaplaceRegression, X, y)
 
 Compute the the number of features of the X input dataset and  the number of variables to predict from  the y  output dataset.
 
@@ -80,7 +80,7 @@ Compute the the number of features of the X input dataset and  the number of var
 # Returns
 - (input size, output size)
 """
-function features_shape(model::LaplaceModels, X, y)
+function dataset_shape(model::LaplaceModels, X, y)
     #X = X isa Tables.MatrixTable ? MLJBase.matrix(X) : X
     n_input = size(X, 1)
     dims = size(y)
@@ -142,7 +142,7 @@ function MMI.fit(m::LaplaceModels, verbosity, X, y)
     y, decode = y
 
     if (m.model === nothing)
-        shape = features_shape(m, X, y)
+        shape = dataset_shape(m, X, y)
 
         m.model = default_build(11, shape)
 

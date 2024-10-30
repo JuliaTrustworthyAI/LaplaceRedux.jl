@@ -11,8 +11,9 @@ cv = MLJBase.CV(; nfolds=3)
 @testset "Regression" begin
     @info " testing  interface for LaplaceRegressor"
     flux_model = Chain(Dense(4, 10, relu), Dense(10, 10, relu), Dense(10, 1))
-    model = LaplaceRegressor(; model=flux_model, epochs=50)
+    model = LaplaceRegressor(; model=flux_model, epochs=20)
 
+    #testing more complex dataset
     X, y = MLJ.make_regression(100, 4; noise=0.5, sparse=0.2, outliers=0.1)
     #train, test = partition(eachindex(y), 0.7); # 70:30 split
     mach = MLJ.machine(model, X, y)  
@@ -21,9 +22,9 @@ cv = MLJBase.CV(; nfolds=3)
     MLJBase.predict_mode(mach, X)   # point predictions
     MLJBase.fitted_params(mach)   #fitted params function 
     MLJBase.training_losses(mach) #training loss history
-    model.epochs = 100 #changing number of epochs
+    model.epochs = 40 #changing number of epochs
     MLJBase.fit!(mach; verbosity=0) #testing update function
-    model.epochs = 50 #changing number of epochs to a lower number
+    model.epochs = 30 #changing number of epochs to a lower number
     MLJBase.fit!(mach; verbosity=0) #testing update function
     model.fit_prior_nsteps = 200 #changing LaplaceRedux fit steps
     MLJBase.fit!(mach; verbosity=0) #testing update function (the laplace part)
@@ -41,15 +42,21 @@ cv = MLJBase.CV(; nfolds=3)
 
 
     #testing default mlp builder
-    model = LaplaceRegressor(; model=nothing, epochs=50)
+    model = LaplaceRegressor(; model=nothing, epochs=20)
     mach = MLJ.machine(model, X, y)  
-    MLJBase.fit!(mach; verbosity=0)
+    MLJBase.fit!(mach; verbosity=1)
     yhat = MLJBase.predict(mach, X) # probabilistic predictions
     MLJBase.predict_mode(mach, X)   # point predictions
     MLJBase.fitted_params(mach)   #fitted params function 
     MLJBase.training_losses(mach) #training loss history
     model.epochs = 100 #changing number of epochs
-    MLJBase.fit!(mach; verbosity=0) #testing update function
+    MLJBase.fit!(mach; verbosity=1) #testing update function
+
+    #testing dataset_shape for one dimensional function
+    X, y = MLJ.make_regression(100, 1; noise=0.5, sparse=0.2, outliers=0.1)
+    model = LaplaceRegressor(; model=nothing, epochs=20)
+    mach = MLJ.machine(model, X, y)  
+    MLJBase.fit!(mach; verbosity=0)
 
 
 
@@ -60,7 +67,7 @@ end
     # Define the model
     flux_model = Chain(Dense(4, 10, relu), Dense(10, 3))
 
-    model = LaplaceClassifier(; model=flux_model, epochs=50)
+    model = LaplaceClassifier(; model=flux_model, epochs=20)
 
     X, y = MLJ.@load_iris
     mach = MLJ.machine(model, X, y)
@@ -76,9 +83,9 @@ end
     MLJBase.pdf.(yhat, "virginica")    # probabilities for the "verginica" class
     MLJBase.fitted_params(mach)  # fitted params 
     MLJBase.training_losses(mach) #training loss history
-    model.epochs = 100 #changing number of epochs
+    model.epochs = 40 #changing number of epochs
     MLJBase.fit!(mach; verbosity=0) #testing update function
-    model.epochs = 50 #changing number of epochs to a lower number
+    model.epochs = 30 #changing number of epochs to a lower number
     MLJBase.fit!(mach; verbosity=0) #testing update function
     model.fit_prior_nsteps = 200 #changing LaplaceRedux fit steps
     MLJBase.fit!(mach; verbosity=0) #testing update function (the laplace part)
