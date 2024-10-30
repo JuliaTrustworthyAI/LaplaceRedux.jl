@@ -346,8 +346,6 @@ function MMI.update(m::LaplaceModels, verbosity, old_fitresult, old_cache, X, y)
         report = (loss_history=old_loss_history,)
         cache = (deepcopy(m), old_state_tree, old_loss_history)
 
-    #else
-        #fitresult, cache, report = MLJBase.fit(m, verbosity, X, y)
     end
 
     return fitresult, cache, report
