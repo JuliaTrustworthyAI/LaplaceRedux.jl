@@ -110,7 +110,7 @@ function default_build(seed::Int, shape)
     chain = Chain(
         Dense(n_input, 20, relu),
         Dense(20, 20, relu),
-        #Dense(20, 20, relu),
+        Dense(20, 20, relu),
         Dense(20, n_output)
     )
     
@@ -140,7 +140,7 @@ function MMI.fit(m::LaplaceModels, verbosity, X, y)
     y, decode = y
 
     if (m.model === nothing)
-        @warn "Warning: no Flux model has been provided in the model. LaplaceRedux will use a standard MLP with 3 hidden layers with 20 neurons each and input and output layers compatible with the dataset."
+        @warn "Warning: no Flux model has been provided in the model. LaplaceRedux will use a standard MLP with 2 hidden layers with 20 neurons each and input and output layers compatible with the dataset."
         shape = dataset_shape(m, X, y)
 
         m.model = default_build(11, shape)
@@ -605,7 +605,7 @@ Train the machine using `fit!(mach, rows=...)`.
 
 # Hyperparameters (format: name-type-default value-restrictions)
 
-- `model::Union{Flux.Chain,Nothing} = nothing`:                                                     Either nothing or a Flux model provided by the user and compatible with the dataset. In the former case, LaplaceRedux will use a standard MLP with 3 hidden layer with 20 neurons each.
+- `model::Union{Flux.Chain,Nothing} = nothing`:                                                     Either nothing or a Flux model provided by the user and compatible with the dataset. In the former case, LaplaceRedux will use a standard MLP with 2 hidden layer with 20 neurons each.
 
 - `flux_loss = Flux.Losses.logitcrossentropy` :                                                     a Flux loss function
 
@@ -743,7 +743,7 @@ Train the machine using `fit!(mach, rows=...)`.
 
 # Hyperparameters (format: name-type-default value-restrictions)
 
-- `model::Union{Flux.Chain,Nothing} = nothing`:                                                     Either nothing or a Flux model provided by the user and compatible with the dataset. In the former case, LaplaceRedux will use a standard MLP with 3 hidden layer with 20 neurons each.
+- `model::Union{Flux.Chain,Nothing} = nothing`:                                                     Either nothing or a Flux model provided by the user and compatible with the dataset. In the former case, LaplaceRedux will use a standard MLP with 2 hidden layer with 20 neurons each.
 - `flux_loss = Flux.Losses.logitcrossentropy` :                                                     a Flux loss function
 
 - `optimiser = Adam()`                                                                              a Flux optimiser
