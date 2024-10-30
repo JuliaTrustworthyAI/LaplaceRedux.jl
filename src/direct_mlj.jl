@@ -1,4 +1,3 @@
-#module MLJLaplaceRedux
 using Optimisers: Optimisers
 using Flux
 using Random
@@ -81,7 +80,6 @@ Compute the the number of features of the X input dataset and  the number of var
 - (input size, output size)
 """
 function dataset_shape(model::LaplaceModels, X, y)
-    #X = X isa Tables.MatrixTable ? MLJBase.matrix(X) : X
     n_input = size(X, 1)
     dims = size(y)
     if length(dims) == 1
@@ -142,6 +140,7 @@ function MMI.fit(m::LaplaceModels, verbosity, X, y)
     y, decode = y
 
     if (m.model === nothing)
+        @warn "Warning: no Flux model has been provided in the model. LaplaceRedux will use a standard MLP with 3 hidden layers with 20 neurons each and input and output layers compatible with the dataset."
         shape = dataset_shape(m, X, y)
 
         m.model = default_build(11, shape)
@@ -606,7 +605,7 @@ Train the machine using `fit!(mach, rows=...)`.
 
 # Hyperparameters (format: name-type-default value-restrictions)
 
-- `model::Flux.Chain = nothing`:                                                               a Flux model provided by the user and compatible with the dataset.
+- `model::Union{Flux.Chain,Nothing} = nothing`:                                                     Either nothing or a Flux model provided by the user and compatible with the dataset. In the former case, LaplaceRedux will use a standard MLP with 3 hidden layer with 20 neurons each.
 
 - `flux_loss = Flux.Losses.logitcrossentropy` :                                                     a Flux loss function
 
@@ -744,8 +743,7 @@ Train the machine using `fit!(mach, rows=...)`.
 
 # Hyperparameters (format: name-type-default value-restrictions)
 
-- `model::Flux.Chain = nothing`:                                                                    a Flux model provided by the user and compatible with the dataset.
-
+- `model::Union{Flux.Chain,Nothing} = nothing`:                                                     Either nothing or a Flux model provided by the user and compatible with the dataset. In the former case, LaplaceRedux will use a standard MLP with 3 hidden layer with 20 neurons each.
 - `flux_loss = Flux.Losses.logitcrossentropy` :                                                     a Flux loss function
 
 - `optimiser = Adam()`                                                                              a Flux optimiser
@@ -846,4 +844,3 @@ See also [LaplaceRedux.jl](https://github.com/JuliaTrustworthyAI/LaplaceRedux.jl
 """
 LaplaceRegressor
 
-#end # module
