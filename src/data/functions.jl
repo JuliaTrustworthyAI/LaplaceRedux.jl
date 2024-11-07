@@ -1,4 +1,4 @@
-import Random
+using Random: Random
 
 """
     toy_data_linear(N=100)
@@ -42,7 +42,7 @@ toy_data_non_linear()
 ```
 
 """
-function toy_data_non_linear( N=100; seed=nothing)
+function toy_data_non_linear(N=100; seed=nothing)
 
     #set seed if available
     if seed !== nothing

@@ -93,7 +93,7 @@ Computes the Bayesian predictivie distribution from a neural network with a Lapl
 - `link_approx::Symbol=:probit`: Link function approximation. Options are `:probit` and `:plugin`.
 - `predict_proba::Bool=true`: If `true` (default) apply a sigmoid or a softmax function to the output of the Flux model.
 - `return_distr::Bool=false`: if `false` (default), the function outputs either the direct output of the chain or pseudo-probabilities (if `predict_proba=true`).
-    if `true` predict return a Bernoulli distribution in binary classification tasks and a categorical distribution in multiclassification tasks.
+    if `true` predict returns a probability distribution.
 
 # Returns
 
@@ -144,7 +144,6 @@ function predict(
         else
             return fμ, pred_var
         end
-
     end
 
     # Classification:

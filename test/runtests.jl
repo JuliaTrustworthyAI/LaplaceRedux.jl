@@ -34,5 +34,7 @@ using Test
     @testset "KronDecomposed" begin
         include("krondecomposed.jl")
     end
-
+    @testset "Interface" begin
+        include("direct_mlj_interface.jl")
+    end
 end
