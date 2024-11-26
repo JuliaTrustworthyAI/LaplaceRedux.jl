@@ -6,6 +6,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 *Note*: We try to adhere to these practices as of version [v0.2.1].
 
+
+## Version [2.0.0] - 2024-11-26
+
+
+
+### Added
+
+-  added support to MLJ [#126] [#134]
+
+
 ## Version [1.1.1] - 2024-09-12
 
 ### Changed
