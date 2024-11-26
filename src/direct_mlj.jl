@@ -582,9 +582,12 @@ $(MMI.doc_header(LaplaceClassifier))
 
 # Training data
 
-In MLJ or MLJBase, given a dataset X,y and a Flux Chain adapt to the dataset, pass the chain to the model
+In MLJ or MLJBase, given a dataset X,y and a `Flux_Chain` adapted to the dataset, pass the
+chain to the model
 
+```julia
 laplace_model = LaplaceClassifier(model = Flux_Chain,kwargs...)
+```
 
 then bind an instance `laplace_model` to data with
 
@@ -605,7 +608,7 @@ Train the machine using `fit!(mach, rows=...)`.
 
 # Hyperparameters (format: name-type-default value-restrictions)
 
-- `model::Union{Flux.Chain,Nothing} = nothing`:                                                     Either nothing or a Flux model provided by the user and compatible with the dataset. In the former case, LaplaceRedux will use a standard MLP with 2 hidden layer with 20 neurons each.
+- `model::Union{Flux.Chain,Nothing} = nothing`:                                                     Either nothing or a Flux model provided by the user and compatible with the dataset. In the former case, LaplaceRedux will use a standard MLP with 2 hidden layers with 20 neurons each.
 
 - `flux_loss = Flux.Losses.logitcrossentropy` :                                                     a Flux loss function
 
@@ -642,8 +645,6 @@ Train the machine using `fit!(mach, rows=...)`.
 - `predict_mode(mach, Xnew)`: instead return the mode of each
   prediction above.
 
-- `training_losses(mach)`: return the loss history from report
-
 
 # Fitted parameters
 
@@ -674,6 +675,8 @@ The fields of `report(mach)` are:
 - `loss_history`: an array containing the total loss per epoch.
 
 # Accessor functions
+
+- `training_losses(mach)`: return the loss history from report
 
 
 # Examples
@@ -721,9 +724,12 @@ $(MMI.doc_header(LaplaceRegressor))
 
 # Training data
 
-In MLJ or MLJBase, given a dataset X,y and a Flux Chain adapt to the dataset, pass the chain to the model
+In MLJ or MLJBase, given a dataset X,y and a `Flux_Chain` adapted to the dataset, pass the
+chain to the model
 
+```julia
 laplace_model = LaplaceRegressor(model = Flux_Chain,kwargs...)
+```
 
 then bind an instance `laplace_model` to data with
 
@@ -743,7 +749,7 @@ Train the machine using `fit!(mach, rows=...)`.
 
 # Hyperparameters (format: name-type-default value-restrictions)
 
-- `model::Union{Flux.Chain,Nothing} = nothing`:                                                     Either nothing or a Flux model provided by the user and compatible with the dataset. In the former case, LaplaceRedux will use a standard MLP with 2 hidden layer with 20 neurons each.
+- `model::Union{Flux.Chain,Nothing} = nothing`:                                                     Either nothing or a Flux model provided by the user and compatible with the dataset. In the former case, LaplaceRedux will use a standard MLP with 2 hidden layers with 20 neurons each.
 - `flux_loss = Flux.Losses.logitcrossentropy` :                                                     a Flux loss function
 
 - `optimiser = Adam()`                                                                              a Flux optimiser
@@ -778,8 +784,6 @@ Train the machine using `fit!(mach, rows=...)`.
 - `predict_mode(mach, Xnew)`: instead return the mode of each
   prediction above.
 
-- `training_losses(mach)`: return the loss history from report
-
 
 # Fitted parameters
 
@@ -812,6 +816,8 @@ The fields of `report(mach)` are:
 
 
 # Accessor functions
+
+- `training_losses(mach)`: return the loss history from report
 
 
 
