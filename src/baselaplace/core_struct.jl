@@ -27,9 +27,13 @@ Container for the parameters of a Laplace approximation.
 - `backend::Symbol`: the backend to use. Possible values are `:GGN` and `:Fisher`.
 - `curvature::Union{Curvature.CurvatureInterface,Nothing}`: the curvature interface. Possible values are `nothing` or a concrete subtype of `CurvatureInterface`.
 - `observational_noise::Real`: the observation noise
+- `σ::Real`: alias for `observational_noise`.
 - `prior_mean::Real`: the prior mean of the network parameters.
+- `μ₀::Real`: alias for `prior_mean`.
 - `prio_precision::Real`: the prior precision for the network parameters.
+- `λ::Real`: alias for `prior_precision`.
 - `prior_precision_matrix::Union{Nothing,AbstractMatrix,UniformScaling}`: the prior precision matrix for the network parameters.
+- `P₀::Union{Nothing,AbstractMatrix,UniformScaling}`: alias for `prior_precision_matrix`.
 """
 Base.@kwdef struct LaplaceParams
     subset_of_weights::Symbol = :all
@@ -38,9 +42,13 @@ Base.@kwdef struct LaplaceParams
     backend::Symbol = :GGN
     curvature::Union{Curvature.CurvatureInterface,Nothing} = nothing
     observational_noise::Real = 1.0
+    σ::Real = observational_noise
     prior_mean::Real = 0.0
+    μ₀::Real = prior_mean
     prior_precision::Real = 1.0
+    λ::Real = prior_precision
     prior_precision_matrix::Union{Nothing,AbstractMatrix,UniformScaling} = nothing
+    P₀::Union{Nothing,AbstractMatrix,UniformScaling} = prior_precision_matrix
 end
 
 function Base.getproperty(ce::LaplaceParams, sym::Symbol)
