@@ -100,7 +100,7 @@ Smaller weights in a neural network can result in a model that is more stable an
 making a prediction on new data.
 """
 function _weight_penalty(la::AbstractLaplace)
-    μ = la.posterior.μ
+    μ = la.posterior.posterior_mean
     μ₀ = get_prior_mean(la)
     Δ = μ .- μ₀
     P₀ = prior_precision(la)

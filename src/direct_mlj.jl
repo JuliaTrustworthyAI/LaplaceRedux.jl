@@ -484,10 +484,10 @@ function MMI.fitted_params(model::LaplaceModels, fitresult)
     la, decode = fitresult
     posterior = la.posterior
     return (
-        mean=posterior.μ,
+        mean=posterior.posterior_mean,
         H=posterior.H,
         P=posterior.P,
-        cov_matrix=posterior.Σ,
+        cov_matrix=posterior.posterior_covariance_matrix,
         n_data=posterior.n_data,
         n_params=posterior.n_params,
         n_out=posterior.n_out,
