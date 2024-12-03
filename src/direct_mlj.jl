@@ -211,9 +211,9 @@ function MMI.fit(m::LaplaceModels, verbosity, X, y)
         subnetwork_indices=m.subnetwork_indices,
         hessian_structure=m.hessian_structure,
         backend=m.backend,
-        σ=m.observational_noise,
-        μ₀=m.prior_mean,
-        P₀=m.prior_precision_matrix,
+        observational_noise=m.observational_noise,
+        prior_mean=m.prior_mean,
+        prior_precision_matrix=m.prior_precision_matrix,
     )
 
     if typeof(m) == LaplaceClassifier
@@ -300,9 +300,9 @@ function MMI.update(m::LaplaceModels, verbosity, old_fitresult, old_cache, X, y)
                 subnetwork_indices=m.subnetwork_indices,
                 hessian_structure=m.hessian_structure,
                 backend=m.backend,
-                σ=m.observational_noise,
-                μ₀=m.prior_mean,
-                P₀=m.prior_precision_matrix,
+                observational_noise=m.observational_noise,
+                prior_mean=m.prior_mean,
+                prior_precision_matrix=m.prior_precision_matrix,
             )
             if typeof(m) == LaplaceClassifier
                 la.likelihood = :classification
@@ -347,9 +347,9 @@ function MMI.update(m::LaplaceModels, verbosity, old_fitresult, old_cache, X, y)
             subnetwork_indices=m.subnetwork_indices,
             hessian_structure=m.hessian_structure,
             backend=m.backend,
-            σ=m.observational_noise,
-            μ₀=m.prior_mean,
-            P₀=m.prior_precision_matrix,
+            observational_noise=m.observational_noise,
+            prior_mean=m.prior_mean,
+            prior_precision_matrix=m.prior_precision_matrix,
         )
         if typeof(m) == LaplaceClassifier
             la.likelihood = :classification
