@@ -18,7 +18,7 @@ LaplaceRedux.n_params(la::Laplace) = LaplaceRedux.n_params(la.model, la.est_para
 Helper function to extract the prior mean of the parameters from a Laplace approximation.
 """
 function get_prior_mean(la::Laplace)
-    return la.prior.μ₀
+    return la.prior.prior_mean
 end
 
 """
@@ -27,7 +27,7 @@ end
 Helper function to extract the prior precision matrix from a Laplace approximation.
 """
 function prior_precision(la::Laplace)
-    return la.prior.P₀
+    return la.prior.prior_precision_matrix
 end
 
 """
@@ -39,7 +39,7 @@ on the last layer of the NN, of a `Flux.Chain` with Laplace approximation.
 outdim(la::AbstractLaplace) = outdim(la.model)
 
 @doc raw"""
-    posterior_precision(la::AbstractLaplace, H=la.posterior.H, P₀=la.prior.P₀)
+    posterior_precision(la::AbstractLaplace, H=la.posterior.H, P₀=la.prior.prior_precision_matrix)
 
 Computes the posterior precision ``P`` for a fitted Laplace Approximation as follows,
 
@@ -47,7 +47,7 @@ Computes the posterior precision ``P`` for a fitted Laplace Approximation as fol
 
 where ``\sum_{n=1}^N\nabla_{\theta}^2\log p(\mathcal{D}_n|\theta)|_{\hat\theta}=H`` is the Hessian and ``\nabla_{\theta}^2 \log p(\theta)|_{\hat\theta}=P_0`` is the prior precision and ``\hat\theta`` is the MAP estimate.
 """
-function posterior_precision(la::AbstractLaplace, H=la.posterior.H, P₀=la.prior.P₀)
+function posterior_precision(la::AbstractLaplace, H=la.posterior.H, P₀=la.prior.prior_precision_matrix)
     @assert !isnothing(H) "Hessian not available. Either no value supplied or Laplace Approximation has not yet been estimated."
     return H + P₀
 end
@@ -70,7 +70,7 @@ end
 function log_likelihood(la::AbstractLaplace)
     factor = -_H_factor(la)
     if la.likelihood == :regression
-        c = la.posterior.n_data * la.posterior.n_out * log(la.prior.σ * sqrt(2 * pi))
+        c = la.posterior.n_data * la.posterior.n_out * log(la.prior.observational_noise * sqrt(2 * pi))
     else
         c = 0
     end
@@ -82,7 +82,7 @@ end
 
 Returns the factor σ⁻², where σ is used in the zero-centered Gaussian prior p(θ) = N(θ;0,σ²I)
 """
-_H_factor(la::AbstractLaplace) = 1 / (la.prior.σ^2)
+_H_factor(la::AbstractLaplace) = 1 / (la.prior.observational_noise^2)
 
 """
     _init_H(la::AbstractLaplace)
@@ -100,7 +100,7 @@ Smaller weights in a neural network can result in a model that is more stable an
 making a prediction on new data.
 """
 function _weight_penalty(la::AbstractLaplace)
-    μ = la.posterior.μ
+    μ = la.posterior.posterior_mean
     μ₀ = get_prior_mean(la)
     Δ = μ .- μ₀
     P₀ = prior_precision(la)
@@ -120,14 +120,14 @@ function log_marginal_likelihood(
 
     # update prior precision:
     if !isnothing(P₀)
-        la.prior.P₀ =
+        la.prior.prior_precision_matrix =
             typeof(P₀) <: AbstractFloat ? UniformScaling(P₀)(la.posterior.n_params) : P₀
     end
 
     # update observation noise:
     if !isnothing(σ)
-        @assert (la.likelihood == :regression || la.prior.σ == σ) "Can only change observational noise σ for regression."
-        la.prior.σ = σ
+        @assert (la.likelihood == :regression || la.prior.observational_noise == σ) "Can only change observational noise σ for regression."
+        la.prior.observational_noise = σ
     end
 
     return log_likelihood(la) - 0.5 * (log_det_ratio(la) + _weight_penalty(la))
@@ -147,7 +147,7 @@ end
 
 
 """
-log_det_prior_precision(la::AbstractLaplace) = sum(log.(diag(la.prior.P₀)))
+log_det_prior_precision(la::AbstractLaplace) = sum(log.(diag(la.prior.prior_precision_matrix)))
 
 """
     log_det_posterior_precision(la::AbstractLaplace)

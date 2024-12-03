@@ -26,10 +26,14 @@ Container for the parameters of a Laplace approximation.
 - `hessian_structure::HessianStructure`: the structure of the Hessian. Possible values are `:full` and `:kron` or a concrete subtype of `HessianStructure`.
 - `backend::Symbol`: the backend to use. Possible values are `:GGN` and `:Fisher`.
 - `curvature::Union{Curvature.CurvatureInterface,Nothing}`: the curvature interface. Possible values are `nothing` or a concrete subtype of `CurvatureInterface`.
-- `σ::Real`: the observation noise
-- `μ₀::Real`: the prior mean
-- `λ::Real`: the prior precision
-- `P₀::Union{Nothing,AbstractMatrix,UniformScaling}`: the prior precision matrix
+- `observational_noise::Real`: the observation noise
+- `σ::Real`: alias for `observational_noise`.
+- `prior_mean::Real`: the prior mean of the network parameters.
+- `μ₀::Real`: alias for `prior_mean`.
+- `prio_precision::Real`: the prior precision for the network parameters.
+- `λ::Real`: alias for `prior_precision`.
+- `prior_precision_matrix::Union{Nothing,AbstractMatrix,UniformScaling}`: the prior precision matrix for the network parameters.
+- `P₀::Union{Nothing,AbstractMatrix,UniformScaling}`: alias for `prior_precision_matrix`.
 """
 Base.@kwdef struct LaplaceParams
     subset_of_weights::Symbol = :all
@@ -37,10 +41,30 @@ Base.@kwdef struct LaplaceParams
     hessian_structure::Union{HessianStructure,Symbol,String} = FullHessian()
     backend::Symbol = :GGN
     curvature::Union{Curvature.CurvatureInterface,Nothing} = nothing
-    σ::Real = 1.0
-    μ₀::Real = 0.0
-    λ::Real = 1.0
-    P₀::Union{Nothing,AbstractMatrix,UniformScaling} = nothing
+    observational_noise::Real = 1.0
+    σ::Real = observational_noise
+    prior_mean::Real = 0.0
+    μ₀::Real = prior_mean
+    prior_precision::Real = 1.0
+    λ::Real = prior_precision
+    prior_precision_matrix::Union{Nothing,AbstractMatrix,UniformScaling} = nothing
+    P₀::Union{Nothing,AbstractMatrix,UniformScaling} = prior_precision_matrix
+end
+
+function Base.getproperty(ce::LaplaceParams, sym::Symbol)
+    sym = sym === :σ ? :observational_noise : sym
+    sym = sym === :μ₀ ? :prior_mean : sym
+    sym = sym === :λ ? :prior_precision : sym
+    sym = sym === :P₀ ? :prior_precision_matrix : sym
+    return Base.getfield(ce, sym)
+end
+
+function Base.setproperty!(ce::LaplaceParams, sym::Symbol, val)
+    sym = sym === :σ ? :observational_noise : sym
+    sym = sym === :μ₀ ? :prior_mean : sym
+    sym = sym === :λ ? :prior_precision : sym
+    sym = sym === :P₀ ? :prior_precision_matrix : sym
+    return Base.setfield!(ce, sym, val)
 end
 
 include("estimation_params.jl")
@@ -96,7 +120,7 @@ la = Laplace(nn, likelihood=:regression)
 """
 function Laplace(model::Any; likelihood::Symbol, kwargs...)
     args = LaplaceParams(; kwargs...)
-    @assert !(args.σ != 1.0 && likelihood != :regression) "Observation noise σ ≠ 1 only available for regression."
+    @assert !(args.observational_noise != 1.0 && likelihood != :regression) "Observation noise σ ≠ 1 only available for regression."
 
     # Unpack arguments and wrap in containers:
     est_args = EstimationParams(args, model, likelihood)

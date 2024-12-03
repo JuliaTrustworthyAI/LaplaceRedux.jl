@@ -334,7 +334,7 @@ function run_workflow(
     la = Laplace(
         nn;
         likelihood=likelihood,
-        λ=λ,
+        prior_precision=λ,
         subset_of_weights=subset_of_weights,
         backend=backend,
         subnetwork_indices=subnetwork_indices,

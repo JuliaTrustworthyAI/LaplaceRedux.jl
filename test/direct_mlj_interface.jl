@@ -14,6 +14,14 @@ cv = MLJBase.CV(; nfolds=3)
     flux_model = Chain(Dense(4, 10, relu), Dense(10, 10, relu), Dense(10, 1))
     model = LaplaceRegressor(; model=flux_model, epochs=20)
 
+    # Aliases:
+    model.σ = model.observational_noise
+    model.μ₀ = model.prior_mean
+    model.P₀ = model.prior_precision_matrix
+    @test model.observational_noise == model.σ
+    @test model.prior_mean == model.μ₀
+    @test model.prior_precision_matrix == model.P₀
+
     #testing more complex dataset
     X, y = MLJBase.make_regression(100, 4; noise=0.5, sparse=0.2, outliers=0.1)
     #train, test = partition(eachindex(y), 0.7); # 70:30 split

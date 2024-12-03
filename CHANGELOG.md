@@ -6,6 +6,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 *Note*: We try to adhere to these practices as of version [v0.2.1].
 
+
+## Version [1.2.0] - 2024-12-03
+
+### Changed
+
+- Largely removed unicode characters from code base. [#134]
+- Removed legacy v1.9 from CI testing. [#134]
+
+### Added
+
+- Added general support for MLJ [#126] [#134]
+
 ## Version [1.1.1] - 2024-09-12
 
 ### Changed

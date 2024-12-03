@@ -46,7 +46,7 @@ function _fit!(
     la.posterior.H = H
     la.posterior.loss = loss
     la.posterior.P = posterior_precision(la)
-    la.posterior.Σ = posterior_covariance(la, la.posterior.P)
+    la.posterior.posterior_covariance_matrix = posterior_covariance(la, la.posterior.P)
     return la.posterior.n_data = n_data
 end
 
