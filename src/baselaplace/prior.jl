@@ -39,16 +39,16 @@ end
 Extracts the prior parameters from a `LaplaceParams` object.
 """
 function Prior(params::LaplaceParams, model::Any, likelihood::Symbol)
-    P₀ = params.prior_precision_matrix
+    prior_precision_matrix = params.prior_precision_matrix
     n = LaplaceRedux.n_params(model, EstimationParams(params, model, likelihood))
-    if typeof(P₀) <: UniformScaling
-        P₀ = P₀(n)
-    elseif isnothing(P₀)
-        P₀ = UniformScaling(params.prior_precision)(n)
+    if typeof(prior_precision_matrix) <: UniformScaling
+        prior_precision_matrix = prior_precision_matrix(n)
+    elseif isnothing(prior_precision_matrix)
+        prior_precision_matrix = UniformScaling(params.prior_precision)(n)
     end
     # Sanity:
-    if isa(P₀, AbstractMatrix)
-        @assert all(size(P₀) .== n) "Dimensions of prior Hessian $(size(P₀)) do not align with number of parameters ($n)"
+    if isa(prior_precision_matrix, AbstractMatrix)
+        @assert all(size(prior_precision_matrix) .== n) "Dimensions of prior Hessian $(size(prior_precision_matrix)) do not align with number of parameters ($n)"
     end
-    return Prior(params.observational_noise, params.prior_mean, params.prior_precision, P₀)
+    return Prior(params.observational_noise, params.prior_mean, params.prior_precision, prior_precision_matrix)
 end
