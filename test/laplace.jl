@@ -9,7 +9,7 @@ using MLUtils
 using LinearAlgebra
 using Distributions: Normal, Bernoulli, Categorical
 using Random
-
+using CategoricalDistributions
 @testset "Construction" begin
 
     # One layer:
