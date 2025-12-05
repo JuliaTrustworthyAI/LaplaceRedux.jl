@@ -132,12 +132,12 @@ end
     #Random.seed!(123) # For reproducibility
     x, y = Data.toy_data_multi(50)
     X = hcat(x...)
-    y_train = Flux.onehotbatch(y, unique(y))
+    y_train = Flux.onehotbatch(y, unwrap.(unique(y)))
     y_train = Flux.unstack(y_train'; dims=1)
     data = zip(x, y_train)
     n_hidden = 3
     D = size(X, 1)
-    out_dim = length(unique(y))
+    out_dim = length(unwrap.(unique(y)))
     # Case: softmax activation function
     nn = Chain(Dense(D, n_hidden, σ), Dense(n_hidden, out_dim), softmax)
 
@@ -374,7 +374,7 @@ end
 
     # Classification multi:
     xs, y = LaplaceRedux.Data.toy_data_multi(n)
-    ytrain = Flux.onehotbatch(y, unique(y))
+    ytrain = Flux.onehotbatch(y, unwrap.(unique(y)))
     ytrain = Flux.unstack(ytrain'; dims=1)
     X = reduce(hcat, xs)
     Y = reduce(hcat, ytrain)
