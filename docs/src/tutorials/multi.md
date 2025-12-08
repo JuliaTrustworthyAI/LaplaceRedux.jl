@@ -6,7 +6,7 @@
 ``` julia
 using Pkg; Pkg.activate("docs")
 # Import libraries
-using Flux, Plots, TaijaPlotting, Random, Statistics, LaplaceRedux
+using Flux, Plots, TaijaPlotting, Random, Statistics, LaplaceRedux, CategoricalDistributions
 theme(:lime)
 ```
 
