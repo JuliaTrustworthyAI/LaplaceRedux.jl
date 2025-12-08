@@ -5,6 +5,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 *Note*: We try to adhere to these practices as of version [v0.2.1].
+## Version [1.3.0] - 2025-12-08
+- temporarely removed the support to taijadata due to issues with CategoricalDistribution 0.2
+- updated the package CategoricalDistribution to 0.2
+- Explicitly used LaplaceRedux.Laplace in the pytorch_comparison.jl to avoid name conflicts
 
 
 ## Version [1.2.0] - 2024-12-03

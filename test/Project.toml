@@ -1,6 +1,7 @@
 [deps]
 Aqua = "4c88cf16-eb10-579e-8560-4a9242c79595"
 CSV = "336ed68f-0bac-5ca0-87d4-7b16caf5d00b"
+CategoricalDistributions = "af321ab8-2d2e-40a6-b165-3d674595d28e"
 DataFrames = "a93c6f00-e57d-5684-b7b6-d8193f3e46c0"
 DelimitedFiles = "8bb1440f-4735-579b-a4ab-409b98df4dab"
 Distributions = "31c24e10-a181-5473-b8eb-7969acd0382f"
