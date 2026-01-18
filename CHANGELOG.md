@@ -6,6 +6,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 *Note*: We try to adhere to these practices as of version [v0.2.1].
 
+## Version [1.2.2] - 2026-01-08
+
+- Merged a bunch of compat related PRs.
+
 ## Version [1.2.1] - 2025-12-19
 
 - temporarily removed  TaijaData due to issues with CategoricalDistributions 0.2 [#142]
