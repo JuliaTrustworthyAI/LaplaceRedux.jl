@@ -9,7 +9,7 @@ using MLUtils
 using LinearAlgebra
 using Distributions: Normal, Bernoulli, Categorical
 using Random
-
+using CategoricalDistributions
 @testset "Construction" begin
 
     # One layer:
@@ -132,12 +132,12 @@ end
     #Random.seed!(123) # For reproducibility
     x, y = Data.toy_data_multi(50)
     X = hcat(x...)
-    y_train = Flux.onehotbatch(y, unique(y))
+    y_train = Flux.onehotbatch(y, unwrap.(unique(y)))
     y_train = Flux.unstack(y_train'; dims=1)
     data = zip(x, y_train)
     n_hidden = 3
     D = size(X, 1)
-    out_dim = length(unique(y))
+    out_dim = length(unwrap.(unique(y)))
     # Case: softmax activation function
     nn = Chain(Dense(D, n_hidden, σ), Dense(n_hidden, out_dim), softmax)
 
@@ -259,7 +259,7 @@ end
     @test LaplaceRedux.has_softmax_or_sigmoid_final_layer(model) == false
 end
 
-function train_nn(val::Dict; verbose=false)
+function train_nn(val::Dict; verbosity=0)
     # Unpack:
     X = val[:X]
     Y = val[:Y]
@@ -291,7 +291,7 @@ function train_nn(val::Dict; verbose=false)
             end
             update!(opt, Flux.params(nn), gs)
         end
-        if verbose && epoch % show_every == 0
+        if verbosity>0 && epoch % show_every == 0
             println("Epoch " * string(epoch))
             @show avg_loss(data)
         end
@@ -306,7 +306,7 @@ function run_workflow(
     backend::Symbol,
     subset_of_weights::Symbol;
     hessian_structure=:full,
-    verbose::Bool=false,
+    verbosity::Int=0,
     do_optimize_prior::Bool=true,
     do_predict::Bool=true,
 )
@@ -334,7 +334,7 @@ function run_workflow(
     la = Laplace(
         nn;
         likelihood=likelihood,
-        λ=λ,
+        prior_precision=λ,
         subset_of_weights=subset_of_weights,
         backend=backend,
         subnetwork_indices=subnetwork_indices,
@@ -342,7 +342,7 @@ function run_workflow(
     )
     fit!(la, data)
     if do_optimize_prior
-        optimize_prior!(la; verbose=verbose)
+        optimize_prior!(la; verbosity=verbosity)
     end
     if do_predict
         predict(la, X)
@@ -374,7 +374,7 @@ end
 
     # Classification multi:
     xs, y = LaplaceRedux.Data.toy_data_multi(n)
-    ytrain = Flux.onehotbatch(y, unique(y))
+    ytrain = Flux.onehotbatch(y, unwrap.(unique(y)))
     ytrain = Flux.unstack(ytrain'; dims=1)
     X = reduce(hcat, xs)
     Y = reduce(hcat, ytrain)

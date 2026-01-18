@@ -110,7 +110,7 @@ Next we optimize the prior precision $P_0$ and and observational noise $\sigma$ 
 ```{julia}
 #| output: true
 
-optimize_prior!(la; verbose=true)
+optimize_prior!(la; verbosity=1)
 plot(la, X_train, y_train; zoom=-5, size=(400,400))
 ```
 
@@ -128,7 +128,7 @@ then we can plot the calibration plot of our neural model
 
 ```{julia}
 #| output: true
-Calibration_Plot(la,y_test,vec(predicted_distributions);n_bins = 20)
+calibration_plot(la,y_test,vec(predicted_distributions);n_bins = 20)
 ``` 
 
 and compute the sharpness of the predictive distribution

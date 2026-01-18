@@ -111,7 +111,7 @@ plot(la, X_train, y_train; zoom=-5, size=(400,400))
 Next we optimize the prior precision $P_0$ and and observational noise $\sigma$ using Empirical Bayes:
 
 ``` julia
-optimize_prior!(la; verbose=true)
+optimize_prior!(la; verbosity=1)
 plot(la, X_train, y_train; zoom=-5, size=(400,400))
 ```
 
