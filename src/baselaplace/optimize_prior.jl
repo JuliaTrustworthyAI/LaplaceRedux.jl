@@ -19,8 +19,8 @@ function optimize_prior!(
 )
 
     # Setup:
-    logP₀ = isnothing(λinit) ? log.(unique(diag(la.prior.P₀))) : log.([λinit])   # prior precision (scalar)
-    logσ = isnothing(σinit) ? log.([la.prior.σ]) : log.([σinit])                 # noise (scalar)
+    logP₀ = isnothing(λinit) ? log.(unique(diag(la.prior.prior_precision_matrix))) : log.([λinit])   # prior precision (scalar)
+    logσ = isnothing(σinit) ? log.([la.prior.observational_noise]) : log.([σinit])                 # noise (scalar)
     opt = Adam(lr)
     show_every = round(n_steps / 10)
     i = 0

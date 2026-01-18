@@ -135,7 +135,7 @@ function predict(
     if la.likelihood == :regression
 
         # Add observational noise:
-        pred_var = fvar .+ la.prior.σ^2
+        pred_var = fvar .+ la.prior.observational_noise^2
         fstd = sqrt.(pred_var)
         pred_dist = [Normal(fμ[i], fstd[i]) for i in axes(fμ, 2)]
 

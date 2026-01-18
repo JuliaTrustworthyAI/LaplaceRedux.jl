@@ -6,7 +6,7 @@
 ``` julia
 using Pkg; Pkg.activate("docs")
 # Import libraries
-using Flux, Plots, TaijaPlotting, Random, Statistics, LaplaceRedux
+using Flux, Plots, TaijaPlotting, Random, Statistics, LaplaceRedux, CategoricalDistributions
 theme(:lime)
 ```
 
@@ -17,7 +17,7 @@ using LaplaceRedux.Data
 seed = 1234
 x, y = Data.toy_data_multi(seed=seed)
 X = hcat(x...)
-y_onehot = Flux.onehotbatch(y, unique(y))
+y_onehot = Flux.onehotbatch(y, unwrap.(unique(y)))
 y_onehot = Flux.unstack(y_onehot',1)
 ```
 
@@ -59,7 +59,7 @@ We set up a model
 ``` julia
 n_hidden = 3
 D = size(X,1)
-out_dim = length(unique(y))
+out_dim = length(unwrap.(unique(y)))
 nn = Chain(
     Dense(D, n_hidden, σ),
     Dense(n_hidden, out_dim)
@@ -103,7 +103,7 @@ optimize_prior!(la; verbosity=1, n_steps=100)
 with either the probit approximation:
 
 ``` julia
-_labels = sort(unique(y))
+_labels = sort(unwrap.(unique(y)))
 plt_list = []
 for target in _labels
     plt = plot(la, X_test, y_test; target=target, clim=(0,1))
@@ -117,7 +117,7 @@ plot(plt_list...)
 or the plugin approximation:
 
 ``` julia
-_labels = sort(unique(y))
+_labels = sort(unwrap.(unique(y)))
 plt_list = []
 for target in _labels
     plt = plot(la, X_test, y_test; target=target, clim=(0,1), link_approx=:plugin)

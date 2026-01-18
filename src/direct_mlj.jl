@@ -19,9 +19,9 @@ MLJBase.@mlj_model mutable struct LaplaceClassifier <: MLJBase.Probabilistic
     hessian_structure::Union{HessianStructure,Symbol,String} =
         :full::(_ in (:full, :diagonal))
     backend::Symbol = :GGN::(_ in (:GGN, :EmpiricalFisher))
-    σ::Float64 = 1.0
-    μ₀::Float64 = 0.0
-    P₀::Union{AbstractMatrix,UniformScaling,Nothing} = nothing
+    observational_noise::Float64 = 1.0
+    prior_mean::Float64 = 0.0
+    prior_precision_matrix::Union{AbstractMatrix,UniformScaling,Nothing} = nothing
     fit_prior_nsteps::Int = 100::(_ > 0)
     link_approx::Symbol = :probit::(_ in (:probit, :plugin))
 end
@@ -37,13 +37,31 @@ MLJBase.@mlj_model mutable struct LaplaceRegressor <: MLJBase.Probabilistic
     hessian_structure::Union{HessianStructure,Symbol,String} =
         :full::(_ in (:full, :diagonal))
     backend::Symbol = :GGN::(_ in (:GGN, :EmpiricalFisher))
-    σ::Float64 = 1.0
-    μ₀::Float64 = 0.0
-    P₀::Union{AbstractMatrix,UniformScaling,Nothing} = nothing
+    observational_noise::Float64 = 1.0
+    prior_mean::Float64 = 0.0
+    prior_precision_matrix::Union{AbstractMatrix,UniformScaling,Nothing} = nothing
     fit_prior_nsteps::Int = 100::(_ > 0)
 end
 
 LaplaceModels = Union{LaplaceRegressor,LaplaceClassifier}
+
+# Aliases
+const LM = LaplaceModels
+function Base.getproperty(ce::LM, sym::Symbol)
+    sym = sym === :σ ? :observational_noise : sym
+    sym = sym === :μ₀ ? :prior_mean : sym
+    sym = sym === :P₀ ? :prior_precision_matrix : sym
+    return Base.getfield(ce, sym)
+end
+function Base.setproperty!(ce::LM, sym::Symbol, val)
+    sym = sym === :σ ? :observational_noise : sym
+    sym = sym === :μ₀ ? :prior_mean : sym
+    sym = sym === :P₀ ? :prior_precision_matrix : sym
+    return Base.setfield!(ce, sym, val)
+end
+
+
+
 
 # for fit:
 function MMI.reformat(::LaplaceRegressor, X, y)
@@ -193,9 +211,9 @@ function MMI.fit(m::LaplaceModels, verbosity, X, y)
         subnetwork_indices=m.subnetwork_indices,
         hessian_structure=m.hessian_structure,
         backend=m.backend,
-        σ=m.σ,
-        μ₀=m.μ₀,
-        P₀=m.P₀,
+        observational_noise=m.observational_noise,
+        prior_mean=m.prior_mean,
+        prior_precision_matrix=m.prior_precision_matrix,
     )
 
     if typeof(m) == LaplaceClassifier
@@ -282,9 +300,9 @@ function MMI.update(m::LaplaceModels, verbosity, old_fitresult, old_cache, X, y)
                 subnetwork_indices=m.subnetwork_indices,
                 hessian_structure=m.hessian_structure,
                 backend=m.backend,
-                σ=m.σ,
-                μ₀=m.μ₀,
-                P₀=m.P₀,
+                observational_noise=m.observational_noise,
+                prior_mean=m.prior_mean,
+                prior_precision_matrix=m.prior_precision_matrix,
             )
             if typeof(m) == LaplaceClassifier
                 la.likelihood = :classification
@@ -315,9 +333,9 @@ function MMI.update(m::LaplaceModels, verbosity, old_fitresult, old_cache, X, y)
         :subnetwork_indices,
         :hessian_structure,
         :backend,
-        :σ,
-        :μ₀,
-        :P₀,
+        :observational_noise,
+        :prior_mean,
+        :prior_precision_matrix,
     )
         println(" updating only the laplace optimization part")
         old_la = old_fitresult[1]
@@ -329,9 +347,9 @@ function MMI.update(m::LaplaceModels, verbosity, old_fitresult, old_cache, X, y)
             subnetwork_indices=m.subnetwork_indices,
             hessian_structure=m.hessian_structure,
             backend=m.backend,
-            σ=m.σ,
-            μ₀=m.μ₀,
-            P₀=m.P₀,
+            observational_noise=m.observational_noise,
+            prior_mean=m.prior_mean,
+            prior_precision_matrix=m.prior_precision_matrix,
         )
         if typeof(m) == LaplaceClassifier
             la.likelihood = :classification
@@ -452,10 +470,10 @@ end
 
  # Returns
  A named tuple containing:
- - `μ`: The mean of the posterior distribution.
+ - `mean`: The mean of the posterior distribution.
  - `H`: The Hessian of the posterior distribution.
  - `P`: The precision matrix of the posterior distribution.
- - `Σ`: The covariance matrix of the posterior distribution.
+ - `cov_matrix`: The covariance matrix of the posterior distribution.
  - `n_data`: The number of data points.
  - `n_params`: The number of parameters.
  - `n_out`: The number of outputs.
@@ -466,10 +484,10 @@ function MMI.fitted_params(model::LaplaceModels, fitresult)
     la, decode = fitresult
     posterior = la.posterior
     return (
-        μ=posterior.μ,
+        mean=posterior.posterior_mean,
         H=posterior.H,
         P=posterior.P,
-        Σ=posterior.Σ,
+        cov_matrix=posterior.posterior_covariance_matrix,
         n_data=posterior.n_data,
         n_params=posterior.n_params,
         n_out=posterior.n_out,
@@ -517,7 +535,7 @@ function MMI.predict(m::LaplaceModels, fitresult, Xnew)
         means, variances = yhat
 
         # Create Normal distributions from the means and variances
-        return vec([Normal(μ, sqrt(σ)) for (μ, σ) in zip(means, variances)])
+        return vec([Normal(mean, sqrt(variance)) for (mean, variance) in zip(means, variances)])
 
     else
         predictions =
@@ -551,7 +569,7 @@ MMI.metadata_pkg(
 MLJBase.metadata_model(
     LaplaceClassifier;
     input_scitype=Union{
-        AbstractMatrix{<:Union{MLJBase.Finite,MLJBase.Continuous}}, # matrix with mixed types
+        AbstractMatrix{<:Union{MLJBase.Finite,MLJBase.Infinite}}, # matrix with mixed types
         MLJBase.Table(MLJBase.Finite, MLJBase.Continuous), # table with mixed types
     },
     target_scitype=AbstractArray{<:MLJBase.Finite}, # ordered factor or multiclass
@@ -562,8 +580,8 @@ MLJBase.metadata_model(
 MLJBase.metadata_model(
     LaplaceRegressor;
     input_scitype=Union{
-        AbstractMatrix{<:Union{MLJBase.Finite,MLJBase.Continuous}}, # matrix with mixed types
-        MLJBase.Table(MLJBase.Finite, MLJBase.Continuous), # table with mixed types
+        AbstractMatrix{<:Union{MLJBase.Finite, MLJBase.Infinite}}, # matrix with mixed types
+        MLJBase.Table(MLJBase.Finite, MLJBase.Infinite), # table with mixed types
     },
     target_scitype=AbstractArray{MLJBase.Continuous},
     supports_training_losses=true,
@@ -582,9 +600,12 @@ $(MMI.doc_header(LaplaceClassifier))
 
 # Training data
 
-In MLJ or MLJBase, given a dataset X,y and a Flux Chain adapt to the dataset, pass the chain to the model
+In MLJ or MLJBase, given a dataset X,y and a `Flux_Chain` adapted to the dataset, pass the
+chain to the model
 
+```julia
 laplace_model = LaplaceClassifier(model = Flux_Chain,kwargs...)
+```
 
 then bind an instance `laplace_model` to data with
 
@@ -605,7 +626,7 @@ Train the machine using `fit!(mach, rows=...)`.
 
 # Hyperparameters (format: name-type-default value-restrictions)
 
-- `model::Union{Flux.Chain,Nothing} = nothing`:                                                     Either nothing or a Flux model provided by the user and compatible with the dataset. In the former case, LaplaceRedux will use a standard MLP with 2 hidden layer with 20 neurons each.
+- `model::Union{Flux.Chain,Nothing} = nothing`:                                                     Either nothing or a Flux model provided by the user and compatible with the dataset. In the former case, LaplaceRedux will use a standard MLP with 2 hidden layers with 20 neurons each.
 
 - `flux_loss = Flux.Losses.logitcrossentropy` :                                                     a Flux loss function
 
@@ -623,11 +644,11 @@ Train the machine using `fit!(mach, rows=...)`.
 
 - `backend::Symbol = :GGN::(_ in (:GGN, :EmpiricalFisher))`:                                        the backend to use, either `:GGN` or `:EmpiricalFisher`.
 
-- `σ::Float64 = 1.0`:                                                                               the standard deviation of the prior distribution.
+- `observational_noise (alias σ)::Float64 = 1.0`:                                                   the standard deviation of the prior distribution.
 
-- `μ₀::Float64 = 0.0`:                                                                              the mean of the prior distribution.
+- `prior_mean (alias μ₀)::Float64 = 0.0`:                                                           the mean of the prior distribution.
 
-- `P₀::Union{AbstractMatrix,UniformScaling,Nothing} = nothing`:                                     the covariance matrix of the prior distribution.
+- `prior_precision_matrix (alias P₀)::Union{AbstractMatrix,UniformScaling,Nothing} = nothing`:      the covariance matrix of the prior distribution.
 
 - `fit_prior_nsteps::Int = 100::(_ > 0) `:                                                          the number of steps used to fit the priors.
 
@@ -642,20 +663,18 @@ Train the machine using `fit!(mach, rows=...)`.
 - `predict_mode(mach, Xnew)`: instead return the mode of each
   prediction above.
 
-- `training_losses(mach)`: return the loss history from report
-
 
 # Fitted parameters
 
 The fields of `fitted_params(mach)` are:
 
- - `μ`: The mean of the posterior distribution.
+ - `mean`: The mean of the posterior distribution.
 
  - `H`: The Hessian of the posterior distribution.
 
  - `P`: The precision matrix of the posterior distribution.
 
- - `Σ`: The covariance matrix of the posterior distribution.
+ - `cov_matrix`: The covariance matrix of the posterior distribution.
 
  - `n_data`: The number of data points.
 
@@ -674,6 +693,8 @@ The fields of `report(mach)` are:
 - `loss_history`: an array containing the total loss per epoch.
 
 # Accessor functions
+
+- `training_losses(mach)`: return the loss history from report
 
 
 # Examples
@@ -721,9 +742,12 @@ $(MMI.doc_header(LaplaceRegressor))
 
 # Training data
 
-In MLJ or MLJBase, given a dataset X,y and a Flux Chain adapt to the dataset, pass the chain to the model
+In MLJ or MLJBase, given a dataset X,y and a `Flux_Chain` adapted to the dataset, pass the
+chain to the model
 
+```julia
 laplace_model = LaplaceRegressor(model = Flux_Chain,kwargs...)
+```
 
 then bind an instance `laplace_model` to data with
 
@@ -743,7 +767,7 @@ Train the machine using `fit!(mach, rows=...)`.
 
 # Hyperparameters (format: name-type-default value-restrictions)
 
-- `model::Union{Flux.Chain,Nothing} = nothing`:                                                     Either nothing or a Flux model provided by the user and compatible with the dataset. In the former case, LaplaceRedux will use a standard MLP with 2 hidden layer with 20 neurons each.
+- `model::Union{Flux.Chain,Nothing} = nothing`:                                                     Either nothing or a Flux model provided by the user and compatible with the dataset. In the former case, LaplaceRedux will use a standard MLP with 2 hidden layers with 20 neurons each.
 - `flux_loss = Flux.Losses.logitcrossentropy` :                                                     a Flux loss function
 
 - `optimiser = Adam()`                                                                              a Flux optimiser
@@ -760,11 +784,11 @@ Train the machine using `fit!(mach, rows=...)`.
 
 - `backend::Symbol = :GGN::(_ in (:GGN, :EmpiricalFisher))`:                                        the backend to use, either `:GGN` or `:EmpiricalFisher`.
 
-- `σ::Float64 = 1.0`:                                                                               the standard deviation of the prior distribution.
+- `observational_noise (alias σ)::Float64 = 1.0`:                                                   the standard deviation of the prior distribution.
 
-- `μ₀::Float64 = 0.0`:                                                                              the mean of the prior distribution.
+- `prior_mean (alias μ₀)::Float64 = 0.0`:                                                           the mean of the prior distribution.
 
-- `P₀::Union{AbstractMatrix,UniformScaling,Nothing} = nothing`:                                     the covariance matrix of the prior distribution.
+- `prior_precision_matrix (alias P₀)::Union{AbstractMatrix,UniformScaling,Nothing} = nothing`:      the covariance matrix of the prior distribution.
 
 - `fit_prior_nsteps::Int = 100::(_ > 0) `:                                                          the number of steps used to fit the priors.
 
@@ -778,20 +802,18 @@ Train the machine using `fit!(mach, rows=...)`.
 - `predict_mode(mach, Xnew)`: instead return the mode of each
   prediction above.
 
-- `training_losses(mach)`: return the loss history from report
-
 
 # Fitted parameters
 
 The fields of `fitted_params(mach)` are:
 
- - `μ`: The mean of the posterior distribution.
+ - `mean`: The mean of the posterior distribution.
 
  - `H`: The Hessian of the posterior distribution.
 
  - `P`: The precision matrix of the posterior distribution.
 
- - `Σ`: The covariance matrix of the posterior distribution.
+ - `cov_matrix`: The covariance matrix of the posterior distribution.
 
  - `n_data`: The number of data points.
 
@@ -812,6 +834,8 @@ The fields of `report(mach)` are:
 
 
 # Accessor functions
+
+- `training_losses(mach)`: return the loss history from report
 
 
 
