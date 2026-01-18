@@ -19,7 +19,7 @@ include("testutils.jl")
         y = df[:, 3]
 
         X = hcat(x...)
-        y_train = Flux.onehotbatch(y, unique(y))
+        y_train = Flux.onehotbatch(y, unwrap.(unique(y)))
         y_train = Flux.unstack(y_train'; dims=1)
 
         data = zip(x, y_train)
@@ -28,7 +28,7 @@ include("testutils.jl")
         nn = deserialize(joinpath(@__DIR__, "datafiles", "nn-binary_multi.jlb"))
 
         @testset "LA - full weights - full hessian - ggn" begin
-            la = Laplace(
+            la = LaplaceRedux.Laplace(
                 nn;
                 likelihood=:classification,
                 hessian_structure=:full,
@@ -43,7 +43,7 @@ include("testutils.jl")
         end
 
         @testset "LA - full weights - full hessian - empfisher" begin
-            la = Laplace(
+            la = LaplaceRedux.Laplace(
                 nn;
                 likelihood=:classification,
                 hessian_structure=:full,
@@ -58,7 +58,7 @@ include("testutils.jl")
         end
 
         @testset "LA - last layer - full hessian - empfisher" begin
-            la = Laplace(
+            la = LaplaceRedux.Laplace(
                 nn;
                 likelihood=:classification,
                 hessian_structure=:full,
@@ -75,7 +75,7 @@ include("testutils.jl")
         end
 
         @testset "LA - last layer - full hessian - ggn" begin
-            la = Laplace(
+            la = LaplaceRedux.Laplace(
                 nn;
                 likelihood=:classification,
                 hessian_structure=:full,
@@ -92,7 +92,7 @@ include("testutils.jl")
         end
 
         @testset "LA - subnetwork - full hessian - ggn" begin
-            la = Laplace(
+            la = LaplaceRedux.Laplace(
                 nn;
                 likelihood=:classification,
                 hessian_structure=:full,
@@ -115,7 +115,7 @@ include("testutils.jl")
         end
 
         @testset "LA - subnetwork - full hessian - empfisher" begin
-            la = Laplace(
+            la = LaplaceRedux.Laplace(
                 nn;
                 likelihood=:classification,
                 hessian_structure=:full,
@@ -138,7 +138,7 @@ include("testutils.jl")
         end
 
         @testset "LA - full weights - kron - ggn" begin
-            la = Laplace(
+            la = LaplaceRedux.Laplace(
                 nn;
                 likelihood=:classification,
                 hessian_structure=:kron,
@@ -151,7 +151,7 @@ include("testutils.jl")
         end
 
         @testset "LA - last layer - kron - ggn" begin
-            la = Laplace(
+            la = LaplaceRedux.Laplace(
                 nn;
                 likelihood=:classification,
                 hessian_structure=:kron,
@@ -179,7 +179,7 @@ include("testutils.jl")
         nn = deserialize(joinpath(@__DIR__, "datafiles", "nn-binary_regression.jlb"))
 
         @testset "LA - full weights - full hessian - ggn" begin
-            la = Laplace(
+            la = LaplaceRedux.Laplace(
                 nn;
                 likelihood=:regression,
                 hessian_structure=:full,
@@ -192,7 +192,7 @@ include("testutils.jl")
         end
 
         @testset "LA - last layer - full hessian - ggn" begin
-            la = Laplace(
+            la = LaplaceRedux.Laplace(
                 nn;
                 likelihood=:regression,
                 hessian_structure=:full,
@@ -205,7 +205,7 @@ include("testutils.jl")
         end
 
         @testset "LA - subnetwork - full hessian - ggn" begin
-            la = Laplace(
+            la = LaplaceRedux.Laplace(
                 nn;
                 likelihood=:regression,
                 hessian_structure=:full,
