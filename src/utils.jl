@@ -38,5 +38,5 @@ Helper function to determine the output dimension of a `Flux.Chain`,
 corresponding to the number of neurons on the last layer of the NN.
 """
 function outdim(model::Chain)::Number
-    return [size(p) for p in Flux.trainable(model)][end][1]
+    return [size(p) for p in Flux.params(model)][end][1]
 end

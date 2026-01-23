@@ -40,10 +40,10 @@ function get_data(N=500; seed=1234, σtrue=0.3)
 
     for epoch in 1:epochs
         for d in data
-            gs = gradient(Flux.trainable(nn)) do
+            gs = gradient(Flux.params(nn)) do
                 l = loss(d...)
             end
-            Flux.Optimise.update!(opt, Flux.trainable(nn), gs)
+            Flux.Optimise.update!(opt, Flux.params(nn), gs)
         end
         if epoch % show_every == 0
             println("Epoch " * string(epoch))

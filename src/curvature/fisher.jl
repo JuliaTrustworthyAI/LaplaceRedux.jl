@@ -62,7 +62,7 @@ function full_batched(curvature::EmpiricalFisher, d::Tuple)
     loss = curvature.factor * curvature.loss_fun(nn(x), y)
     nn = curvature.model
     grads::Zygote.Grads = jacobian(
-        () -> curvature.loss_fun(nn(x), y; agg=identity), Flux.trainable(nn)
+        () -> curvature.loss_fun(nn(x), y; agg=identity), Flux.params(nn)
     )
     𝐠 = transpose(reduce(hcat, [grads[θ] for θ in curvature.params]))
     if curvature.subset_of_weights == :subnetwork
