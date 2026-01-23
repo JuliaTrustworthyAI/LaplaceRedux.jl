@@ -280,6 +280,7 @@ function train_nn(val::Dict; verbosity=0)
     loss(x, y) = getfield(Flux.Losses, loss_fun)(nn(x), y) + weight_regularization()
 
     opt = Adam()
+    t = Optimisers.setup(opt, nn)
     epochs = 200
     avg_loss(data) = mean(map(d -> loss(d[1], d[2]), data))
     show_every = epochs / 10
@@ -289,7 +290,7 @@ function train_nn(val::Dict; verbosity=0)
             gs = gradient(Flux.params(nn)) do
                 l = loss(d...)
             end
-            update!(opt, Flux.params(nn), gs)
+            update!(t, nn, gs)
         end
         if verbosity>0 && epoch % show_every == 0
             println("Epoch " * string(epoch))
