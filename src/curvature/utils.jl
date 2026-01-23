@@ -1,4 +1,5 @@
 using ChainRulesCore
+using Flux
 
 """
     jacobians(curvature::CurvatureInterface, X::AbstractArray; batched::Bool=false)
