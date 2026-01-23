@@ -30,7 +30,7 @@ function jacobians_unbatched(curvature::CurvatureInterface, X::AbstractArray)
     # Differentiate f with regards to the model parameters
     J = []
     ChainRulesCore.ignore_derivatives() do
-        𝐉 = jacobian(() -> nn(X), Flux.params(nn))
+        𝐉 = jacobian(() -> nn(X), Flux.trainable(nn))
         push!(J, 𝐉)
     end
     𝐉 = J[1]
@@ -56,7 +56,7 @@ function jacobians_batched(curvature::CurvatureInterface, X::AbstractArray)
     # Jacobian:
     grads = []
     ChainRulesCore.ignore_derivatives() do
-        g = jacobian(() -> nn(X), Flux.params(nn))
+        g = jacobian(() -> nn(X), Flux.trainable(nn))
         push!(grads, g)
     end
     grads = grads[1]
@@ -82,6 +82,6 @@ function gradients(
     curvature::CurvatureInterface, X::AbstractArray, y::Union{Number,AbstractArray}
 )::Zygote.Grads
     nn = curvature.model
-    𝐠 = gradient(() -> curvature.loss_fun(nn(X), y), Flux.params(nn))           # compute the gradients of the loss function with respect to the model parameters
+    𝐠 = gradient(() -> curvature.loss_fun(nn(X), y), Flux.trainable(nn))           # compute the gradients of the loss function with respect to the model parameters
     return 𝐠
 end

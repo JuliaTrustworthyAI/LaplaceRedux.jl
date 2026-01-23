@@ -1,9 +1,9 @@
 """
-    Flux.params(la::Laplace)
+    Flux.trainable(la::Laplace)
 
 Overloads the `params` function for a `Laplace` object.
 """
-Flux.params(la::Laplace) = Flux.params(la.model, la.est_params)
+Flux.trainable(la::Laplace) = Flux.trainable(la.model, la.est_params)
 
 """
     LaplaceRedux.n_params(la::Laplace)

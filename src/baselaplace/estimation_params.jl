@@ -34,7 +34,7 @@ function EstimationParams(params::LaplaceParams, model::Any, likelihood::Symbol)
     # Asserts:
     @assert params.subset_of_weights ∈ [:all, :last_layer, :subnetwork] "`subset_of_weights` of weights should be one of the following: `[:all, :last_layer, :subnetwork]`"
     if (params.subset_of_weights == :subnetwork)
-        validate_subnetwork_indices(params.subnetwork_indices, Flux.params(model))
+        validate_subnetwork_indices(params.subnetwork_indices, Flux.trainable(model))
     end
 
     est_params = EstimationParams(
@@ -51,12 +51,12 @@ function EstimationParams(params::LaplaceParams, model::Any, likelihood::Symbol)
 end
 
 """
-    Flux.params(model::Any, params::EstimationParams)
+    Flux.trainable(model::Any, params::EstimationParams)
 
 Extracts the parameters of a model based on the subset of weights specified in the `EstimationParams` object.
 """
-function Flux.params(model::Any, params::EstimationParams)
-    model_params = Flux.params(model)
+function Flux.trainable(model::Any, params::EstimationParams)
+    model_params = Flux.trainable(model)
     n_elements = length(model_params)
     if params.subset_of_weights == :all || params.subset_of_weights == :subnetwork
         # get all parameters and constants in logitbinarycrossentropy
@@ -79,7 +79,7 @@ function n_params(model::Any, est_params::EstimationParams)
     if est_params.subset_of_weights == :subnetwork
         n = length(est_params.subnetwork_indices)
     else
-        n = length(reduce(vcat, [vec(θ) for θ in Flux.params(model, est_params)]))
+        n = length(reduce(vcat, [vec(θ) for θ in Flux.trainable(model, est_params)]))
     end
     return n
 end
@@ -90,7 +90,7 @@ end
 Helper function to extract the MAP estimate of the parameters for the model based on the subset of weights specified in the `EstimationParams` object.
 """
 function get_map_estimate(model::Any, est_params::EstimationParams)
-    μ = reduce(vcat, [vec(θ) for θ in Flux.params(model, est_params)])
+    μ = reduce(vcat, [vec(θ) for θ in Flux.trainable(model, est_params)])
     return μ[(end - LaplaceRedux.n_params(model, est_params) + 1):end]
 end
 
@@ -102,7 +102,7 @@ Instantiates the curvature interface for a Laplace approximation. The curvature 
 function instantiate_curvature!(
     params::EstimationParams, model::Any, likelihood::Symbol, backend::Symbol
 )
-    model_params = Flux.params(model, params)
+    model_params = Flux.trainable(model, params)
 
     if params.subset_of_weights == :subnetwork
         subnetwork_indices = convert_subnetwork_indices(

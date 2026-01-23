@@ -51,7 +51,7 @@ D = size(X, 1)
 nn = Chain(Dense(D, n_hidden, σ), Dense(n_hidden, outdim))
 λ = 0.01
 sqnorm(x) = sum(abs2, x)
-weight_regularization(λ=λ) = 1 / 2 * λ^2 * sum(sqnorm, Flux.params(nn))
+weight_regularization(λ=λ) = 1 / 2 * λ^2 * sum(sqnorm, Flux.trainable(nn))
 loss(x, y) = getfield(Flux.Losses, loss_fun)(nn(x), y) + weight_regularization()
 
 opt = Adam()
@@ -62,7 +62,7 @@ show_every = epochs / 10
 
 for epoch in 1:epochs
     for d in data
-        gs = gradient(Flux.params(nn)) do
+        gs = gradient(Flux.trainable(nn)) do
             l = loss(d...)
         end
         update!(t, nn, gs)

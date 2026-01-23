@@ -42,10 +42,10 @@ end
 @testset "Parameters" begin
     nn = Chain(Dense(2, 2, σ), Dense(2, 1))
     la = Laplace(nn; likelihood=:classification, subset_of_weights=:last_layer)
-    @test Flux.params(la) == collect(Flux.params(nn))[(end - 1):end]
+    @test Flux.trainable(la) == collect(Flux.trainable(nn))[(end - 1):end]
 
     la = Laplace(nn; likelihood=:classification, subset_of_weights=:all)
-    @test Flux.params(la) == collect(Flux.params(nn))
+    @test Flux.trainable(la) == collect(Flux.trainable(nn))
 end
 
 # We know the analytical expression for the gradient of logit binary cross entropy loss for a single-layer neural net with sigmoid activation just corresponds to the gradient in logistic regression (see for example: https://www.paltmeyer.com/blog/posts/bayesian-logit/): ∇ℓ=(μ-y)x. We can use this analytical expression to see if we get the expected results.
@@ -276,7 +276,7 @@ function train_nn(val::Dict; verbosity=0)
     nn = Chain(Dense(D, n_hidden, σ), Dense(n_hidden, outdim))
     λ = 0.01
     sqnorm(x) = sum(abs2, x)
-    weight_regularization(λ=λ) = 1 / 2 * λ^2 * sum(sqnorm, Flux.params(nn))
+    weight_regularization(λ=λ) = 1 / 2 * λ^2 * sum(sqnorm, Flux.trainable(nn))
     loss(x, y) = getfield(Flux.Losses, loss_fun)(nn(x), y) + weight_regularization()
 
     opt = Adam()
@@ -287,7 +287,7 @@ function train_nn(val::Dict; verbosity=0)
 
     for epoch in 1:epochs
         for d in data
-            gs = gradient(Flux.params(nn)) do
+            gs = gradient(Flux.trainable(nn)) do
                 l = loss(d...)
             end
             update!(t, nn, gs)
