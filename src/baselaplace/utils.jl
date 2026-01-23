@@ -94,10 +94,7 @@ _init_H(la::AbstractLaplace) = zeros(la.posterior.n_params, la.posterior.n_param
 """
     _weight_penalty(la::AbstractLaplace)
 
-The weight penalty term is a regularization term used to prevent overfitting.
-Weight regularization methods such as weight decay introduce a penalty to the loss function when training a neural network to encourage the network to use small weights.
-Smaller weights in a neural network can result in a model that is more stable and less likely to overfit the training dataset, in turn having better performance when 
-making a prediction on new data.
+The weight penalty term is a regularization term used to prevent overfitting. Weight regularization methods such as weight decay introduce a penalty to the loss function when training a neural network to encourage the network to use small weights. Smaller weights in a neural network can result in a model that is more stable and less likely to overfit the training dataset, in turn having better performance when making a prediction on new data.
 """
 function _weight_penalty(la::AbstractLaplace)
     μ = la.posterior.posterior_mean
