@@ -287,7 +287,7 @@ function train_nn(val::Dict; verbosity=0)
 
     for epoch in 1:epochs
         for (x,y) in data
-            gs = Flux.gradient(Flux.params(nn)) do m
+            gs = Flux.gradient(nn) do m
                 l = loss(m(x), y)
             end
             update!(t, nn, gs[1])
