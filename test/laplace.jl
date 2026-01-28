@@ -277,20 +277,20 @@ function train_nn(val::Dict; verbosity=0)
     λ = 0.01
     sqnorm(x) = sum(abs2, x)
     weight_regularization(λ=λ) = 1 / 2 * λ^2 * sum(sqnorm, Flux.params(nn))
-    loss(x, y) = getfield(Flux.Losses, loss_fun)(nn(x), y) + weight_regularization()
+    loss(yhat, y) = getfield(Flux.Losses, loss_fun)(yhat, y) + weight_regularization()
 
     opt = Adam()
     t = Optimisers.setup(opt, nn)
     epochs = 200
-    avg_loss(data) = mean(map(d -> loss(d[1], d[2]), data))
+    avg_loss(data) = mean(map(d -> loss(nn(d[1]), d[2]), data))
     show_every = epochs / 10
 
     for epoch in 1:epochs
-        for d in data
-            gs = Flux.gradient(Flux.params(nn)) do
-                l = loss(d...)
+        for (x,y) in data
+            gs = Flux.gradient(Flux.params(nn)) do m
+                l = loss(m(x), y)
             end
-            update!(t, nn, gs)
+            update!(t, nn, gs[1])
         end
         if verbosity>0 && epoch % show_every == 0
             println("Epoch " * string(epoch))
