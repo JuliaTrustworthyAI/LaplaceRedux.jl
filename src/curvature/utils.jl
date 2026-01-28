@@ -82,6 +82,7 @@ function gradients(
     curvature::CurvatureInterface, X::AbstractArray, y::Union{Number,AbstractArray}
 )::Zygote.Grads
     nn = curvature.model
-    𝐠 = Flux.gradient(() -> curvature.loss_fun(nn(X), y), Flux.params(nn))           # compute the gradients of the loss function with respect to the model parameters
+    # Use explicit gradient API instead of Flux.params
+    𝐠 = Flux.gradient(m -> curvature.loss_fun(m(X), y), nn)
     return 𝐠
 end

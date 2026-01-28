@@ -263,7 +263,6 @@ function train_nn(val::Dict; verbosity=0)
     # Unpack:
     X = val[:X]
     Y = val[:Y]
-    # NOTE: for classification multi, Y is one-hot, y is labels as itegers (1-N)
     y = val[:y]
     data = val[:data]
     outdim = val[:outdim]
@@ -276,23 +275,26 @@ function train_nn(val::Dict; verbosity=0)
     nn = Chain(Dense(D, n_hidden, σ), Dense(n_hidden, outdim))
     λ = 0.01
     sqnorm(x) = sum(abs2, x)
-    weight_regularization(λ=λ) = 1 / 2 * λ^2 * sum(sqnorm, Flux.params(nn))
-    loss(yhat, y) = getfield(Flux.Losses, loss_fun)(yhat, y) + weight_regularization()
+    
+    # Updated weight regularization to work with explicit gradients
+    weight_regularization() = 1 / 2 * λ^2 * sum(sqnorm, Flux.destructure(nn)[1])
+    
+    # Updated loss function
+    loss(model, x, y) = getfield(Flux.Losses, loss_fun)(model(x), y) + weight_regularization()
 
     opt = Adam()
     t = Optimisers.setup(opt, nn)
     epochs = 200
-    avg_loss(data) = mean(map(d -> loss(nn(d[1]), d[2]), data))
+    avg_loss(data) = mean(map(d -> loss(nn, d[1], d[2]), data))
     show_every = epochs / 10
 
     for epoch in 1:epochs
-        for (x,y) in data
-            gs = Flux.gradient(nn) do m
-                l = loss(m(x), y)
-            end
+        for (x, y) in data
+            # Use explicit gradient API
+            gs = Flux.gradient(m -> loss(m, x, y), nn)
             update!(t, nn, gs[1])
         end
-        if verbosity>0 && epoch % show_every == 0
+        if verbosity > 0 && epoch % show_every == 0
             println("Epoch " * string(epoch))
             @show avg_loss(data)
         end
