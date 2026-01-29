@@ -6,6 +6,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 *Note*: We try to adhere to these practices as of version [v0.2.1].
 
+## Version [1.2.3] - 2026-01-23
+
+- Updated compatibility for Optimisers.jl.
+- Updated README (was showing outdated Flux API). 
+
 ## Version [1.2.2] - 2026-01-08
 
 - Merged a bunch of compat related PRs.

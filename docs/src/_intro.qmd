@@ -41,7 +41,8 @@ If you are new to Deep Learning in Julia or simply prefer learning through video
 
 using LaplaceRedux
 using LaplaceRedux.Data: toy_data_regression
-using Flux.Optimise: update!, Adam
+using Optimisers
+using Flux
 
 # Data:
 n = 150           # number of observations
@@ -58,20 +59,21 @@ nn = Chain(
     Dense(D, n_hidden, tanh),
     Dense(n_hidden, 1)
 )  
-loss(x, y) = Flux.Losses.mse(nn(x), y)
+loss(yhat, y) = Flux.Losses.mse(yhat, y)
 
 # Training:
-opt = Adam(1e-3)
+opt = Flux.Adam(1e-3)
+t = Optimisers.setup(opt, nn)
 epochs = 1000
-avg_loss(data) = mean(map(d -> loss(d[1],d[2]), data))
+avg_loss(data) = mean(map(d -> loss(nn(d[1]), d[2]), data))  # Fixed this line!
 show_every = epochs/10
 
 for epoch = 1:epochs
-  for d in data
-    gs = gradient(Flux.params(nn)) do
-      l = loss(d...)
+  for (x,y) in data
+    gs = gradient(nn) do m
+      l = loss(m(x),y)
     end
-    update!(opt, Flux.params(nn), gs)
+    Flux.update!(t, nn, gs[1])
   end
   if epoch % show_every == 0
     println("Epoch " * string(epoch))
@@ -79,6 +81,7 @@ for epoch = 1:epochs
   end
 end
 ```
+
 
 A complete worked example for a regression model can be found in the [docs](https://www.paltmeyer.com/LaplaceRedux.jl/dev/tutorials/regression/). Here we jump straight to Laplace Approximation and take the pre-trained model `nn` as given. Then LA can be implemented as follows, where we specify the model `likelihood`. The plot shows the fitted values overlaid with a 95% confidence interval. As expected, predictive uncertainty quickly increases in areas that are not populated by any training data.
 
@@ -134,20 +137,21 @@ nn = Chain(
     Dense(D, n_hidden, σ),
     Dense(n_hidden, 1)
 )  
-loss(x, y) = Flux.Losses.logitbinarycrossentropy(nn(x), y) 
+loss(yhat, y) = Flux.Losses.logitbinarycrossentropy(yhat, y) 
 
 # Training:
-opt = Adam()
+opt = Flux.Adam()
+t = Optimisers.setup(opt, nn)
 epochs = 500
-avg_loss(data) = mean(map(d -> loss(d[1],d[2]), data))
+avg_loss(data) = mean(map(d -> loss(nn(d[1]),d[2]), data))
 show_every = epochs/10
 
 for epoch = 1:epochs
-  for d in data
-    gs = gradient(Flux.params(nn)) do
-      l = loss(d...)
+  for (x,y) in data
+    gs = gradient(nn) do m
+      l = loss(m(x), y)
     end
-    update!(opt, Flux.params(nn), gs)
+    Flux.update!(t, nn, gs[1])
   end
   if epoch % show_every == 0
     println("Epoch " * string(epoch))
