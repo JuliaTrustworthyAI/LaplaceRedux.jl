@@ -4,7 +4,7 @@ using Flux
 """
     jacobians(curvature::CurvatureInterface, X::AbstractArray; batched::Bool=false)
 
-Computes the Jacobian `∇f(x;θ)` where `f: ℝᴰ ↦ ℝᴷ`.
+Computes the Jacobian ∇f(x;θ) where f: ℝᴰ ↦ ℝᴷ.
 """
 function jacobians(curvature::CurvatureInterface, X::AbstractArray; batched::Bool=false)
     if batched
@@ -18,28 +18,35 @@ end
     jacobians_unbatched(curvature::CurvatureInterface, X::AbstractArray)
 
 Compute the Jacobian of the model output w.r.t. model parameters for the point X, without batching.
-Here, the nn function is wrapped in an anonymous function using the () -> syntax, which allows it to be differentiated using automatic differentiation.
 """
 function jacobians_unbatched(curvature::CurvatureInterface, X::AbstractArray)
     nn = curvature.model
-    # Output:
-    ŷ = nn(X)
-    # Convert ŷ to a vector
-    ŷ = vec(ŷ)
-    # Jacobian:
-    # Differentiate f with regards to the model parameters
+    
+    # Use destructure for flat parameter handling
+    p_flat, restructure = Flux.destructure(nn)
+    
+    # Output
+    y_hat = nn(X)
+    y_hat = vec(y_hat)
+    
+    # Jacobian: differentiate f with regards to the model parameters
     J = []
     ChainRulesCore.ignore_derivatives() do
-        𝐉 = jacobian(() -> nn(X), Flux.params(nn))
-        push!(J, 𝐉)
+        jac = Zygote.jacobian(p_flat) do p
+            m = restructure(p)
+            vec(m(X))
+        end
+        push!(J, jac[1])  # Extract the Jacobian from the tuple
     end
-    𝐉 = J[1]
-    # Concatenate Jacobians for the selected parameters, to produce a matrix (K, P), where P is the total number of parameter scalars.                      
-    𝐉 = reduce(hcat, [𝐉[θ] for θ in curvature.params])
+    jac_matrix = J[1]
+    
+    # jac_matrix is now [K, P] where K is output size, P is number of parameters
+    # Apply subnetwork masking if needed
     if curvature.subset_of_weights == :subnetwork
-        𝐉 = 𝐉[:, curvature.subnetwork_indices]
+        jac_matrix = jac_matrix[:, curvature.subnetwork_indices]
     end
-    return 𝐉, ŷ
+    
+    return jac_matrix, y_hat
 end
 
 """
@@ -49,39 +56,55 @@ Compute Jacobians of the model output w.r.t. model parameters for points in X, w
 """
 function jacobians_batched(curvature::CurvatureInterface, X::AbstractArray)
     nn = curvature.model
-    # Output:
-    ŷ = nn(X)
+    
+    # Use destructure for flat parameter handling
+    p_flat, restructure = Flux.destructure(nn)
+    
+    # Output
+    y_hat = nn(X)
     batch_size = size(X)[end]
     out_size = outdim(nn)
-    # Jacobian:
+    
+    # Jacobian
     grads = []
     ChainRulesCore.ignore_derivatives() do
-        g = jacobian(() -> nn(X), Flux.params(nn))
-        push!(grads, g)
+        g = Zygote.jacobian(p_flat) do p
+            m = restructure(p)
+            m(X)
+        end
+        push!(grads, g[1])  # Extract the Jacobian from the tuple
     end
-    grads = grads[1]
-    grads_joint = reduce(hcat, [grads[θ] for θ in curvature.params])
-    views = [
-        @view grads_joint[batch_start:(batch_start + out_size - 1), :] for
-        batch_start in 1:out_size:(batch_size * out_size)
-    ]
-    𝐉 = stack(views)
+    jac_raw = grads[1]
+    
+    # jac_raw shape depends on output structure
+    # Typically: [out_size * batch_size, n_params] or [out_size, n_params, batch_size]
+    if ndims(jac_raw) == 3
+        # Shape: [out_size, n_params, batch_size]
+        jac_matrix = permutedims(jac_raw, (1, 2, 3))
+    elseif ndims(jac_raw) == 2
+        # Shape: [out_size * batch_size, n_params]
+        # Reshape to [out_size, batch_size, n_params] then permute
+        jac_matrix = reshape(jac_raw, out_size, batch_size, :)
+        jac_matrix = permutedims(jac_matrix, (1, 3, 2))  # [out_size, n_params, batch_size]
+    end
+    
+    # Apply subnetwork masking if needed
     if curvature.subset_of_weights == :subnetwork
-        𝐉 = 𝐉[:, curvature.subnetwork_indices, :]
+        jac_matrix = jac_matrix[:, curvature.subnetwork_indices, :]
     end
-    # NOTE: it is also possible to select indices at the view stage TODO benchmark and compare
-    return 𝐉, ŷ
+    
+    return jac_matrix, y_hat
 end
 
 """
-    gradients(curvature::CurvatureInterface, X::AbstractArray, y::Number)
+    gradients(curvature::CurvatureInterface, X::AbstractArray, y::Union{Number,AbstractArray})
 
-Compute the gradients with respect to the loss function: `∇ℓ(f(x;θ),y)` where `f: ℝᴰ ↦ ℝᴷ`.
+Compute the gradients with respect to the loss function: ∇ℓ(f(x;θ),y) where f: ℝᴰ ↦ ℝᴷ.
 """
 function gradients(
     curvature::CurvatureInterface, X::AbstractArray, y::Union{Number,AbstractArray}
-)::Zygote.Grads
+)
     nn = curvature.model
     g = Flux.gradient(m -> curvature.loss_fun(m(X), y), nn)
-    return g
+    return g[1]
 end
