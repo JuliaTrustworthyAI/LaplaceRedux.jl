@@ -59,7 +59,7 @@ function full_batched(curvature::EmpiricalFisher, d::Tuple)
     x, y = d
 
     nn = curvature.model
-
+    loss = curvature.factor * curvature.loss_fun(nn(x), y)
     nn = curvature.model
     grads::Zygote.Grads = jacobian(
         () -> curvature.loss_fun(nn(x), y; agg=identity), Flux.params(nn)

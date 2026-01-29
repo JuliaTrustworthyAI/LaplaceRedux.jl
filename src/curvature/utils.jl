@@ -81,7 +81,14 @@ Compute the gradients with respect to the loss function: `∇ℓ(f(x;θ),y)` whe
 function gradients(
     curvature::CurvatureInterface, X::AbstractArray, y::Union{Number,AbstractArray}
 )::Zygote.Grads
+
     nn = curvature.model
-    g = Flux.gradient(m -> curvature.loss_fun(m(X), y), nn)
-    return g[1]
+    p_flat, restructure = Flux.destructure(nn)
+    
+    g = Flux.gradient(p_flat) do p
+        m = restructure(p)
+        curvature.loss_fun(m(X), y)
+    end
+    
+    return g[1]  # Returns a flat vector
 end
