@@ -58,43 +58,21 @@ Compute the full empirical Fisher for batch of inputs-outputs, with the batch di
 """
 function full_batched(curvature::EmpiricalFisher, d::Tuple)
     x, y = d
+
     nn = curvature.model
-
-    # Compute loss
-    loss = curvature.factor * sum(curvature.loss_fun(nn(x), y; agg=identity))
-
-    # Use destructure for flat parameter handling
-    p_flat, restructure = Flux.destructure(nn)
-
-    # Compute Jacobian with respect to flat parameters
-    # This gives us per-sample gradients
-    jac = Zygote.jacobian(p_flat) do p
-        m = restructure(p)
-        curvature.loss_fun(m(x), y; agg=identity)
-    end
-
-    # jac[1] shape: [n_outputs, n_params, batch_size] or [n_params, batch_size]
-    grad_matrix = jac[1]
-
-    # Reshape to [n_params, n_samples]
-    if ndims(grad_matrix) == 3
-        # Multiple outputs: flatten output dimension with batch dimension
-        n_out, n_params, batch_size = size(grad_matrix)
-        grad_matrix = reshape(permutedims(grad_matrix, (2, 1, 3)), n_params, :)
-    elseif ndims(grad_matrix) == 2
-        # Single output: might need transpose to get [n_params, batch_size]
-        if size(grad_matrix, 1) != length(p_flat)
-            grad_matrix = transpose(grad_matrix)
-        end
-    end
-
-    # Apply subnetwork masking if needed
+    loss = curvature.factor * curvature.loss_fun(nn(x), y)
+    nn = curvature.model
+    grads::Zygote.Grads = jacobian(
+        () -> curvature.loss_fun(nn(x), y; agg=identity), Flux.params(nn)
+    )
+    𝐠 = transpose(reduce(hcat, [grads[θ] for θ in curvature.params]))
     if curvature.subset_of_weights == :subnetwork
-        grad_matrix = grad_matrix[curvature.subnetwork_indices, :]
+        𝐠 = 𝐠[curvature.subnetwork_indices, :]
     end
 
-    # Empirical Fisher: H = grad_matrix * grad_matrix'
-    @tullio H[i, j] := grad_matrix[i, b] * grad_matrix[j, b]
+    # Empirical Fisher:
+    # H = 𝐠 * 𝐠'
+    @tullio H[i, j] := 𝐠[i, b] * 𝐠[j, b]
 
     return loss, H
 end
