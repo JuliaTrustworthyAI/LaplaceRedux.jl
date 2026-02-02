@@ -35,18 +35,17 @@ function full_unbatched(curvature::EmpiricalFisher, d::Tuple)
 
     nn = curvature.model
     loss = curvature.factor * curvature.loss_fun(nn(x), y)
+    𝐠 = gradients(curvature, x, y)
+    # Concatenate the selected gradients into a vector, column-wise
+    𝐠 = reduce(vcat, [vec(𝐠[θ]) for θ in curvature.params])
 
-    # gradients now returns a flat vector directly
-    grad_vec = gradients(curvature, x, y)
-
-    # Apply subnetwork masking if needed
     if curvature.subset_of_weights == :subnetwork
-        grad_vec = grad_vec[curvature.subnetwork_indices]
+        𝐠 = [𝐠[p] for p in curvature.subnetwork_indices]
     end
 
     # Empirical Fisher:
     # - the product of the gradient vector with itself transposed
-    H = grad_vec * grad_vec'
+    H = 𝐠 * 𝐠'
 
     return loss, H
 end
