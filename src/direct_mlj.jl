@@ -246,7 +246,9 @@ function MMI.update(m::LaplaceModels, verbosity, old_fitresult, old_cache, X, y)
 
     epochs = m.epochs
 
-    fitresult = nothing
+    fitresult = (old_fitresult[1], decode)
+    report = (loss_history=old_loss_history,)
+    cache = old_cache
 
     if MMI.is_same_except(m, old_model, :epochs)
         old_la = old_fitresult[1]
