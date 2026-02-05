@@ -4,6 +4,16 @@ include("utils.jl")
 struct KronHessian <: HessianStructure end
 
 """
+    _get_activations(nn::Chain, x)
+
+Compute intermediate activations at each layer of a Chain.
+Replaces the deprecated `Flux.activations`.
+"""
+function _get_activations(nn::Chain, x)
+    return collect(accumulate((y, layer) -> layer(y), nn.layers; init=x))
+end
+
+"""
     approximate(curvature::CurvatureInterface, hessian_structure::KronHessian, data; batched::Bool=false)
 
 Compute the eigendecomposed Kronecker-factored approximate curvature as the Fisher information matrix.
@@ -27,7 +37,7 @@ function approximate(
     # NOTE: this method is for classification only, thus the loss must be logitcrossentropy
     # lossf = Flux.Losses.logitcrossentropy
 
-    d_zb = [[size(x_1)]; map(a -> size(a), collect(Flux.activations(nn, x_1)))]
+    d_zb = [[size(x_1)]; map(a -> size(a), _get_activations(nn, x_1))]
     n_layers = length(nn.layers)
     if subset_of_weights == :last_layer
         initial_layer = n_layers # designate the last layer as the initial layer
@@ -48,7 +58,7 @@ function approximate(
     for x_n in xs
         n_data += 1
 
-        a_zb = [[x_n]; collect(Flux.activations(nn, x_n))]
+        a_zb = [[x_n]; _get_activations(nn, x_n)]
         p = softmax(nn(x_n))
 
         # Approximate the expected value of the activation outer product A = aa'

@@ -3,7 +3,7 @@ mutable struct GGN <: CurvatureInterface
     model::Any
     likelihood::Symbol
     loss_fun::Function
-    params::AbstractArray
+    param_indices::Vector{Int}
     factor::Union{Nothing,Real}
     subset_of_weights::Symbol
     subnetwork_indices::Union{Nothing,Vector{Int}}
@@ -12,7 +12,7 @@ end
 function GGN(
     model::Any,
     likelihood::Symbol,
-    params::AbstractArray,
+    param_indices::Vector{Int},
     subset_of_weights::Symbol,
     subnetwork_indices::Union{Nothing,Vector{Int}},
 )
@@ -21,7 +21,7 @@ function GGN(
     factor = likelihood == :regression ? 0.5 : 1.0
 
     return GGN(
-        model, likelihood, loss_fun, params, factor, subset_of_weights, subnetwork_indices
+        model, likelihood, loss_fun, param_indices, factor, subset_of_weights, subnetwork_indices
     )
 end
 

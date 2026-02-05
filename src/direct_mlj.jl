@@ -439,8 +439,8 @@ function _equal_flux_chain(chain1::Flux.Chain, chain2::Flux.Chain)
     if length(chain1.layers) != length(chain2.layers)
         return false
     end
-    params1 = Flux.params(chain1)
-    params2 = Flux.params(chain2)
+    params1 = LaplaceRedux.collect_trainable(chain1)
+    params2 = LaplaceRedux.collect_trainable(chain2)
     if length(params1) != length(params2)
         return false
     end

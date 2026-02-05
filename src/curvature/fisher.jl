@@ -3,7 +3,7 @@ mutable struct EmpiricalFisher <: CurvatureInterface
     model::Any
     likelihood::Symbol
     loss_fun::Function
-    params::AbstractArray
+    param_indices::Vector{Int}
     factor::Union{Nothing,Real}
     subset_of_weights::Symbol
     subnetwork_indices::Union{Nothing,Vector{Int}}
@@ -12,7 +12,7 @@ end
 function EmpiricalFisher(
     model::Any,
     likelihood::Symbol,
-    params::AbstractArray,
+    param_indices::Vector{Int},
     subset_of_weights::Symbol,
     subnetwork_indices::Union{Nothing,Vector{Int}},
 )
@@ -21,7 +21,7 @@ function EmpiricalFisher(
     factor = likelihood == :regression ? 0.5 : 1.0
 
     return EmpiricalFisher(
-        model, likelihood, loss_fun, params, factor, subset_of_weights, subnetwork_indices
+        model, likelihood, loss_fun, param_indices, factor, subset_of_weights, subnetwork_indices
     )
 end
 
@@ -35,12 +35,11 @@ function full_unbatched(curvature::EmpiricalFisher, d::Tuple)
 
     nn = curvature.model
     loss = curvature.factor * curvature.loss_fun(nn(x), y)
+    # Get gradient as a flat vector (already subset-selected)
     𝐠 = gradients(curvature, x, y)
-    # Concatenate the selected gradients into a vector, column-wise
-    𝐠 = reduce(vcat, [vec(𝐠[θ]) for θ in curvature.params])
 
     if curvature.subset_of_weights == :subnetwork
-        𝐠 = [𝐠[p] for p in curvature.subnetwork_indices]
+        𝐠 = 𝐠[curvature.subnetwork_indices]
     end
 
     # Empirical Fisher:
@@ -60,11 +59,12 @@ function full_batched(curvature::EmpiricalFisher, d::Tuple)
 
     nn = curvature.model
     loss = curvature.factor * curvature.loss_fun(nn(x), y)
-    nn = curvature.model
-    grads::Zygote.Grads = jacobian(
-        () -> curvature.loss_fun(nn(x), y; agg=identity), Flux.params(nn)
-    )
-    𝐠 = transpose(reduce(hcat, [grads[θ] for θ in curvature.params]))
+    # Jacobian of per-sample losses via destructure:
+    θ, re = Flux.destructure(nn)
+    grads_mat = jacobian(
+        θ_ -> curvature.loss_fun(re(θ_)(x), y; agg=identity), θ
+    )[1]
+    𝐠 = transpose(grads_mat[:, curvature.param_indices])
     if curvature.subset_of_weights == :subnetwork
         𝐠 = 𝐠[curvature.subnetwork_indices, :]
     end

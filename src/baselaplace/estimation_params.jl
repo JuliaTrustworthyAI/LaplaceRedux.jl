@@ -1,7 +1,7 @@
 """
     EstimationParams
 
-Container for the parameters of a Laplace approximation. 
+Container for the parameters of a Laplace approximation.
 
 # Fields
 
@@ -34,7 +34,7 @@ function EstimationParams(params::LaplaceParams, model::Any, likelihood::Symbol)
     # Asserts:
     @assert params.subset_of_weights ∈ [:all, :last_layer, :subnetwork] "`subset_of_weights` of weights should be one of the following: `[:all, :last_layer, :subnetwork]`"
     if (params.subset_of_weights == :subnetwork)
-        validate_subnetwork_indices(params.subnetwork_indices, Flux.params(model))
+        validate_subnetwork_indices(params.subnetwork_indices, collect_trainable(model))
     end
 
     est_params = EstimationParams(
@@ -51,23 +51,40 @@ function EstimationParams(params::LaplaceParams, model::Any, likelihood::Symbol)
 end
 
 """
-    Flux.params(model::Any, params::EstimationParams)
+    get_params(model::Any, params::EstimationParams)
 
-Extracts the parameters of a model based on the subset of weights specified in the `EstimationParams` object.
+Extracts the trainable parameter arrays of a model based on the subset of weights
+specified in the `EstimationParams` object. Replaces the old `Flux.params` API.
 """
-function Flux.params(model::Any, params::EstimationParams)
-    model_params = Flux.params(model)
+function get_params(model::Any, params::EstimationParams)
+    model_params = collect_trainable(model)
     n_elements = length(model_params)
     if params.subset_of_weights == :all || params.subset_of_weights == :subnetwork
-        # get all parameters and constants in logitbinarycrossentropy
-        model_params = [θ for θ in model_params]
+        return [θ for θ in model_params]
     elseif params.subset_of_weights == :last_layer
         # Only get last layer parameters:
         # params[n_elements] is the bias vector of the last layer
         # params[n_elements-1] is the weight matrix of the last layer
-        model_params = [model_params[n_elements - 1], model_params[n_elements]]
+        return [model_params[n_elements - 1], model_params[n_elements]]
     end
-    return model_params
+end
+
+"""
+    compute_param_indices(model::Any, est_params::EstimationParams)
+
+Compute the flat indices into the destructured parameter vector for the selected
+subset of weights. These indices are used for Jacobian/gradient column selection.
+"""
+function compute_param_indices(model::Any, est_params::EstimationParams)
+    all_params = collect_trainable(model)
+    total = sum(length, all_params)
+    if est_params.subset_of_weights == :all || est_params.subset_of_weights == :subnetwork
+        return collect(1:total)
+    elseif est_params.subset_of_weights == :last_layer
+        n_last = sum(length, all_params[end-1:end])
+        offset = total - n_last
+        return collect((offset+1):total)
+    end
 end
 
 """
@@ -79,7 +96,7 @@ function n_params(model::Any, est_params::EstimationParams)
     if est_params.subset_of_weights == :subnetwork
         n = length(est_params.subnetwork_indices)
     else
-        n = length(reduce(vcat, [vec(θ) for θ in Flux.params(model, est_params)]))
+        n = length(reduce(vcat, [vec(θ) for θ in get_params(model, est_params)]))
     end
     return n
 end
@@ -90,7 +107,7 @@ end
 Helper function to extract the MAP estimate of the parameters for the model based on the subset of weights specified in the `EstimationParams` object.
 """
 function get_map_estimate(model::Any, est_params::EstimationParams)
-    μ = reduce(vcat, [vec(θ) for θ in Flux.params(model, est_params)])
+    μ = reduce(vcat, [vec(θ) for θ in get_params(model, est_params)])
     return μ[(end - LaplaceRedux.n_params(model, est_params) + 1):end]
 end
 
@@ -102,7 +119,8 @@ Instantiates the curvature interface for a Laplace approximation. The curvature 
 function instantiate_curvature!(
     params::EstimationParams, model::Any, likelihood::Symbol, backend::Symbol
 )
-    model_params = Flux.params(model, params)
+    model_params = get_params(model, params)
+    param_indices = compute_param_indices(model, params)
 
     if params.subset_of_weights == :subnetwork
         subnetwork_indices = convert_subnetwork_indices(
@@ -113,7 +131,7 @@ function instantiate_curvature!(
     end
 
     curvature = getfield(Curvature, backend)(
-        model, likelihood, model_params, params.subset_of_weights, subnetwork_indices
+        model, likelihood, param_indices, params.subset_of_weights, subnetwork_indices
     )
 
     return params.curvature = curvature
