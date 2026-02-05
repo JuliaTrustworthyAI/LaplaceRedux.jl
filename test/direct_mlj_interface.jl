@@ -5,7 +5,7 @@ import StatisticalMeasures as SM
 using Flux
 using StableRNGs
 import LaplaceRedux: LaplaceClassifier, LaplaceRegressor
-import MLJTestInterface
+using MLJTestInterface: MLJTestInterface
 
 cv = MLJBase.CV(; nfolds=3)
 
@@ -25,7 +25,7 @@ cv = MLJBase.CV(; nfolds=3)
     #testing more complex dataset
     X, y = MLJBase.make_regression(100, 4; noise=0.5, sparse=0.2, outliers=0.1)
     #train, test = partition(eachindex(y), 0.7); # 70:30 split
-    mach = MLJBase.machine(model, X, y)  
+    mach = MLJBase.machine(model, X, y)
     MLJBase.fit!(mach; verbosity=0)
     yhat = MLJBase.predict(mach, X) # probabilistic predictions
     MLJBase.predict_mode(mach, X)   # point predictions
@@ -48,11 +48,9 @@ cv = MLJBase.CV(; nfolds=3)
     model_two = LaplaceRegressor(; model=flux_model_two, epochs=100)
     @test !MLJBase.is_same_except(model, model_two)
 
-
-
     #testing default mlp builder
     model = LaplaceRegressor(; model=nothing, epochs=20)
-    mach = MLJBase.machine(model, X, y)  
+    mach = MLJBase.machine(model, X, y)
     MLJBase.fit!(mach; verbosity=1)
     yhat = MLJBase.predict(mach, X) # probabilistic predictions
     MLJBase.predict_mode(mach, X)   # point predictions
@@ -64,7 +62,7 @@ cv = MLJBase.CV(; nfolds=3)
     #testing dataset_shape for one dimensional function
     X, y = MLJBase.make_regression(100, 1; noise=0.5, sparse=0.2, outliers=0.1)
     model = LaplaceRegressor(; model=nothing, epochs=20)
-    mach = MLJBase.machine(model, X, y)  
+    mach = MLJBase.machine(model, X, y)
     MLJBase.fit!(mach; verbosity=0)
 
     # applying generic interface tests from MLJTestInterface.jl
@@ -79,17 +77,16 @@ cv = MLJBase.CV(; nfolds=3)
             failures, summary = @test_logs(
                 (:warn,),
                 MLJTestInterface.test(
-                [LaplaceRegressor,],
-                data...;
-                mod=@__MODULE__,
-                verbosity=1, # bump to debug
-                throw=true,  # set to true to debug
+                    [LaplaceRegressor],
+                    data...;
+                    mod=@__MODULE__,
+                    verbosity=1, # bump to debug
+                    throw=true,  # set to true to debug
                 ),
             )
             @test isempty(failures)
         end
     end
-
 end
 
 @testset "Classification" begin
@@ -139,7 +136,7 @@ end
             failures, summary = @test_logs(
                 (:warn,),
                 MLJTestInterface.test(
-                    [LaplaceClassifier,],
+                    [LaplaceClassifier],
                     data...;
                     mod=@__MODULE__,
                     verbosity=1, # bump to debug
@@ -149,5 +146,4 @@ end
             @test isempty(failures)
         end
     end
-
 end

@@ -46,5 +46,4 @@ using Test
             @test isnothing(LaplaceRedux._collect_trainable!(ps, 1))
         end
     end
-
 end

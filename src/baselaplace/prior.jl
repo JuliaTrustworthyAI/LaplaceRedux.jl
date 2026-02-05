@@ -50,5 +50,10 @@ function Prior(params::LaplaceParams, model::Any, likelihood::Symbol)
     if isa(prior_precision_matrix, AbstractMatrix)
         @assert all(size(prior_precision_matrix) .== n) "Dimensions of prior Hessian $(size(prior_precision_matrix)) do not align with number of parameters ($n)"
     end
-    return Prior(params.observational_noise, params.prior_mean, params.prior_precision, prior_precision_matrix)
+    return Prior(
+        params.observational_noise,
+        params.prior_mean,
+        params.prior_precision,
+        prior_precision_matrix,
+    )
 end

@@ -81,9 +81,9 @@ function compute_param_indices(model::Any, est_params::EstimationParams)
     if est_params.subset_of_weights == :all || est_params.subset_of_weights == :subnetwork
         return collect(1:total)
     elseif est_params.subset_of_weights == :last_layer
-        n_last = sum(length, all_params[end-1:end])
+        n_last = sum(length, all_params[(end - 1):end])
         offset = total - n_last
-        return collect((offset+1):total)
+        return collect((offset + 1):total)
     end
 end
 

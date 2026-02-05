@@ -21,7 +21,13 @@ function EmpiricalFisher(
     factor = likelihood == :regression ? 0.5 : 1.0
 
     return EmpiricalFisher(
-        model, likelihood, loss_fun, param_indices, factor, subset_of_weights, subnetwork_indices
+        model,
+        likelihood,
+        loss_fun,
+        param_indices,
+        factor,
+        subset_of_weights,
+        subnetwork_indices,
     )
 end
 
@@ -61,9 +67,7 @@ function full_batched(curvature::EmpiricalFisher, d::Tuple)
     loss = curvature.factor * curvature.loss_fun(nn(x), y)
     # Jacobian of per-sample losses via destructure:
     θ, re = Flux.destructure(nn)
-    grads_mat = jacobian(
-        θ_ -> curvature.loss_fun(re(θ_)(x), y; agg=identity), θ
-    )[1]
+    grads_mat = jacobian(θ_ -> curvature.loss_fun(re(θ_)(x), y; agg=identity), θ)[1]
     𝐠 = transpose(grads_mat[:, curvature.param_indices])
     if curvature.subset_of_weights == :subnetwork
         𝐠 = 𝐠[curvature.subnetwork_indices, :]

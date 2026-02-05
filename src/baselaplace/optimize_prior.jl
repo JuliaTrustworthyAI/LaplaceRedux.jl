@@ -15,11 +15,15 @@ function optimize_prior!(
     λinit::Union{Nothing,Real}=nothing,
     σinit::Union{Nothing,Real}=nothing,
     verbosity::Int=0,
-    tune_σ::Bool=la.likelihood == :regression,
+    tune_σ::Bool=(la.likelihood == :regression),
 )
 
     # Setup:
-    logP₀ = isnothing(λinit) ? log.(unique(diag(la.prior.prior_precision_matrix))) : log.([λinit])   # prior precision (scalar)
+    logP₀ = if isnothing(λinit)
+        log.(unique(diag(la.prior.prior_precision_matrix)))   # prior precision (scalar)
+    else
+        log.([λinit])   # prior precision (scalar)
+    end   # prior precision (scalar)
     logσ = isnothing(σinit) ? log.([la.prior.observational_noise]) : log.([σinit])                 # noise (scalar)
     opt_state_P = Optimisers.setup(Optimisers.Adam(lr), logP₀)
     opt_state_σ = Optimisers.setup(Optimisers.Adam(lr), logσ)

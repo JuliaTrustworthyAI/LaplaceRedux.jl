@@ -60,9 +60,6 @@ function Base.setproperty!(ce::LM, sym::Symbol, val)
     return Base.setfield!(ce, sym, val)
 end
 
-
-
-
 # for fit:
 function MMI.reformat(::LaplaceRegressor, X, y)
     return (MLJBase.matrix(X) |> permutedims, (reshape(y, 1, :), nothing))
@@ -81,8 +78,6 @@ MMI.reformat(::LaplaceModels, X) = (MLJBase.matrix(X) |> permutedims,)
 
 MMI.selectrows(::LaplaceModels, I, Xmatrix, y) = (Xmatrix[:, I], (y[1][:, I], y[2]))
 MMI.selectrows(::LaplaceModels, I, Xmatrix) = (Xmatrix[:, I],)
-
-
 
 """
     function dataset_shape(model::LaplaceRegression, X, y)
@@ -108,7 +103,6 @@ function dataset_shape(model::LaplaceModels, X, y)
     return (n_input, n_output)
 end
 
-
 """
     default_build( seed::Int, shape)
 
@@ -124,19 +118,16 @@ Builds a default MLP Flux model compatible with the dimensions of the dataset, w
 function default_build(seed::Int, shape)
     Random.seed!(seed)
     (n_input, n_output) = shape
-    
+
     chain = Chain(
         Dense(n_input, 20, relu),
         Dense(20, 20, relu),
         Dense(20, 20, relu),
-        Dense(20, n_output)
+        Dense(20, n_output),
     )
-    
+
     return chain
 end
-
-
-
 
 @doc """
     MMI.fit(m::Union{LaplaceRegressor,LaplaceClassifier}, verbosity, X, y)
@@ -162,7 +153,6 @@ function MMI.fit(m::LaplaceModels, verbosity, X, y)
         shape = dataset_shape(m, X, y)
 
         m.model = default_build(11, shape)
-
     end
 
     # Make a copy of the model because Flux does not allow to mutate hyperparameters
@@ -222,7 +212,7 @@ function MMI.fit(m::LaplaceModels, verbosity, X, y)
 
     # fit the Laplace model:
     LaplaceRedux.fit!(la, data_loader)
-    optimize_prior!(la; verbosity= verbosity, n_steps=m.fit_prior_nsteps)
+    optimize_prior!(la; verbosity=verbosity, n_steps=m.fit_prior_nsteps)
 
     fitresult = (la, decode)
     report = (loss_history=loss_history,)
@@ -310,7 +300,7 @@ function MMI.update(m::LaplaceModels, verbosity, old_fitresult, old_cache, X, y)
 
             # fit the Laplace model:
             LaplaceRedux.fit!(la, data_loader)
-            optimize_prior!(la; verbosity = verbosity, n_steps=m.fit_prior_nsteps)
+            optimize_prior!(la; verbosity=verbosity, n_steps=m.fit_prior_nsteps)
 
             fitresult = (la, decode)
             report = (loss_history=old_loss_history,)
@@ -357,12 +347,11 @@ function MMI.update(m::LaplaceModels, verbosity, old_fitresult, old_cache, X, y)
 
         # fit the Laplace model:
         LaplaceRedux.fit!(la, data_loader)
-        optimize_prior!(la; verbosity = verbosity, n_steps=m.fit_prior_nsteps)
+        optimize_prior!(la; verbosity=verbosity, n_steps=m.fit_prior_nsteps)
 
         fitresult = (la, decode)
         report = (loss_history=old_loss_history,)
         cache = (deepcopy(m), old_state_tree, old_loss_history)
-
     end
 
     return fitresult, cache, report
@@ -535,7 +524,9 @@ function MMI.predict(m::LaplaceModels, fitresult, Xnew)
         means, variances = yhat
 
         # Create Normal distributions from the means and variances
-        return vec([Normal(mean, sqrt(variance)) for (mean, variance) in zip(means, variances)])
+        return vec([
+            Normal(mean, sqrt(variance)) for (mean, variance) in zip(means, variances)
+        ])
 
     else
         predictions =
@@ -580,7 +571,7 @@ MLJBase.metadata_model(
 MLJBase.metadata_model(
     LaplaceRegressor;
     input_scitype=Union{
-        AbstractMatrix{<:Union{MLJBase.Finite, MLJBase.Infinite}}, # matrix with mixed types
+        AbstractMatrix{<:Union{MLJBase.Finite,MLJBase.Infinite}}, # matrix with mixed types
         MLJBase.Table(MLJBase.Finite, MLJBase.Infinite), # table with mixed types
     },
     target_scitype=AbstractArray{MLJBase.Continuous},
@@ -867,4 +858,3 @@ See also [LaplaceRedux.jl](https://github.com/JuliaTrustworthyAI/LaplaceRedux.jl
 
 """
 LaplaceRegressor
-

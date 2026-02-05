@@ -47,7 +47,9 @@ Computes the posterior precision ``P`` for a fitted Laplace Approximation as fol
 
 where ``\sum_{n=1}^N\nabla_{\theta}^2\log p(\mathcal{D}_n|\theta)|_{\hat\theta}=H`` is the Hessian and ``\nabla_{\theta}^2 \log p(\theta)|_{\hat\theta}=P_0`` is the prior precision and ``\hat\theta`` is the MAP estimate.
 """
-function posterior_precision(la::AbstractLaplace, H=la.posterior.H, P₀=la.prior.prior_precision_matrix)
+function posterior_precision(
+    la::AbstractLaplace, H=la.posterior.H, P₀=la.prior.prior_precision_matrix
+)
     @assert !isnothing(H) "Hessian not available. Either no value supplied or Laplace Approximation has not yet been estimated."
     return H + P₀
 end
@@ -70,7 +72,10 @@ end
 function log_likelihood(la::AbstractLaplace)
     factor = -_H_factor(la)
     if la.likelihood == :regression
-        c = la.posterior.n_data * la.posterior.n_out * log(la.prior.observational_noise * sqrt(2 * pi))
+        c =
+            la.posterior.n_data *
+            la.posterior.n_out *
+            log(la.prior.observational_noise * sqrt(2 * pi))
     else
         c = 0
     end
@@ -147,7 +152,9 @@ end
 
 
 """
-log_det_prior_precision(la::AbstractLaplace) = sum(log.(diag(la.prior.prior_precision_matrix)))
+function log_det_prior_precision(la::AbstractLaplace)
+    sum(log.(diag(la.prior.prior_precision_matrix)))
+end
 
 """
     log_det_posterior_precision(la::AbstractLaplace)

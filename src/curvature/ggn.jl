@@ -21,7 +21,13 @@ function GGN(
     factor = likelihood == :regression ? 0.5 : 1.0
 
     return GGN(
-        model, likelihood, loss_fun, param_indices, factor, subset_of_weights, subnetwork_indices
+        model,
+        likelihood,
+        loss_fun,
+        param_indices,
+        factor,
+        subset_of_weights,
+        subnetwork_indices,
     )
 end
 
