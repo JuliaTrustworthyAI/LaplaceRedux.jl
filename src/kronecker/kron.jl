@@ -48,7 +48,7 @@ function approximate(
     for x_n in xs
         n_data += 1
 
-        a_zb = [[x_n]; _get_activations(nn, x_n)]
+        a_zb = [[x_n]; collect(Flux.activations(nn, x_n))]
         p = softmax(nn(x_n))
 
         # Approximate the expected value of the activation outer product A = aa'
