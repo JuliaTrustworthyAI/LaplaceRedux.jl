@@ -2,7 +2,7 @@ using LaplaceRedux
 using LaplaceRedux.Curvature
 using LaplaceRedux.Data
 using Flux
-using Flux.Optimise: update!, Adam
+using Optimisers
 using Plots
 using Statistics
 using MLUtils
@@ -10,6 +10,7 @@ using LinearAlgebra
 using Distributions: Normal, Bernoulli, Categorical
 using Random
 using CategoricalDistributions
+using Zygote: gradient
 @testset "Construction" begin
 
     # One layer:
@@ -42,16 +43,16 @@ end
 @testset "Parameters" begin
     nn = Chain(Dense(2, 2, σ), Dense(2, 1))
     la = Laplace(nn; likelihood=:classification, subset_of_weights=:last_layer)
-    @test Flux.params(la) == collect(Flux.params(nn))[(end - 1):end]
+    @test LaplaceRedux.get_params(la) == LaplaceRedux.collect_trainable(nn)[(end - 1):end]
 
     la = Laplace(nn; likelihood=:classification, subset_of_weights=:all)
-    @test Flux.params(la) == collect(Flux.params(nn))
+    @test LaplaceRedux.get_params(la) == LaplaceRedux.collect_trainable(nn)
 end
 
 # We know the analytical expression for the gradient of logit binary cross entropy loss for a single-layer neural net with sigmoid activation just corresponds to the gradient in logistic regression (see for example: https://www.paltmeyer.com/blog/posts/bayesian-logit/): ∇ℓ=(μ-y)x. We can use this analytical expression to see if we get the expected results.
 
 @testset "Hessian" begin
-    nn = Chain(Dense([0 0]))
+    nn = Chain(Dense([0.0 0.0]))
 
     # (always ignoring constant)
     @testset "Empirical Fisher - full" begin
@@ -109,7 +110,7 @@ end
 # We can use this analytical expression to see if we get the expected results.
 
 # Setup global scope:
-nn = Chain(Dense([0 0]))
+nn = Chain(Dense([0.0 0.0]))
 la = Laplace(nn; likelihood=:classification)
 function hessian_exact(x, target)
     return (nn(x) .- target) .* (nn(x) .* (1 .- nn(x)) .* x * x') + la.prior.P₀[1:2, 1:2]
@@ -275,21 +276,24 @@ function train_nn(val::Dict; verbosity=0)
     D = size(X, 1)
     nn = Chain(Dense(D, n_hidden, σ), Dense(n_hidden, outdim))
     λ = 0.01
-    sqnorm(x) = sum(abs2, x)
-    weight_regularization(λ=λ) = 1 / 2 * λ^2 * sum(sqnorm, Flux.params(nn))
-    loss(x, y) = getfield(Flux.Losses, loss_fun)(nn(x), y) + weight_regularization()
 
-    opt = Adam()
+    function loss(model, x, y)
+        pred = model(x)
+        base_loss = getfield(Flux.Losses, loss_fun)(pred, y)
+        θ_flat, _ = Flux.destructure(model)
+        reg = 1 / 2 * λ^2 * sum(abs2, θ_flat)
+        return base_loss + reg
+    end
+
+    opt_state = Optimisers.setup(Optimisers.Adam(), nn)
     epochs = 200
-    avg_loss(data) = mean(map(d -> loss(d[1], d[2]), data))
+    avg_loss(data) = mean(map(d -> loss(nn, d[1], d[2]), data))
     show_every = epochs / 10
 
     for epoch in 1:epochs
         for d in data
-            gs = gradient(Flux.params(nn)) do
-                l = loss(d...)
-            end
-            update!(opt, Flux.params(nn), gs)
+            gs = gradient(m -> loss(m, d...), nn)[1]
+            opt_state, nn = Optimisers.update!(opt_state, nn, gs)
         end
         if verbosity>0 && epoch % show_every == 0
             println("Epoch " * string(epoch))

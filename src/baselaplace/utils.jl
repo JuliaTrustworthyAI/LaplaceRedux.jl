@@ -1,9 +1,9 @@
 """
-    Flux.params(la::Laplace)
+    get_params(la::Laplace)
 
-Overloads the `params` function for a `Laplace` object.
+Returns the selected trainable parameter arrays for a `Laplace` object.
 """
-Flux.params(la::Laplace) = Flux.params(la.model, la.est_params)
+get_params(la::Laplace) = get_params(la.model, la.est_params)
 
 """
     LaplaceRedux.n_params(la::Laplace)

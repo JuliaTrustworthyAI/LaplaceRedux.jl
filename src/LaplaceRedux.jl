@@ -19,7 +19,6 @@ export fit!, predict
 export optimize_prior!,
     glm_predictive_distribution, posterior_covariance, posterior_precision
 
-
 include("calibration_functions.jl")
 export empirical_frequency_binary_classification,
     sharpness_classification,

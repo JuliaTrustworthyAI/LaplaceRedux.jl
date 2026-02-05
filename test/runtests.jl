@@ -37,4 +37,14 @@ using Test
     @testset "Interface" begin
         include("direct_mlj_interface.jl")
     end
+
+    @testset "Other" begin
+        @testset "Collect parameters" begin
+            ps = AbstractArray[]
+            @test isnothing(LaplaceRedux._collect_trainable!(ps, ps))
+            @test isnothing(LaplaceRedux._collect_trainable!(ps, nothing))
+            @test isnothing(LaplaceRedux._collect_trainable!(ps, 1))
+        end
+    end
+
 end

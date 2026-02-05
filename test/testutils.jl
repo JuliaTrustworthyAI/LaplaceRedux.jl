@@ -1,5 +1,5 @@
 using Flux, Plots, Random, Statistics, LaplaceRedux
-using Flux.Optimise: update!, Adam
+using Optimisers
 using CSV
 using DataFrames
 using JSON
@@ -31,7 +31,7 @@ end
 Rearrange the Hessian from column-major order (Julia way) to row order (Python way).
 """
 function rearrange_hessian(h::Matrix{Float64}, nn::Chain)
-    to_row_order(h, nn) = h[gen_mapping_sq(Flux.params(nn))]
+    to_row_order(h, nn) = h[gen_mapping_sq(LaplaceRedux.collect_trainable(nn))]
 
     return to_row_order(h, nn)
 end
@@ -40,7 +40,7 @@ end
 Take the submatrix of the Hessian corresponding to the last layers, rearranged as per `gen_mapping`.
 """
 function rearrange_hessian_last_layer(h::Matrix{Float64}, nn::Chain)
-    ps = [p for p in Flux.params(nn)]
+    ps = LaplaceRedux.collect_trainable(nn)
     M = length(ps[end])
     N = length(ps[end - 1])
     return h[:, (end - M - N + 1):end][gen_mapping_sq(ps[(end - 1):end])]
