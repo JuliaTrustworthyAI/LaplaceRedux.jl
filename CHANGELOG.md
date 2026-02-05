@@ -9,7 +9,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 ## Version [1.3.0] - 2026-02-05
 
 - Migrated to new Flux API (see #146).
-- Updated compatibility bounds for various packages. 
+- Updated compatibility bounds for various packages.
+- Breaking change to internal API as a consequence of migration: `gradient` no longer returns `::Zygote.Grads`.
 
 ## Version [1.2.2] - 2026-01-08
 
