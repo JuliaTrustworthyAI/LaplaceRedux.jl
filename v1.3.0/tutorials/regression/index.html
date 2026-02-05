@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>MLP Regression · LaplaceRedux.jl</title><meta name="title" content="MLP Regression · LaplaceRedux.jl"/><meta property="og:title" content="MLP Regression · LaplaceRedux.jl"/><meta property="twitter:title" content="MLP Regression · LaplaceRedux.jl"/><meta name="description" content="Documentation for LaplaceRedux.jl."/><meta property="og:description" content="Documentation for LaplaceRedux.jl."/><meta property="twitter:description" content="Documentation for LaplaceRedux.jl."/><meta property="og:url" content="https://juliatrustworthyai.github.io/LaplaceRedux.jl/tutorials/regression/"/><meta property="twitter:url" content="https://juliatrustworthyai.github.io/LaplaceRedux.jl/tutorials/regression/"/><link rel="canonical" href="https://juliatrustworthyai.github.io/LaplaceRedux.jl/tutorials/regression/"/><script data-outdated-warner src="../../assets/warner.js"></script><link href="https://cdnjs.cloudflare.com/ajax/libs/lato-font/3.0.0/css/lato-font.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/juliamono/0.050/juliamono.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.8/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="../.."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../../assets/documenter.js"></script><script src="../../search_index.js"></script><script src="../../siteinfo.js"></script><script src="../../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-mocha.css" data-theme-name="catppuccin-mocha"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-macchiato.css" data-theme-name="catppuccin-macchiato"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-frappe.css" data-theme-name="catppuccin-frappe"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-latte.css" data-theme-name="catppuccin-latte"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><a class="docs-logo" href="../../"><img src="../../assets/logo.svg" alt="LaplaceRedux.jl logo"/></a><div class="docs-package-name"><span class="docs-autofit"><a href="../../">LaplaceRedux.jl</a></span></div><button class="docs-search-query input is-rounded is-small is-clickable my-2 mx-auto py-1 px-2" id="documenter-search-query">Search docs (Ctrl + /)</button><ul class="docs-menu"><li><a class="tocitem" href="../../">Home</a></li><li><span class="tocitem">Tutorials</span><ul><li><a class="tocitem" href="../logit/">Logistic Regression</a></li><li><a class="tocitem" href="../mlp/">MLP Binary Classifier</a></li><li><a class="tocitem" href="../multi/">MLP Multi-Label Classifier</a></li><li class="is-active"><a class="tocitem" href>MLP Regression</a><ul class="internal"><li><a class="tocitem" href="#Libraries"><span>Libraries</span></a></li><li><a class="tocitem" href="#Data"><span>Data</span></a></li><li><a class="tocitem" href="#MLP"><span>MLP</span></a></li><li><a class="tocitem" href="#Laplace-Approximation"><span>Laplace Approximation</span></a></li><li><a class="tocitem" href="#Calibration-Plot"><span>Calibration Plot</span></a></li></ul></li><li><a class="tocitem" href="../prior/">A note on the prior ...</a></li><li><a class="tocitem" href="../calibration/">Calibrated forecasts</a></li></ul></li><li><a class="tocitem" href="../../reference/">Reference</a></li><li><a class="tocitem" href="../../mlj_interface/">MLJ interface</a></li><li><a class="tocitem" href="../../resources/_resources/">Additional Resources</a></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><a class="docs-sidebar-button docs-navbar-link fa-solid fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a><nav class="breadcrumb"><ul class="is-hidden-mobile"><li><a class="is-disabled">Tutorials</a></li><li class="is-active"><a href>MLP Regression</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>MLP Regression</a></li></ul></nav><div class="docs-right"><a class="docs-navbar-link" href="https://github.com/JuliaTrustworthyAI/LaplaceRedux.jl/blob/main/docs/src/tutorials/regression.md#" title="Edit source on GitHub"><span class="docs-icon fa-solid"></span></a><a class="docs-settings-button docs-navbar-link fa-solid fa-gear" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-article-toggle-button fa-solid fa-chevron-up" id="documenter-article-toggle-button" href="javascript:;" title="Collapse all docstrings"></a></div></header><article class="content" id="documenter-page"><h2 id="Libraries"><a class="docs-heading-anchor" href="#Libraries">Libraries</a><a id="Libraries-1"></a><a class="docs-heading-anchor-permalink" href="#Libraries" title="Permalink"></a></h2><p>Import the libraries required to run this example</p><pre><code class="language-julia hljs">using Pkg; Pkg.activate(&quot;docs&quot;)
+# Import libraries
+using Flux, Plots, TaijaPlotting, Random, Statistics, LaplaceRedux
+theme(:wong)</code></pre><h2 id="Data"><a class="docs-heading-anchor" href="#Data">Data</a><a id="Data-1"></a><a class="docs-heading-anchor-permalink" href="#Data" title="Permalink"></a></h2><p>We first generate some synthetic data:</p><pre><code class="language-julia hljs">using LaplaceRedux.Data
+n = 3000       # number of observations
+σtrue = 0.30  # true observational noise
+x, y = Data.toy_data_regression(n;noise=σtrue,seed=1234)
+xs = [[x] for x in x]
+X = permutedims(x)</code></pre><p>and split them in a training set and a test set</p><pre><code class="language-julia hljs"># Shuffle the data
+Random.seed!(1234)  # Set a seed for reproducibility
+shuffle_indices = shuffle(1:n)
+
+# Define split ratios
+train_ratio = 0.8
+test_ratio = 0.2
+
+# Calculate split indices
+train_end = Int(floor(train_ratio * n))
+
+# Split the data
+train_indices = shuffle_indices[1:train_end]
+test_indices = shuffle_indices[train_end+1:end]
+
+# Create the splits
+x_train, y_train = x[train_indices], y[train_indices]
+x_test, y_test = x[test_indices], y[test_indices]
+
+# Optional: Convert to desired format
+xs_train = [[x] for x in x_train]
+xs_test = [[x] for x in x_test]
+X_train = permutedims(x_train)
+X_test = permutedims(x_test)</code></pre><h2 id="MLP"><a class="docs-heading-anchor" href="#MLP">MLP</a><a id="MLP-1"></a><a class="docs-heading-anchor-permalink" href="#MLP" title="Permalink"></a></h2><p>We set up a model and loss with weight regularization:</p><pre><code class="language-julia hljs">train_data = zip(xs_train,y_train)
+n_hidden = 50
+D = size(X,1)
+nn = Chain(
+    Dense(D, n_hidden, tanh),
+    Dense(n_hidden, 1)
+)  
+loss(x, y) = Flux.Losses.mse(nn(x), y)</code></pre><p>We train the model:</p><pre><code class="language-julia hljs">using Flux.Optimise: update!, Adam
+opt = Adam(1e-3)
+epochs = 1000
+avg_loss(train_data) = mean(map(d -&gt; loss(d[1],d[2]), train_data))
+show_every = epochs/10
+
+for epoch = 1:epochs
+  for d in train_data
+    gs = gradient(Flux.params(nn)) do
+      l = loss(d...)
+    end
+    update!(opt, Flux.params(nn), gs)
+  end
+  if epoch % show_every == 0
+    println(&quot;Epoch &quot; * string(epoch))
+    @show avg_loss(train_data)
+  end
+end</code></pre><h2 id="Laplace-Approximation"><a class="docs-heading-anchor" href="#Laplace-Approximation">Laplace Approximation</a><a id="Laplace-Approximation-1"></a><a class="docs-heading-anchor-permalink" href="#Laplace-Approximation" title="Permalink"></a></h2><p>Laplace approximation can be implemented as follows:</p><pre><code class="language-julia hljs">subset_w = :all
+la = Laplace(nn; likelihood=:regression, subset_of_weights=subset_w)
+fit!(la, train_data)
+plot(la, X_train, y_train; zoom=-5, size=(400,400))</code></pre><p><img src="../regression_files/figure-commonmark/cell-7-output-1.svg" alt/></p><p>Next we optimize the prior precision <span>$P_0$</span> and and observational noise <span>$\sigma$</span> using Empirical Bayes:</p><pre><code class="language-julia hljs">optimize_prior!(la; verbosity=1)
+plot(la, X_train, y_train; zoom=-5, size=(400,400))</code></pre><pre><code class="nohighlight hljs">loss(exp.(logP₀), exp.(logσ)) = 668.3714946472106
+Log likelihood: -618.5175117610522
+Log det ratio: 68.76532606873238
+Scatter: 30.942639703584522
+loss(exp.(logP₀), exp.(logσ)) = 719.2536119935747
+Log likelihood: -673.0996963447847
+Log det ratio: 76.53255037599948
+Scatter: 15.775280921580569
+loss(exp.(logP₀), exp.(logσ)) = 574.605864472924
+Log likelihood: -528.694286608232
+
+
+Log det ratio: 80.73114330857285
+Scatter: 11.092012420811196
+loss(exp.(logP₀), exp.(logσ)) = 568.4433850825203
+Log likelihood: -522.4407550111031
+Log det ratio: 82.10089958560243
+Scatter: 9.90436055723207
+
+
+loss(exp.(logP₀), exp.(logσ)) = 566.9485255672008
+Log likelihood: -520.9682443835385
+Log det ratio: 81.84516297272847
+Scatter: 10.11539939459612
+loss(exp.(logP₀), exp.(logσ)) = 559.9852101992792
+Log likelihood: -514.0625630685765
+Log det ratio: 80.97813304453496
+Scatter: 10.867161216870441
+
+loss(exp.(logP₀), exp.(logσ)) = 559.1404593114019
+Log likelihood: -513.2449017869876
+Log det ratio: 80.16026747795866
+Scatter: 11.630847570869795
+loss(exp.(logP₀), exp.(logσ)) = 559.3201392562346
+Log likelihood: -513.4273312363501
+Log det ratio: 79.68892769076004
+Scatter: 12.096688349008877
+
+
+loss(exp.(logP₀), exp.(logσ)) = 559.2111983983311
+Log likelihood: -513.3174948065804
+Log det ratio: 79.56631681347287
+Scatter: 12.2210903700287
+loss(exp.(logP₀), exp.(logσ)) = 559.1107459310829
+Log likelihood: -513.2176579845662
+Log det ratio: 79.63946732368183
+Scatter: 12.146708569351494</code></pre><p><img src="../regression_files/figure-commonmark/cell-8-output-6.svg" alt/></p><h2 id="Calibration-Plot"><a class="docs-heading-anchor" href="#Calibration-Plot">Calibration Plot</a><a id="Calibration-Plot-1"></a><a class="docs-heading-anchor-permalink" href="#Calibration-Plot" title="Permalink"></a></h2><p>Once the prior precision has been optimized it is possible to evaluate the quality of the predictive distribution obtained through a calibration plot and a test dataset (y<em>test, X</em>test).</p><p>First, we apply the trained network on the test dataset (y<em>test, X</em>test) and collect the neural network’s predicted distributions</p><pre><code class="language-julia hljs">predicted_distributions= predict(la, X_test,ret_distr=true)</code></pre><pre><code class="nohighlight hljs">600×1 Matrix{Distributions.Normal{Float64}}:
+ Distributions.Normal{Float64}(μ=-0.1137533187866211, σ=0.07161056521032018)
+ Distributions.Normal{Float64}(μ=0.7063850164413452, σ=0.050697938829269665)
+ Distributions.Normal{Float64}(μ=-0.2211049497127533, σ=0.06876939416479119)
+ Distributions.Normal{Float64}(μ=0.720299243927002, σ=0.08665125572287981)
+ Distributions.Normal{Float64}(μ=-0.8338974714279175, σ=0.06464012115237727)
+ Distributions.Normal{Float64}(μ=0.9910320043563843, σ=0.07452060172164382)
+ Distributions.Normal{Float64}(μ=0.1507074236869812, σ=0.07316299850461126)
+ Distributions.Normal{Float64}(μ=0.20875799655914307, σ=0.05507748397231652)
+ Distributions.Normal{Float64}(μ=0.973572850227356, σ=0.07899004963915071)
+ Distributions.Normal{Float64}(μ=0.9497100114822388, σ=0.07750126389821968)
+ Distributions.Normal{Float64}(μ=0.22462180256843567, σ=0.07103664786246695)
+ Distributions.Normal{Float64}(μ=-0.7654240131378174, σ=0.05501397704409917)
+ Distributions.Normal{Float64}(μ=1.0029183626174927, σ=0.07619466916431794)
+ ⋮
+ Distributions.Normal{Float64}(μ=0.7475956678390503, σ=0.049875919157527815)
+ Distributions.Normal{Float64}(μ=0.019430622458457947, σ=0.07445076746045155)
+ Distributions.Normal{Float64}(μ=-0.9451781511306763, σ=0.05929712369810892)
+ Distributions.Normal{Float64}(μ=-0.9813591241836548, σ=0.05844012710417755)
+ Distributions.Normal{Float64}(μ=-0.6470385789871216, σ=0.055754609087554294)
+ Distributions.Normal{Float64}(μ=-0.34288135170936584, σ=0.05533523375842789)
+ Distributions.Normal{Float64}(μ=0.9912381172180176, σ=0.07872473667398772)
+ Distributions.Normal{Float64}(μ=-0.824547290802002, σ=0.05499258101374759)
+ Distributions.Normal{Float64}(μ=-0.3306621015071869, σ=0.06745251908756716)
+ Distributions.Normal{Float64}(μ=0.3742436170578003, σ=0.10588913330223387)
+ Distributions.Normal{Float64}(μ=0.0875578224658966, σ=0.07436153828228255)
+ Distributions.Normal{Float64}(μ=-0.34871187806129456, σ=0.06742745343084512)</code></pre><p>then we can plot the calibration plot of our neural model</p><pre><code class="language-julia hljs">Calibration_Plot(la,y_test,vec(predicted_distributions);n_bins = 20)</code></pre><p><img src="../regression_files/figure-commonmark/cell-10-output-1.svg" alt/></p><p>and compute the sharpness of the predictive distribution</p><pre><code class="language-julia hljs">sharpness_regression(vec(predicted_distributions))</code></pre><pre><code class="nohighlight hljs">0.005058067743863281</code></pre></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../multi/">« MLP Multi-Label Classifier</a><a class="docs-footer-nextpage" href="../prior/">A note on the prior ... »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.16.1 on <span class="colophon-date" title="Thursday 5 February 2026 14:37">Thursday 5 February 2026</span>. Using Julia version 1.12.4.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
