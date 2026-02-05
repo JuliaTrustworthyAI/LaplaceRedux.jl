@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>MLP Multi-Label Classifier · LaplaceRedux.jl</title><meta name="title" content="MLP Multi-Label Classifier · LaplaceRedux.jl"/><meta property="og:title" content="MLP Multi-Label Classifier · LaplaceRedux.jl"/><meta property="twitter:title" content="MLP Multi-Label Classifier · LaplaceRedux.jl"/><meta name="description" content="Documentation for LaplaceRedux.jl."/><meta property="og:description" content="Documentation for LaplaceRedux.jl."/><meta property="twitter:description" content="Documentation for LaplaceRedux.jl."/><meta property="og:url" content="https://juliatrustworthyai.github.io/LaplaceRedux.jl/tutorials/multi/"/><meta property="twitter:url" content="https://juliatrustworthyai.github.io/LaplaceRedux.jl/tutorials/multi/"/><link rel="canonical" href="https://juliatrustworthyai.github.io/LaplaceRedux.jl/tutorials/multi/"/><script data-outdated-warner src="../../assets/warner.js"></script><link href="https://cdnjs.cloudflare.com/ajax/libs/lato-font/3.0.0/css/lato-font.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/juliamono/0.050/juliamono.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.8/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="../.."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../../assets/documenter.js"></script><script src="../../search_index.js"></script><script src="../../siteinfo.js"></script><script src="../../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-mocha.css" data-theme-name="catppuccin-mocha"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-macchiato.css" data-theme-name="catppuccin-macchiato"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-frappe.css" data-theme-name="catppuccin-frappe"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-latte.css" data-theme-name="catppuccin-latte"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><a class="docs-logo" href="../../"><img src="../../assets/logo.svg" alt="LaplaceRedux.jl logo"/></a><div class="docs-package-name"><span class="docs-autofit"><a href="../../">LaplaceRedux.jl</a></span></div><button class="docs-search-query input is-rounded is-small is-clickable my-2 mx-auto py-1 px-2" id="documenter-search-query">Search docs (Ctrl + /)</button><ul class="docs-menu"><li><a class="tocitem" href="../../">Home</a></li><li><span class="tocitem">Tutorials</span><ul><li><a class="tocitem" href="../logit/">Logistic Regression</a></li><li><a class="tocitem" href="../mlp/">MLP Binary Classifier</a></li><li class="is-active"><a class="tocitem" href>MLP Multi-Label Classifier</a><ul class="internal"><li><a class="tocitem" href="#Libraries"><span>Libraries</span></a></li><li><a class="tocitem" href="#Data"><span>Data</span></a></li><li><a class="tocitem" href="#MLP"><span>MLP</span></a></li><li><a class="tocitem" href="#Laplace-Approximation"><span>Laplace Approximation</span></a></li><li><a class="tocitem" href="#Calibration-Plots"><span>Calibration Plots</span></a></li></ul></li><li><a class="tocitem" href="../regression/">MLP Regression</a></li><li><a class="tocitem" href="../prior/">A note on the prior ...</a></li><li><a class="tocitem" href="../calibration/">Calibrated forecasts</a></li></ul></li><li><a class="tocitem" href="../../reference/">Reference</a></li><li><a class="tocitem" href="../../mlj_interface/">MLJ interface</a></li><li><a class="tocitem" href="../../resources/_resources/">Additional Resources</a></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><a class="docs-sidebar-button docs-navbar-link fa-solid fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a><nav class="breadcrumb"><ul class="is-hidden-mobile"><li><a class="is-disabled">Tutorials</a></li><li class="is-active"><a href>MLP Multi-Label Classifier</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>MLP Multi-Label Classifier</a></li></ul></nav><div class="docs-right"><a class="docs-navbar-link" href="https://github.com/JuliaTrustworthyAI/LaplaceRedux.jl/blob/main/docs/src/tutorials/multi.md#" title="Edit source on GitHub"><span class="docs-icon fa-solid"></span></a><a class="docs-settings-button docs-navbar-link fa-solid fa-gear" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-article-toggle-button fa-solid fa-chevron-up" id="documenter-article-toggle-button" href="javascript:;" title="Collapse all docstrings"></a></div></header><article class="content" id="documenter-page"><h1 id="Multi-class-problem"><a class="docs-heading-anchor" href="#Multi-class-problem">Multi-class problem</a><a id="Multi-class-problem-1"></a><a class="docs-heading-anchor-permalink" href="#Multi-class-problem" title="Permalink"></a></h1><h2 id="Libraries"><a class="docs-heading-anchor" href="#Libraries">Libraries</a><a id="Libraries-1"></a><a class="docs-heading-anchor-permalink" href="#Libraries" title="Permalink"></a></h2><pre><code class="language-julia hljs">using Pkg; Pkg.activate(&quot;docs&quot;)
+# Import libraries
+using Flux, Plots, TaijaPlotting, Random, Statistics, LaplaceRedux, CategoricalDistributions
+theme(:lime)</code></pre><h2 id="Data"><a class="docs-heading-anchor" href="#Data">Data</a><a id="Data-1"></a><a class="docs-heading-anchor-permalink" href="#Data" title="Permalink"></a></h2><pre><code class="language-julia hljs">using LaplaceRedux.Data
+seed = 1234
+x, y = Data.toy_data_multi(seed=seed)
+X = hcat(x...)
+y_onehot = Flux.onehotbatch(y, unwrap.(unique(y)))
+y_onehot = Flux.unstack(y_onehot&#39;,1)</code></pre><p>split in training and test datasets</p><pre><code class="language-julia hljs"># Shuffle the data
+Random.seed!(seed)
+n = length(y)
+indices = randperm(n)
+
+# Define the split ratio
+split_ratio = 0.8
+split_index = Int(floor(split_ratio * n))
+
+# Split the data into training and test sets
+train_indices = indices[1:split_index]
+test_indices = indices[split_index+1:end]
+
+x_train = x[train_indices]
+x_test = x[test_indices]
+y_onehot_train = y_onehot[train_indices,:]
+y_onehot_test = y_onehot[test_indices,:]
+
+y_train = vec(y[train_indices,:])
+y_test = vec(y[test_indices,:])
+# bring into tabular format
+X_train = hcat(x_train...) 
+X_test = hcat(x_test...) 
+
+data = zip(x_train,y_onehot_train)
+#data = zip(x,y_onehot)</code></pre><h2 id="MLP"><a class="docs-heading-anchor" href="#MLP">MLP</a><a id="MLP-1"></a><a class="docs-heading-anchor-permalink" href="#MLP" title="Permalink"></a></h2><p>We set up a model</p><pre><code class="language-julia hljs">n_hidden = 3
+D = size(X,1)
+out_dim = length(unwrap.(unique(y)))
+nn = Chain(
+    Dense(D, n_hidden, σ),
+    Dense(n_hidden, out_dim)
+)  
+loss(x, y) = Flux.Losses.logitcrossentropy(nn(x), y)</code></pre><p>training:</p><pre><code class="language-julia hljs">using Flux.Optimise: update!, Adam
+opt = Adam()
+epochs = 100
+avg_loss(data) = mean(map(d -&gt; loss(d[1],d[2]), data))
+show_every = epochs/10
+
+for epoch = 1:epochs
+    for d in data
+        gs = gradient(Flux.params(nn)) do
+            l = loss(d...)
+        end
+        update!(opt, Flux.params(nn), gs)
+    end
+    if epoch % show_every == 0
+        println(&quot;Epoch &quot; * string(epoch))
+        @show avg_loss(data)
+    end
+end</code></pre><h2 id="Laplace-Approximation"><a class="docs-heading-anchor" href="#Laplace-Approximation">Laplace Approximation</a><a id="Laplace-Approximation-1"></a><a class="docs-heading-anchor-permalink" href="#Laplace-Approximation" title="Permalink"></a></h2><p>The Laplace approximation can be implemented as follows:</p><pre><code class="language-julia hljs">la = Laplace(nn; likelihood=:classification)
+fit!(la, data)
+optimize_prior!(la; verbosity=1, n_steps=100)</code></pre><p>with either the probit approximation:</p><pre><code class="language-julia hljs">_labels = sort(unwrap.(unique(y)))
+plt_list = []
+for target in _labels
+    plt = plot(la, X_test, y_test; target=target, clim=(0,1))
+    push!(plt_list, plt)
+end
+plot(plt_list...)</code></pre><p><img src="../multi_files/figure-commonmark/cell-8-output-1.svg" alt/></p><p>or the plugin approximation:</p><pre><code class="language-julia hljs">_labels = sort(unwrap.(unique(y)))
+plt_list = []
+for target in _labels
+    plt = plot(la, X_test, y_test; target=target, clim=(0,1), link_approx=:plugin)
+    push!(plt_list, plt)
+end
+plot(plt_list...)</code></pre><p><img src="../multi_files/figure-commonmark/cell-9-output-1.svg" alt/></p><h2 id="Calibration-Plots"><a class="docs-heading-anchor" href="#Calibration-Plots">Calibration Plots</a><a id="Calibration-Plots-1"></a><a class="docs-heading-anchor-permalink" href="#Calibration-Plots" title="Permalink"></a></h2><p>In the case of multiclass classification tasks, we cannot plot the calibration plots directly since they can only be used in the binary classification case. However, we can use them to plot the calibration of the predictions for 1 class against all the others. To do so, we first have to collect the predicted categorical distributions</p><pre><code class="language-julia hljs">predicted_distributions= predict(la, X_test,ret_distr=true)</code></pre><pre><code class="nohighlight hljs">1×20 Matrix{Distributions.Categorical{Float64, Vector{Float64}}}:
+ Distributions.Categorical{Float64, Vector{Float64}}(support=Base.OneTo(4), p=[0.0569184, 0.196066, 0.0296796, 0.717336])  …  Distributions.Categorical{Float64, Vector{Float64}}(support=Base.OneTo(4), p=[0.0569634, 0.195727, 0.0296449, 0.717665])</code></pre><p>then we transform the categorical distributions into Bernoulli distributions by taking only the probability of the class of interest, for example the third one.</p><pre><code class="language-julia hljs">using Distributions
+bernoulli_distributions = [Bernoulli(p.p[3]) for p in vec(predicted_distributions)]</code></pre><pre><code class="nohighlight hljs">20-element Vector{Bernoulli{Float64}}:
+ Bernoulli{Float64}(p=0.029679590887034743)
+ Bernoulli{Float64}(p=0.6682373773598078)
+ Bernoulli{Float64}(p=0.20912995228011141)
+ Bernoulli{Float64}(p=0.20913322913224044)
+ Bernoulli{Float64}(p=0.02971989045895732)
+ Bernoulli{Float64}(p=0.668431087463204)
+ Bernoulli{Float64}(p=0.03311710703617972)
+ Bernoulli{Float64}(p=0.20912981531862682)
+ Bernoulli{Float64}(p=0.11273726979027407)
+ Bernoulli{Float64}(p=0.2490744632745955)
+ Bernoulli{Float64}(p=0.029886357844211404)
+ Bernoulli{Float64}(p=0.02965323602487074)
+ Bernoulli{Float64}(p=0.1126799374664026)
+ Bernoulli{Float64}(p=0.11278538625980777)
+ Bernoulli{Float64}(p=0.6683139127616431)
+ Bernoulli{Float64}(p=0.029644435143197145)
+ Bernoulli{Float64}(p=0.11324691083703237)
+ Bernoulli{Float64}(p=0.6681422555922787)
+ Bernoulli{Float64}(p=0.668424345470233)
+ Bernoulli{Float64}(p=0.029644891255330787)</code></pre><p>Now we can use <code>Calibration_Plot</code> to see the level of calibration of the neural network</p><pre><code class="language-julia hljs">plt = Calibration_Plot(la,hcat(y_onehot_test...)[3,:],bernoulli_distributions;n_bins = 10);</code></pre><p><img src="../multi_files/figure-commonmark/cell-12-output-1.svg" alt/></p><p>The plot is peaked around 0.7.</p><p>A possible reason is that class 3 is relatively easy for the model to identify from the other classes, although it remains a bit underconfident in its predictions. Another reason for the peak may be the lack of cases where the predicted probability is lower (e.g., around 0.5), which could indicate that the network has not encountered ambiguous or difficult-to-classify examples for such class. This once again might be because either class 3 has distinct features that the model can easily learn, leading to fewer uncertain predictions, or is a consequence of the limited dataset.</p><p>We can measure how sharp the neural network is by computing the sharpness score</p><p>sharpness<em>classification(hcat(y</em>onehot<em>test…)[3,:],vec(bernoulli</em>distributions))</p><p>```</p><p>The neural network seems to be able to correctly classify the majority of samples not belonging to class 3 with a relative high confidence, but remains more uncertain when he encounter examples belonging to class 3.</p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../mlp/">« MLP Binary Classifier</a><a class="docs-footer-nextpage" href="../regression/">MLP Regression »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.16.1 on <span class="colophon-date" title="Thursday 5 February 2026 15:39">Thursday 5 February 2026</span>. Using Julia version 1.12.4.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
