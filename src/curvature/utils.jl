@@ -83,6 +83,6 @@ function gradients(
 )
     nn = curvature.model
     θ, re = Flux.destructure(nn)
-    𝐠 = gradient(θ_ -> curvature.loss_fun(re(θ_)(X), y), θ)[1]
+    𝐠 = Flux.gradient(θ_ -> curvature.loss_fun(re(θ_)(X), y), θ)[1]
     return 𝐠[curvature.param_indices]
 end

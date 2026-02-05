@@ -63,7 +63,7 @@ function approximate(
         # via the model's predictive distribution.
         for (j, yhat) in enumerate(eachcol(I(length(p))))
             loss_m = m -> curvature.loss_fun(m(x_n), yhat)
-            grad, = gradient(loss_m, nn)
+            grad, = Flux.gradient(loss_m, nn)
 
             # See Martens & Grosse 2015 page 5
             # DW[i] <- g[i] * a[i-1]'

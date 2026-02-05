@@ -173,7 +173,7 @@ function MMI.fit(m::LaplaceModels, verbosity, X, y)
             loss = m.flux_loss(y_pred, y_batch)
 
             # Compute gradients 
-            grads, _ = gradient(copied_model, X_batch) do grad_model, X
+            grads, _ = Flux.gradient(copied_model, X_batch) do grad_model, X
                 # Recompute predictions inside gradient context
                 y_pred = grad_model(X)
                 m.flux_loss(y_pred, y_batch)
@@ -260,7 +260,7 @@ function MMI.update(m::LaplaceModels, verbosity, old_fitresult, old_cache, X, y)
                     loss = m.flux_loss(y_pred, y_batch)
 
                     # Compute gradients 
-                    grads, _ = gradient(old_la.model, X_batch) do grad_model, X
+                    grads, _ = Flux.gradient(old_la.model, X_batch) do grad_model, X
                         # Recompute predictions inside gradient context
                         y_pred = grad_model(X)
                         m.flux_loss(y_pred, y_batch)
