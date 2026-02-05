@@ -41,15 +41,15 @@ function optimize_prior!(
     # Optimization:
     while i < n_steps
         if tune_σ
-            gs_P, gs_σ = gradient((lp, ls) -> loss(exp.(lp), exp.(ls)), logP₀, logσ)
+            gs_P, gs_σ = Flux.gradient((lp, ls) -> loss(exp.(lp), exp.(ls)), logP₀, logσ)
             opt_state_P, logP₀ = Optimisers.update!(opt_state_P, logP₀, gs_P)
             opt_state_σ, logσ = Optimisers.update!(opt_state_σ, logσ, gs_σ)
         else
-            gs_P = gradient(lp -> loss(exp.(lp), exp.(logσ)), logP₀)[1]
+            gs_P = Flux.gradient(lp -> loss(exp.(lp), exp.(logσ)), logP₀)[1]
             opt_state_P, logP₀ = Optimisers.update!(opt_state_P, logP₀, gs_P)
         end
         i += 1
-        if verbosity>0
+        if verbosity > 0
             if i % show_every == 0
                 @info "Iteration $(i): P₀=$(exp(logP₀[1])), σ=$(exp(logσ[1]))"
                 @show loss(exp.(logP₀), exp.(logσ))
